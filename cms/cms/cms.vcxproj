@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\app\cms_app.cpp" />
+    <ClCompile Include="..\..\app\cms_app_info.cpp" />
+    <ClCompile Include="..\..\cJSON\cJSON.c" />
+    <ClCompile Include="..\..\common\cms_binary_reader.cpp" />
+    <ClCompile Include="..\..\common\cms_binary_writer.cpp" />
+    <ClCompile Include="..\..\common\cms_char_int.cpp" />
+    <ClCompile Include="..\..\common\cms_shmmgr.cpp" />
+    <ClCompile Include="..\..\common\cms_time.cpp" />
+    <ClCompile Include="..\..\common\cms_url.cpp" />
+    <ClCompile Include="..\..\common\cms_utility.cpp" />
+    <ClCompile Include="..\..\config\cms_config.cpp" />
+    <ClCompile Include="..\..\conn\cms_conn_common.cpp" />
+    <ClCompile Include="..\..\conn\cms_conn_rtmp.cpp" />
+    <ClCompile Include="..\..\conn\cms_http_c.cpp" />
+    <ClCompile Include="..\..\conn\cms_http_s.cpp" />
+    <ClCompile Include="..\..\core\cms_buffer.cpp" />
+    <ClCompile Include="..\..\core\cms_errno.cpp" />
+    <ClCompile Include="..\..\core\cms_lock.cpp" />
+    <ClCompile Include="..\..\core\cms_thread.cpp" />
+    <ClCompile Include="..\..\decode\BitStream.cpp" />
+    <ClCompile Include="..\..\decode\decode.cpp" />
+    <ClCompile Include="..\..\decode\ParseH264Header.cpp" />
+    <ClCompile Include="..\..\decode\ParseHevcHeader.cpp" />
+    <ClCompile Include="..\..\decode\ParseSequenceHeader.cpp" />
+    <ClCompile Include="..\..\dnscache\cms_dns_cache.cpp" />
+    <ClCompile Include="..\..\enc\cms_base64.cpp" />
+    <ClCompile Include="..\..\enc\cms_crc32.cpp" />
+    <ClCompile Include="..\..\enc\cms_crc32n.cpp" />
+    <ClCompile Include="..\..\enc\cms_sha1.cpp" />
+    <ClCompile Include="..\..\flvPool\cms_flv_pool.cpp" />
+    <ClCompile Include="..\..\interface\cms_conn_listener.cpp" />
+    <ClCompile Include="..\..\interface\cms_interf_conn.cpp" />
+    <ClCompile Include="..\..\interface\cms_protocol.cpp" />
+    <ClCompile Include="..\..\interface\cms_read_write.cpp" />
+    <ClCompile Include="..\..\interface\cms_stream_info.cpp" />
+    <ClCompile Include="..\..\interface\cms_thread.cpp" />
+    <ClCompile Include="..\..\kcp\ikcp.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\event.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_epoll.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_kqueue.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_poll.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_port.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_select.c" />
+    <ClCompile Include="..\..\libev\libev-4.25\ev_win32.c" />
+    <ClCompile Include="..\..\log\cms_log.cpp" />
+    <ClCompile Include="..\..\net\cms_net_var.cpp" />
+    <ClCompile Include="..\..\net\cms_tcp_conn.cpp" />
+    <ClCompile Include="..\..\protocol\cms_amf0.cpp" />
+    <ClCompile Include="..\..\protocol\cms_flv.cpp" />
+    <ClCompile Include="..\..\protocol\cms_flv_pump.cpp" />
+    <ClCompile Include="..\..\protocol\cms_flv_transmission.cpp" />
+    <ClCompile Include="..\..\protocol\cms_http.cpp" />
+    <ClCompile Include="..\..\protocol\cms_rtmp.cpp" />
+    <ClCompile Include="..\..\protocol\cms_rtmp_handshake.cpp" />
+    <ClCompile Include="..\..\protocol\cms_ssl.cpp" />
+    <ClCompile Include="..\..\static\cms_static_common.cpp" />
+    <ClCompile Include="..\..\static\cms_static.cpp" />
+    <ClCompile Include="..\..\strategy\cms_duration_timestamp.cpp" />
+    <ClCompile Include="..\..\strategy\cms_fast_bit_rate.cpp" />
+    <ClCompile Include="..\..\strategy\cms_first_play.cpp" />
+    <ClCompile Include="..\..\strategy\cms_jitter.cpp" />
+    <ClCompile Include="..\..\strategy\cms_jump_last_x_seconds.cpp" />
+    <ClCompile Include="..\..\taskmgr\cms_task_mgr.cpp" />
+    <ClCompile Include="..\..\ts\cms_hls_mgr.cpp" />
+    <ClCompile Include="..\..\ts\cms_ts.cpp" />
+    <ClCompile Include="..\..\ts\cms_ts_callback.cpp" />
+    <ClCompile Include="..\..\ts\cms_ts_chunk.cpp" />
+    <ClCompile Include="..\..\worker\cms_master.cpp" />
+    <ClCompile Include="..\..\worker\cms_master_callback.cpp" />
+    <ClCompile Include="..\..\worker\cms_worker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\app\cms_app_info.h" />
+    <ClInclude Include="..\..\app\cms_build_config.h" />
+    <ClInclude Include="..\..\cJSON\cJSON.h" />
+    <ClInclude Include="..\..\common\cms_binary_reader.h" />
+    <ClInclude Include="..\..\common\cms_binary_writer.h" />
+    <ClInclude Include="..\..\common\cms_char_int.h" />
+    <ClInclude Include="..\..\common\cms_shmmgr.h" />
+    <ClInclude Include="..\..\common\cms_time.h" />
+    <ClInclude Include="..\..\common\cms_type.h" />
+    <ClInclude Include="..\..\common\cms_url.h" />
+    <ClInclude Include="..\..\common\cms_utility.h" />
+    <ClInclude Include="..\..\config\cms_config.h" />
+    <ClInclude Include="..\..\conn\cms_conn_common.h" />
+    <ClInclude Include="..\..\conn\cms_conn_rtmp.h" />
+    <ClInclude Include="..\..\conn\cms_conn_var.h" />
+    <ClInclude Include="..\..\conn\cms_http_c.h" />
+    <ClInclude Include="..\..\conn\cms_http_s.h" />
+    <ClInclude Include="..\..\core\cms_buffer.h" />
+    <ClInclude Include="..\..\core\cms_errno.h" />
+    <ClInclude Include="..\..\core\cms_lock.h" />
+    <ClInclude Include="..\..\core\cms_thread.h" />
+    <ClInclude Include="..\..\decode\BitStream.h" />
+    <ClInclude Include="..\..\decode\decode.h" />
+    <ClInclude Include="..\..\decode\ParseH264Header.h" />
+    <ClInclude Include="..\..\decode\ParseHevcHeader.h" />
+    <ClInclude Include="..\..\decode\ParseSequenceHeader.h" />
+    <ClInclude Include="..\..\dnscache\cms_dns_cache.h" />
+    <ClInclude Include="..\..\enc\cms_base64.h" />
+    <ClInclude Include="..\..\enc\cms_crc32.h" />
+    <ClInclude Include="..\..\enc\cms_crc32n.h" />
+    <ClInclude Include="..\..\enc\cms_sha1.h" />
+    <ClInclude Include="..\..\flvPool\cms_flv_pool.h" />
+    <ClInclude Include="..\..\flvPool\cms_flv_var.h" />
+    <ClInclude Include="..\..\interface\cms_conn_listener.h" />
+    <ClInclude Include="..\..\interface\cms_inerf_var.h" />
+    <ClInclude Include="..\..\interface\cms_interf_conn.h" />
+    <ClInclude Include="..\..\interface\cms_protocol.h" />
+    <ClInclude Include="..\..\interface\cms_read_write.h" />
+    <ClInclude Include="..\..\interface\cms_stream_info.h" />
+    <ClInclude Include="..\..\interface\cms_thread.h" />
+    <ClInclude Include="..\..\kcp\ikcp.h" />
+    <ClInclude Include="..\..\libev\libev-4.25\ev++.h" />
+    <ClInclude Include="..\..\libev\libev-4.25\ev.h" />
+    <ClInclude Include="..\..\libev\libev-4.25\event.h" />
+    <ClInclude Include="..\..\libev\libev-4.25\ev_vars.h" />
+    <ClInclude Include="..\..\libev\libev-4.25\ev_wrap.h" />
+    <ClInclude Include="..\..\log\cms_log.h" />
+    <ClInclude Include="..\..\net\cms_net_var.h" />
+    <ClInclude Include="..\..\net\cms_tcp_conn.h" />
+    <ClInclude Include="..\..\protocol\cms_amf0.h" />
+    <ClInclude Include="..\..\protocol\cms_flv.h" />
+    <ClInclude Include="..\..\protocol\cms_flv_pump.h" />
+    <ClInclude Include="..\..\protocol\cms_flv_transmission.h" />
+    <ClInclude Include="..\..\protocol\cms_http.h" />
+    <ClInclude Include="..\..\protocol\cms_rtmp.h" />
+    <ClInclude Include="..\..\protocol\cms_rtmp_const.h" />
+    <ClInclude Include="..\..\protocol\cms_rtmp_handshake.h" />
+    <ClInclude Include="..\..\protocol\cms_ssl.h" />
+    <ClInclude Include="..\..\s2n\s2n.h" />
+    <ClInclude Include="..\..\static\cms_static_common.h" />
+    <ClInclude Include="..\..\static\cms_static.h" />
+    <ClInclude Include="..\..\strategy\cms_duration_timestamp.h" />
+    <ClInclude Include="..\..\strategy\cms_fast_bit_rate.h" />
+    <ClInclude Include="..\..\strategy\cms_first_play.h" />
+    <ClInclude Include="..\..\strategy\cms_jitter.h" />
+    <ClInclude Include="..\..\strategy\cms_jump_last_x_seconds.h" />
+    <ClInclude Include="..\..\taskmgr\cms_task_mgr.h" />
+    <ClInclude Include="..\..\ts\cms_hls_mgr.h" />
+    <ClInclude Include="..\..\ts\cms_ts.h" />
+    <ClInclude Include="..\..\ts\cms_ts_callback.h" />
+    <ClInclude Include="..\..\ts\cms_ts_chunk.h" />
+    <ClInclude Include="..\..\ts\cms_ts_common.h" />
+    <ClInclude Include="..\..\worker\cms_common_var.h" />
+    <ClInclude Include="..\..\worker\cms_master.h" />
+    <ClInclude Include="..\..\worker\cms_master_callback.h" />
+    <ClInclude Include="..\..\worker\cms_worker.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{2210FEE3-11F4-4E8B-B623-BFAA402AC8F9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>cms</RootNamespace>
+    <ProjectName>cms</ProjectName>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

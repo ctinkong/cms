@@ -1,0 +1,120 @@
+﻿生成启动时间为 2017/3/29 14:25:28。
+     1>项目“H:\project\c++\crtmp\crtmp\crtmp\crtmp.vcxproj”在节点 2 上(Build 个目标)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /IH:\project\c++\crtmp /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\common\cms_binary_reader.cpp ..\..\common\cms_binary_writer.cpp ..\..\common\cms_shmmgr.cpp ..\..\common\cms_utility.cpp ..\..\conn\cms_conn.cpp ..\..\conn\cms_conn_mgr.cpp ..\..\core\cms_buffer.cpp ..\..\core\cms_errno.cpp ..\..\core\cms_lock.cpp ..\..\core\cms_thread.cpp ..\..\dispatch\cms_net_dispatch.cpp ..\..\dnscache\cms_dns_cache.cpp ..\..\enc\cms_base64.cpp ..\..\enc\cms_crc32.cpp ..\..\enc\cms_crc32n.cpp ..\..\enc\cms_sha1.cpp ..\..\ev\cms_ev.cpp ..\..\interface\cms_interf_conn.cpp ..\..\interface\cms_dispatch.cpp ..\..\interface\cms_read_write.cpp ..\..\interface\cms_thread.cpp ..\..\log\cms_log.cpp ..\..\net\cms_tcp_conn.cpp ..\..\protocol\cms_amf0.cpp ..\..\protocol\cms_rtmp_handshake.cpp ..\..\rtmp\cms_rtmp.cpp
+         cms_rtmp.cpp
+         cms_rtmp_handshake.cpp
+     1>h:\project\c++\crtmp\protocol\cms_rtmp_handshake.cpp(46): fatal error C1083: 无法打开包括文件:“arpa/inet.h”: No such file or directory
+         cms_amf0.cpp
+     1>h:\project\c++\crtmp\protocol\cms_amf0.cpp(8): fatal error C1083: 无法打开包括文件:“netinet/in.h”: No such file or directory
+         cms_tcp_conn.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_log.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_thread.cpp
+     1>h:\project\c++\crtmp\stlib\st.h(40): fatal error C1083: 无法打开包括文件:“unistd.h”: No such file or directory
+         cms_read_write.cpp
+         cms_dispatch.cpp
+     1>h:\project\c++\crtmp\stlib\st.h(40): fatal error C1083: 无法打开包括文件:“unistd.h”: No such file or directory
+         cms_interf_conn.cpp
+         cms_ev.cpp
+     1>h:\project\c++\crtmp\dispatch\cms_net_dispatch.h(19): error C2146: 语法错误: 缺少“;”(在标识符“mdispatchLock”的前面)
+     1>h:\project\c++\crtmp\dispatch\cms_net_dispatch.h(19): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+         cms_sha1.cpp
+     1>h:\project\c++\crtmp\enc\cms_sha1.cpp(2): fatal error C1083: 无法打开包括文件:“../include/sha1.h”: No such file or directory
+         cms_crc32n.cpp
+     1>h:\project\c++\crtmp\enc\cms_crc32n.cpp(1): fatal error C1083: 无法打开包括文件:“crc32n.h”: No such file or directory
+         cms_crc32.cpp
+     1>h:\project\c++\crtmp\enc\cms_crc32.cpp(1): fatal error C1083: 无法打开包括文件:“crc32.h”: No such file or directory
+         cms_base64.cpp
+     1>h:\project\c++\crtmp\enc\cms_base64.cpp(25): fatal error C1083: 无法打开包括文件:“base64.h”: No such file or directory
+         cms_dns_cache.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_net_dispatch.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_thread.cpp
+     1>h:\project\c++\crtmp\core\cms_thread.cpp(1): fatal error C1083: 无法打开包括文件:“qvod_thread.h”: No such file or directory
+         cms_lock.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_errno.cpp
+     1>h:\project\c++\crtmp\core\cms_errno.cpp(14): error C3861: “strerror”: 找不到标识符
+         cms_buffer.cpp
+     1>h:\project\c++\crtmp\core\cms_buffer.cpp(60): error C2065: “logs”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_buffer.cpp(60): error C2227: “->error”的左边必须指向类/结构/联合/泛型类型
+                 类型是“'unknown-type'”
+         正在生成代码...
+         正在编译...
+         cms_conn_mgr.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_conn.cpp
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C2146: 语法错误: 缺少“;”(在标识符“cms_thread_lock_t”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(6): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(25): error C2061: 语法错误: 标识符“cms_thread_lock_t”
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C2143: 语法错误 : 缺少“;”(在“*”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(34): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C2146: 语法错误: 缺少“;”(在标识符“m_cs”的前面)
+     1>h:\project\c++\crtmp\core\cms_lock.h(50): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): error C2065: “lock”: 未声明的标识符
+     1>h:\project\c++\crtmp\core\cms_lock.h(110): fatal error C1903: 无法从以前的错误中恢复；正在停止编译
+         cms_utility.cpp
+     1>h:\project\c++\crtmp\stlib\st.h(40): fatal error C1083: 无法打开包括文件:“unistd.h”: No such file or directory
+         cms_shmmgr.cpp
+     1>h:\project\c++\crtmp\common\cms_shmmgr.h(4): fatal error C1083: 无法打开包括文件:“sys/ipc.h”: No such file or directory
+         cms_binary_writer.cpp
+     1>h:\project\c++\crtmp\common\cms_binary_writer.h(5): fatal error C1083: 无法打开包括文件:“arpa/inet.h”: No such file or directory
+         cms_binary_reader.cpp
+     1>h:\project\c++\crtmp\common\cms_binary_reader.cpp(4): fatal error C1083: 无法打开包括文件:“sys/socket.h”: No such file or directory
+         正在生成代码...
+     1>已完成生成项目“H:\project\c++\crtmp\crtmp\crtmp\crtmp.vcxproj”(Build 个目标)的操作 - 失败。
+
+生成失败。
+
+已用时间 00:00:09.56

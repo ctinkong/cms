@@ -1,0 +1,522 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="enc">
+      <UniqueIdentifier>{056f85e7-d3ae-457c-9344-efb5f1bf9698}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="protocol">
+      <UniqueIdentifier>{bf265c56-d431-4ae4-9669-41b1de34afbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="common">
+      <UniqueIdentifier>{19f78c1b-7181-4686-bf20-aea6c984a3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="log">
+      <UniqueIdentifier>{ff945226-e626-4b1d-870d-1327ae8a512f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{83dec291-3f93-46ec-ac6c-aed34ad8f92e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="interface">
+      <UniqueIdentifier>{7e237538-6d4e-43be-a7fe-ede6b11d3284}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dnscache">
+      <UniqueIdentifier>{6f0176a0-f391-40a2-a633-2e4ac1bd3a92}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="net">
+      <UniqueIdentifier>{aabb4874-446e-40da-ad91-5c5a7135a8a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="conn">
+      <UniqueIdentifier>{42e557d8-637c-4d37-a4e8-e044779ea067}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="app">
+      <UniqueIdentifier>{b4ee379f-97b3-4f03-b0c3-a5fb08972b33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="config">
+      <UniqueIdentifier>{d258aa76-9a77-48d0-9506-69710005bf56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="flvPool">
+      <UniqueIdentifier>{571c830d-8911-4737-8001-3533ce6968c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="s2n">
+      <UniqueIdentifier>{931448a2-9f08-4cae-9aa9-f6bdda3e0ce9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="taskmgr">
+      <UniqueIdentifier>{15b25509-e71a-4f3f-bd79-12c5af5846a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="strategy">
+      <UniqueIdentifier>{4300117f-9dcd-42e7-823d-7b91f3b9851b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="static">
+      <UniqueIdentifier>{6f3a753f-317e-4f70-84d5-2587eb82d5cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ts">
+      <UniqueIdentifier>{77ce34ef-1539-4718-a553-9e24ccae200f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kcp">
+      <UniqueIdentifier>{be9f8966-6a4d-4096-be8d-627e9afd7a8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="decode">
+      <UniqueIdentifier>{a137d3cf-cda8-4c40-baef-33c1bfbdb505}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cJSON">
+      <UniqueIdentifier>{e7f8dfa3-fc0c-4a9e-bc71-f0a5fb31ce00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mem">
+      <UniqueIdentifier>{8758e60f-c5d0-451e-b286-62ea8d1f665b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="worker">
+      <UniqueIdentifier>{477c90cb-bea2-4df6-8efd-5af2ee4b1864}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libev">
+      <UniqueIdentifier>{f3217a75-8f30-4a65-a840-c793543a5613}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libev\libev-4.25">
+      <UniqueIdentifier>{d4b32ff5-fea8-45d3-bee7-68b7a7c371a1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\enc\cms_base64.cpp">
+      <Filter>enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\enc\cms_crc32.cpp">
+      <Filter>enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\enc\cms_sha1.cpp">
+      <Filter>enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_amf0.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_rtmp_handshake.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_binary_reader.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_binary_writer.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_shmmgr.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\log\cms_log.cpp">
+      <Filter>log</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\cms_lock.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_utility.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\cms_thread.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_read_write.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\enc\cms_crc32n.cpp">
+      <Filter>enc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_thread.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\dnscache\cms_dns_cache.cpp">
+      <Filter>dnscache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\cms_buffer.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\cms_errno.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\net\cms_tcp_conn.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_interf_conn.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_rtmp.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_char_int.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_url.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_flv.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\app\cms_app.cpp">
+      <Filter>app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\config\cms_config.cpp">
+      <Filter>config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\flvPool\cms_flv_pool.cpp">
+      <Filter>flvPool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_flv_transmission.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_ssl.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\conn\cms_http_c.cpp">
+      <Filter>conn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\conn\cms_http_s.cpp">
+      <Filter>conn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_http.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_protocol.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\taskmgr\cms_task_mgr.cpp">
+      <Filter>taskmgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\strategy\cms_fast_bit_rate.cpp">
+      <Filter>strategy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\conn\cms_conn_rtmp.cpp">
+      <Filter>conn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\static\cms_static.cpp">
+      <Filter>static</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\static\cms_static_common.cpp">
+      <Filter>static</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\strategy\cms_jitter.cpp">
+      <Filter>strategy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protocol\cms_flv_pump.cpp">
+      <Filter>protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_stream_info.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\strategy\cms_duration_timestamp.cpp">
+      <Filter>strategy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\strategy\cms_first_play.cpp">
+      <Filter>strategy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ts\cms_ts.cpp">
+      <Filter>ts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\net\cms_net_var.cpp">
+      <Filter>net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ts\cms_hls_mgr.cpp">
+      <Filter>ts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ts\cms_ts_chunk.cpp">
+      <Filter>ts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\interface\cms_conn_listener.cpp">
+      <Filter>interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\decode\BitStream.cpp">
+      <Filter>decode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\decode\decode.cpp">
+      <Filter>decode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\decode\ParseH264Header.cpp">
+      <Filter>decode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\decode\ParseHevcHeader.cpp">
+      <Filter>decode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\decode\ParseSequenceHeader.cpp">
+      <Filter>decode</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cJSON\cJSON.c">
+      <Filter>cJSON</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kcp\ikcp.c">
+      <Filter>kcp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\cms_time.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\app\cms_app_info.cpp">
+      <Filter>app</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\strategy\cms_jump_last_x_seconds.cpp">
+      <Filter>strategy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\conn\cms_conn_common.cpp">
+      <Filter>conn</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\worker\cms_master.cpp">
+      <Filter>worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\worker\cms_worker.cpp">
+      <Filter>worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\worker\cms_master_callback.cpp">
+      <Filter>worker</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_epoll.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_kqueue.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_poll.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_port.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_select.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\ev_win32.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libev\libev-4.25\event.c">
+      <Filter>libev\libev-4.25</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ts\cms_ts_callback.cpp">
+      <Filter>ts</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\enc\cms_base64.h">
+      <Filter>enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\enc\cms_crc32.h">
+      <Filter>enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\enc\cms_sha1.h">
+      <Filter>enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_amf0.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_rtmp_handshake.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_binary_reader.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_binary_writer.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_shmmgr.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\log\cms_log.h">
+      <Filter>log</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\cms_lock.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_utility.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\cms_thread.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_read_write.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\enc\cms_crc32n.h">
+      <Filter>enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_thread.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\dnscache\cms_dns_cache.h">
+      <Filter>dnscache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\cms_buffer.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\cms_errno.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\net\cms_tcp_conn.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_interf_conn.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_rtmp.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_rtmp_const.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_char_int.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_url.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_flv.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\config\cms_config.h">
+      <Filter>config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flvPool\cms_flv_pool.h">
+      <Filter>flvPool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_type.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_flv_transmission.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_ssl.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\conn\cms_http_c.h">
+      <Filter>conn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\conn\cms_http_s.h">
+      <Filter>conn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_http.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\s2n\s2n.h">
+      <Filter>s2n</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_protocol.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\conn\cms_conn_var.h">
+      <Filter>conn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\taskmgr\cms_task_mgr.h">
+      <Filter>taskmgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\strategy\cms_fast_bit_rate.h">
+      <Filter>strategy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\conn\cms_conn_rtmp.h">
+      <Filter>conn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\static\cms_static.h">
+      <Filter>static</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\static\cms_static_common.h">
+      <Filter>static</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\strategy\cms_jitter.h">
+      <Filter>strategy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_flv_pump.h">
+      <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_stream_info.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\strategy\cms_duration_timestamp.h">
+      <Filter>strategy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\strategy\cms_first_play.h">
+      <Filter>strategy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ts\cms_ts.h">
+      <Filter>ts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ts\cms_ts_common.h">
+      <Filter>ts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\net\cms_net_var.h">
+      <Filter>net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ts\cms_hls_mgr.h">
+      <Filter>ts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\flvPool\cms_flv_var.h">
+      <Filter>flvPool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ts\cms_ts_chunk.h">
+      <Filter>ts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_conn_listener.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode\BitStream.h">
+      <Filter>decode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode\decode.h">
+      <Filter>decode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode\ParseH264Header.h">
+      <Filter>decode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode\ParseHevcHeader.h">
+      <Filter>decode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\decode\ParseSequenceHeader.h">
+      <Filter>decode</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cJSON\cJSON.h">
+      <Filter>cJSON</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kcp\ikcp.h">
+      <Filter>kcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\cms_time.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\strategy\cms_jump_last_x_seconds.h">
+      <Filter>strategy</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\conn\cms_conn_common.h">
+      <Filter>conn</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\worker\cms_master.h">
+      <Filter>worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\worker\cms_worker.h">
+      <Filter>worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\app\cms_app_info.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\app\cms_build_config.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\worker\cms_common_var.h">
+      <Filter>worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\worker\cms_master_callback.h">
+      <Filter>worker</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libev\libev-4.25\ev.h">
+      <Filter>libev\libev-4.25</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libev\libev-4.25\ev_vars.h">
+      <Filter>libev\libev-4.25</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libev\libev-4.25\ev_wrap.h">
+      <Filter>libev\libev-4.25</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libev\libev-4.25\ev++.h">
+      <Filter>libev\libev-4.25</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libev\libev-4.25\event.h">
+      <Filter>libev\libev-4.25</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\interface\cms_inerf_var.h">
+      <Filter>interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ts\cms_ts_callback.h">
+      <Filter>ts</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,44 @@
+{
+  "listen": {
+    "http": ":80",
+    "https": ":443",
+    "rtmp": ":1935",
+    "query": ":8980"
+  },
+  "tls": {
+    "cert-key": [
+      {
+        "cert": "./https/ispeed.cn.crt",
+        "key": "./https/ispeed.cn.key"
+      },
+      {
+        "cert": "./https/prod-live-front.playbattlegrounds.com.crt",
+        "key": "./https/prod-live-front.playbattlegrounds.com.key"
+      }
+    ],
+    "dhparam": "./dhparam.pem",
+    "version": "default"
+  },
+  "worker": {
+    "count": 4
+  },
+  "media": {
+    "first_play_milsecond": 1000,
+    "reset_timestamp": true,
+    "no_timeout": false,
+    "stream_timeout": 30000,
+    "no_hash_timeout": 15000,
+    "real_time_stream": true,
+    "cache_ms": 10000,
+    "open_hls": true,
+    "ts_duration": 3,
+    "ts_num": 3,
+    "ts_save_num": 5
+  },
+  "log": {
+    "file": "./log",
+    "level": "debug",
+    "size": 524288000,
+    "console": true
+  }
+}
