@@ -92,6 +92,7 @@ private:
 	int	 doWrite();
 	void makeHash();
 	void makePushHash();
+	bool isStreamTask();
 
 	bool		misStop;
 	RtmpType	mrtmpType;

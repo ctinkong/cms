@@ -331,9 +331,6 @@ int parseOptions(int argc, char ** argv)
 int main(int argc, char *argv[])
 {
 	parseOptions(argc, argv);
-#ifdef _CMS_APP_USE_TIME_
-	cmsTimeRun();
-#endif
 	char *pPos = strrchr(argv[0], '/');
 	if (pPos)
 	{
@@ -352,7 +349,10 @@ int main(int argc, char *argv[])
 	if (!g_isDebug)
 	{
 		daemon();
-	}	
+	}
+#ifdef _CMS_APP_USE_TIME_
+	cmsTimeRun();
+#endif
 	writePid();
 	inorgSignal();
 	if (!CConfig::instance()->init(g_configPath.c_str()))

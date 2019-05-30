@@ -204,7 +204,7 @@ void CMaster::stopWorker()
 }
 
 bool CMaster::listenAll()
-{	
+{
 	if (mHttp->listen(CConfig::instance()->addrHttp()->addr(), TypeHttp) == CMS_ERROR)
 	{
 		logs->error("***** [CMaster::listenAll] listen http fail *****");
@@ -260,6 +260,12 @@ Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pu
 		TCPConn *tcp = new TCPConn();
 		if (tcp->dialTcp(addr, connectType) == CMS_ERROR)
 		{
+			delete tcp;
+			return NULL;
+		}
+		if (tcp->connect() == CMS_ERROR)
+		{
+			delete tcp;
 			return NULL;
 		}
 		if (connectType == TypeHttp || connectType == TypeHttps)

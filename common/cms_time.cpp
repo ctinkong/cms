@@ -141,12 +141,14 @@ void cmsUpdateTime()
 
 void *cmsTimeThread(void *lp)
 {
+	printf("cmsTimeThread enter.\n");
 	setThreadName("cms-timer");
 	do
 	{
 		cmsUpdateTime();
 		cmsSleep(1);
 	} while (gcmsTimeRun);
+	printf("cmsTimeThread leave.\n");
 	return NULL;
 }
 
@@ -168,11 +170,13 @@ void cmsRegister()
 
 void cmsTimeRun()
 {
+	printf("cmsTimeRun enter.\n");
 	cmsRegister();
 	do
 	{
 		cmsSleep(10);
 	} while (!gisCmsTimeSet);
+	printf("cmsTimeRun leave.\n");
 }
 
 void cmsTimeStop()

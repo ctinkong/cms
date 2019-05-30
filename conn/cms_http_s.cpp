@@ -116,7 +116,7 @@ CHttpServer::~CHttpServer()
 }
 
 void CHttpServer::reset()
-{	
+{
 	misHttpResponseFinish = false;
 	misDecodeHeader = false;
 	murl.clear();
@@ -974,7 +974,7 @@ void CHttpServer::down8upBytes()
 			int32 bytes = mrdBuff->readBytesNum();
 			if (bytes > 0)
 			{
-				makeOneTaskDownload(mHash, bytes, false);
+				makeOneTaskDownload(mHash, bytes, false, false);
 			}
 
 			mxSecdownBytes += bytes;

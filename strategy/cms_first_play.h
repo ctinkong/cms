@@ -52,9 +52,10 @@ private:
 	int32	mdistanceKeyFrame;				//关键帧距离
 	int32	mdropSliceNum;					//丢帧数
 	int32	mhaveDropSliceNum;				//已经丢帧数
+	int64   mdrop2SliceIdx;					//丢包到索引为止
 	bool	misSetFirstFrame;
 	int		mvideoFrameRate;
 	int		maudioFrameRate;
-	int64	beginTT;
+	int64	mbeginTT;
 };
 #endif

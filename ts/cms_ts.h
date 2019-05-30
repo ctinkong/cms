@@ -22,84 +22,66 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#ifndef __CMS_TS_H__
-#define __CMS_TS_H__
+#ifndef __CMS_MUX_H__
+#define __CMS_MUX_H__
 #include <ts/cms_ts_common.h>
 #include <ts/cms_ts_chunk.h>
-#include <common/cms_type.h>
-//解码器
-class CSMux
+
+class CMux
 {
 public:
-	CSMux();
-	~CSMux();
+	CMux();
+	~CMux();
 
 	void init();
+	void reset();
 	void release();
-	int  packPES(byte *inBuf, int inLen, byte frameType, uint32 timestamp, byte **outBuf, int &outLen, uint64 &pts64);
-	int	 packTS(byte *inBuf, int inLen, byte frameType, byte pusi, byte afc,
-		byte *mcc, int16 pid, uint32 timestamp, byte **outBuf, int &outLen);
-
-	int  packPES(byte *inBuf, int inLen, byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, uint64 &pts64, int pesLen);
-	int  packTS(byte *inBuf, int inLen, byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, uint64 &pts64);
-	int  writeTsHeader(byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, int pesLen);
-	void writeES(char *inBuf, int inLen, byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, uint64 &pts64, int &pesLen);
-
-	void packPSI();
+	int  tag2Ts(byte *inBuf, int inLen, byte *outBuf, int &outLen, byte &outType, uint64 &outPts);
 	int  parseAAC(byte *inBuf, int inLen, byte **outBuf, int &outLen);
 	int  parseNAL(byte *inBuf, int inLen, byte **outBuf, int &outLen);
-	int  parseAACEx(byte *inBuf, int inLen, byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, uint64 &pts64, int &pesLen);
-	int  parseNALEx(byte *inBuf, int inLen, byte frameType, uint32 timestamp, byte pusi, byte afc,
-		byte *mcc, int16 pid, TsChunkArray **tca, TsChunkArray *lastTca, uint64 &pts64, int &pesLen);
-
-	int  parseAACLen(byte *inBuf, int inLen);
-	int  parseNALLen(byte *inBuf, int inLen);
-	int  packPESLen(byte *inBuf, int inLen, byte frameType, uint32 timestamp);
-
-	void reset();
-	void setPcr(uint64 DTS, byte **outBuf, int &outLen);
-	int  tag2ts(byte *inBuf, int inLen, byte **outBuf, int &outLen, byte &outType, uint64 &outPts);
-
-	byte &getAmcc();
-	byte &getVmcc();
-	byte &getPatmcc();
-	byte &getPmtmcc();
-	byte *getPat();
-	byte *getPmt();
+	int  packTS(byte *inBuf, int inLen, byte framType, byte pusi, byte afc, byte *mcc, int16 pid, uint32 timeStamp, byte **outBuf, int &outLen);
+	void onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint32 timestamp);
+	void packPSI();
+	byte *getPAT() { return mPAT; };
+	byte *getPMT() { return mPMT; };
 private:
-	bool		mheadFlag;
-	bool		minfoTag;
-	SHead		mhead;
-	SDataInfo	mscript;
-	STagInfo	mcurTag;
+	int  packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte **outBuf, int &outLen);
+	void setPcr(uint64 DTS, byte **outBuf, int &outLen);
+	void tsHeadPack(byte afc, byte pusi, byte* mcc, int16 pid, byte PcrFlag, byte RadomAFlag, int StuffLen, uint32 timeStamp, byte *outBuf, int &outLen);
+	void pesHeadPack(byte DTSFlag, uint64 pts, uint64 dts, int dataLen, byte *outBuf, int &outLen);
+	bool		mheadFlag;  //收到FVL头
+	bool		minfoTag;   //收到scriptTag
+	SHead		mhead;		//头信息
+	SDataInfo	mscript;	//TAG信息
+	STagInfo	mcurTag;	//scriptTag信息
 
-	byte		mSpsPpsNal[512];
-	int			mSpsPpsNalLen;
+	//byte		mSpsPpsNal[512]; //SpsPps
+	//int		mSpsPpsNalLen;       //SpsPps的长度
+	byte		mSpsNal[512]; //Sps
+	int			mSpsNalLen;        //Sps的长度
+	byte		mPpsNal[512]; //Pps
+	int			mPpsNalLen;       //Pps的长度
 
-	byte		mheadBuf[9];
-	int			mheadBufDL;
+	byte		mheadBuf[9]; //FVL头缓存
+	int			mheadBufDL;     //FVL头缓存数据长度
 
 	int			mTagSize;
 	byte		mTagSizeBuf[8];
 	int			mTagSizeBufDL;
 
-	byte		*mTagBuf;
+	byte		mTagBuf[65536];
 	int			mTagBufDLen;
 
-	byte		mPAT[188];
-	byte		mPMT[188];
+	byte mPAT[TS_CHUNK_SIZE];
+	byte mPMT[TS_CHUNK_SIZE];
+	byte mPCR[6];
 
-	SAudioSpecificConfig	mAudioSpecificConfig;
-	bool		mAACFLag;
-
-	byte		mamcc;
-	byte		mvmcc;
-	byte		mpatmcc;
-	byte		mpmtmcc;
+	SAudioSpecificConfig mAudioSpecificConfig;
+	bool mAACFLag;
+	byte mamcc;
+	byte mvmcc;
+	byte mpatmcc;
+	byte mpmtmcc;
+	byte mAstreamType;
 };
 #endif

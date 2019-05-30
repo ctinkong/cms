@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_lock.h>
 #include <strategy/cms_duration_timestamp.h>
 #include <app/cms_app_info.h>
+#include <flvPool/cms_flv_var.h>
 #include <libev/libev-4.25/ev.h>
 #include <string>
 #include <vector>
@@ -39,7 +40,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 typedef struct _SSlice {
 	int		mionly;		  //0 表示没被使用，大于0表示正在被使用次数
-	float	msliceRange;  //切片时长
+	uint64	msliceRange;  //切片时长
 	int		msliceLen;    //切片大小
 	int64	msliceIndex;  //切片序号
 	uint64	msliceStart;  //切片开始时间戳
@@ -61,12 +62,13 @@ public:
 	int  doFirstVideoAudio(bool isVideo);
 	int  doit();
 	void stop();
-	int  pushData(TsChunkArray *tca, byte frameType, uint64 timestamp);
+	int  pushData(Slice *s, byte frameType, uint64 timestamp);
 	int  getTS(int64 idx, SSlice **s);
 	int  getM3U8(std::string addr, std::string &outData);
 	int64 getLastTsTime();
 	int64 getUid();
 private:
+	void initMux();
 	EvTimerParam		mtimerEtp;
 	struct ev_loop		*mevLoop;
 	ev_timer		    mevTimer;
@@ -76,10 +78,13 @@ private:
 	uint32  mhashIdx;		//
 	std::string murl;		//拼接用的URL
 
+	char    mszM3u8Buf[1024];
+	std::string mm3u8ContentPart2;
+
 	int		mtsDuration;    //单个切片时长
 	int		mtsNum;         //切片上限个数
 	int		mtsSaveNum;     //缓存保留的切片个数
-	std::vector<SSlice *> msliceList; //切片列表
+	std::vector<SSlice *>	msliceList; //切片列表
 	int		msliceCount;    //切片计数
 	int64	msliceIndx;     //当前切片的序号
 
@@ -93,7 +98,9 @@ private:
 	bool	mFAFlag;	//是否读到首帧音频
 	bool	mFVFlag;	//是否读到首帧视频(SPS/PPS)
 	int64	mbTime;		//最后一个切片的生成时间
-	CSMux	*mMux;      //转码器
+	uint32  mtimeStamp;        //读到的上一帧的时间戳，有时时间戳重置了会用到
+	bool	mbFIFrame;  //首个I帧，用来做切片的参考
+	CMux	*mMux;      //转码器
 	TsChunkArray *mlastTca;//节省空间
 
 	uint64  mullTransUid;

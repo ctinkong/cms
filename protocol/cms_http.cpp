@@ -447,8 +447,8 @@ CHttp::CHttp(Conn *super, CBufferReader *rd,
 	mrw = rw;
 	misClient = isClient;
 	misTls = isTls;
-	mrequest = NULL;
-	mresponse = NULL;
+	mrequest = new Request;
+	mresponse = new Response;
 	mssl = NULL;
 	misReadHeader = false;
 	misWriteHeader = false;
@@ -590,7 +590,6 @@ int CHttp::want2Read()
 			misReadHeader = true;
 			if (misClient)
 			{
-				mresponse = new Response;
 				if (!mresponse->parseHeader(mstrHeader.c_str(), mstrHeader.length()))
 				{
 					logs->error("***** %s [CHttp::want2Read] %s parseHeader fail *****",
@@ -600,11 +599,7 @@ int CHttp::want2Read()
 			}
 			else
 			{
-				if (mrequest == NULL)
-				{
-					mrequest = new Request;
-					mrequest->setRemoteAddr(mremoteAddr);
-				}
+				mrequest->setRemoteAddr(mremoteAddr);
 				if (!mrequest->parseHeader(mstrHeader.c_str(), mstrHeader.length()))
 				{
 					logs->error("***** %s [CHttp::want2Read] %s parseHeader fail *****",
@@ -1148,7 +1143,7 @@ int CHttp::write(const char *data, int &len)
 			msuper->reset();
 			return CMS_OK;
 		}
-	}	
+	}
 	return CMS_OK;
 }
 
@@ -1230,7 +1225,7 @@ int CHttp::sendMetaData(Slice *s)
 }
 
 int CHttp::sendVideoOrAudio(Slice *s, uint32 uiTimestamp)
-{	
+{
 	if (s->miDataType == DATA_TYPE_AUDIO || s->miDataType == DATA_TYPE_FIRST_AUDIO)
 	{
 		*mbinaryWriter << (char)FLV_TAG_AUDIO;
@@ -1311,7 +1306,6 @@ std::string CHttp::getUrl()
 
 bool CHttp::setUrl(std::string url)
 {
-	mrequest = new Request;
 	if (!mrequest->setUrl(url))
 	{
 		return false;
@@ -1341,10 +1335,6 @@ Request *CHttp::httpRequest()
 
 Response *CHttp::httpResponse()
 {
-	if (mresponse == NULL)
-	{
-		mresponse = new Response;
-	}
 	return mresponse;
 }
 

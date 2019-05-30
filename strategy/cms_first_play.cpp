@@ -38,6 +38,7 @@ CFirstPlay::CFirstPlay()
 	misSetFirstFrame = false;
 	mvideoFrameRate = 0;
 	maudioFrameRate = 0;
+	mdrop2SliceIdx = 0;
 }
 
 CFirstPlay::~CFirstPlay()
@@ -79,7 +80,7 @@ bool CFirstPlay::checkfirstPlay()
 			//开播的时候会导致最开始的用户播放失败
 			mfirstPlaySkipMilSecond = 0;
 		}
-		beginTT = getTimeUnix();
+		mbeginTT = getTimeUnix();
 		logs->debug(">>>%s %s first play task %s firstPlaySkipMilSecond=%d,distanceKeyFrame=%d",
 			mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
 			mfirstPlaySkipMilSecond, mdistanceKeyFrame);
@@ -96,11 +97,12 @@ bool CFirstPlay::checkShouldDropFrameCount(int64 &transIdx, Slice *s)
 	{
 		return true;
 	}
-	if (getTimeUnix() - beginTT > 3)
+	int64 minIdx = 0;
+	int64 maxIdx = 0;
+	if (getTimeUnix() - mbeginTT > 3)
 	{
 		//超过三秒放弃
-		mfirstPlaySkipMilSecond = 0;
-		return true;
+		goto Cancel;
 	}
 	misSetFirstFrame = true;
 	mvideoFrameRate = CFlvPool::instance()->getVideoFrameRate(mhashIdx, mhash);
@@ -117,50 +119,98 @@ bool CFirstPlay::checkShouldDropFrameCount(int64 &transIdx, Slice *s)
 		mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
 		mvideoFrameRate, maudioFrameRate);
 	mdropSliceNum = (mvideoFrameRate + maudioFrameRate)*mfirstPlaySkipMilSecond / 1000;
-	int64 minIdx = CFlvPool::instance()->getMinIdx(mhashIdx, mhash);
-	int64 maxIdx = CFlvPool::instance()->getMaxIdx(mhashIdx, mhash);
+	minIdx = CFlvPool::instance()->getMinIdx(mhashIdx, mhash);
+	maxIdx = CFlvPool::instance()->getMaxIdx(mhashIdx, mhash);
 	if (mfirstPlaySkipMilSecond < mdistanceKeyFrame)
-	{		
-		logs->debug(">>>1 %s %s first play task %s should drop slice num %d,minIdx=%lld,maxIdx=%lld,s->mllIndex=%lld",
-			mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
-			mdropSliceNum, minIdx, maxIdx, s->mllIndex);
+	{
+// 		logs->debug(">>>11drop slice num %d, "
+// 			"minIdx=%lld, "
+// 			"maxIdx=%lld, "
+// 			"s->mllIndex=%lld, "
+// 			"transIdx=%lld",
+// 			mdropSliceNum,
+// 			minIdx,
+// 			maxIdx,
+// 			s->mllIndex,
+// 			transIdx);
+
 		if (s->mllIndex - minIdx > (int64)mdropSliceNum)
 		{
-			transIdx = s->mllIndex - (int64)mdropSliceNum - 1;
+			transIdx = s->mllIndex - (int64)mdropSliceNum;
 			if (transIdx - minIdx < 5)
 			{
-				transIdx += 15;
-				mdropSliceNum -= 15;
+				//预防发送的时候 旧帧过期
+				transIdx += 10;
+				mdropSliceNum -= 10;
 			}
 		}
 		else
 		{
-			transIdx = minIdx + 20 - 1;
-			mdropSliceNum = (int32)(s->mllIndex - minIdx - 20);
+			transIdx = minIdx + 10;
+			mdropSliceNum = (int32)(s->mllIndex - transIdx);
 		}
 		if (mdropSliceNum <= 0)
 		{
-			transIdx = -1;
-			return true;
+			goto Cancel;
 		}
+		logs->debug(">>>1 %s %s first play task %s should drop slice num %d, "
+			"minIdx=%lld, "
+			"maxIdx=%lld, "
+			"s->mllIndex=%lld, "
+			"transIdx=%lld",
+			mremoteAddr.c_str(),
+			modeName.c_str(),
+			murl.c_str(),
+			mdropSliceNum,
+			minIdx,
+			maxIdx,
+			s->mllIndex,
+			transIdx);
 	}
 	else
 	{
-		mdropSliceNum -= 20;
-		logs->debug(">>>2 %s %s first play task %s should drop slice num %d,maxIdx=%lld,s->mllIndex=%lld",
-			mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
-			mdropSliceNum, maxIdx, s->mllIndex);
+		//mdropSliceNum -= 20;		
 		if (mdropSliceNum > 0)
 		{
-			transIdx = s->mllIndex + (int64)mdropSliceNum + 10;
+			transIdx = s->mllIndex - (int64)mdropSliceNum/* + 10*/;
+			if (transIdx - minIdx < 5)
+			{
+				//预防发送的时候 旧帧过期
+				transIdx += 10;
+				mdropSliceNum -= 10;
+			}
 		}
 		else
 		{
-			mdropSliceNum = 0;
-			return true;
+			goto Cancel;
 		}
+		logs->debug(">>>2 %s %s first play task %s should drop slice num %d, "
+			"minIdx=%lld, "
+			"maxIdx=%lld, "
+			"s->mllIndex=%lld "
+			"transIdx=%lld",
+			mremoteAddr.c_str(),
+			modeName.c_str(),
+			murl.c_str(),
+			mdropSliceNum,
+			minIdx,
+			maxIdx,
+			s->mllIndex,
+			transIdx);
 	}
+	if (transIdx>maxIdx)
+	{
+		goto Cancel;
+	}
+	mdrop2SliceIdx = s->mllIndex;
 	return false;
+Cancel:
+	//不满足条件 取消丢帧
+	transIdx = -1;
+	mfirstPlaySkipMilSecond = 0;
+	misSetFirstFrame = false;
+	mdrop2SliceIdx = 0;
+	return true;
 }
 
 bool CFirstPlay::needDropFrame(Slice *s)
@@ -170,40 +220,55 @@ bool CFirstPlay::needDropFrame(Slice *s)
 		mfirstPlaySkipMilSecond > 0 &&
 		misSetFirstFrame)
 	{
-		if (mdistanceKeyFrame >= mfirstPlaySkipMilSecond)
+		//算法1 丢帧达到指定索引
+		if ((s->mData[0] == VideoTypeAVCKey ||
+			s->mData[0] == VideoTypeHEVCKey) &&
+			s->mllIndex >= mdrop2SliceIdx - 5)
 		{
-			//如果关键帧距离gop大于丢帧长度，遇到关键帧肯定丢帧结束
-			if (s->mData[0] == VideoTypeAVCKey ||
-				s->mData[0] == VideoTypeHEVCKey)
-			{
-				logs->debug(">>>4 %s %s first play task %s 22 should drop slice num %d,have drop %d",
-					mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
-					mdropSliceNum, mhaveDropSliceNum);
-				misSetFirstFrame = false;
-			}
-			else
-			{
-				needDrop = true;
-			}
+			logs->debug(">>>4 %s %s first play task %s 22 should drop slice num %d,have drop %d",
+				mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
+				mdropSliceNum, mhaveDropSliceNum);
+			misSetFirstFrame = false;
 		}
 		else
 		{
-			if (!((mhaveDropSliceNum < mdropSliceNum - 5) ||
-				(mhaveDropSliceNum >= mdropSliceNum - 5 &&
-					s->mData[0] != VideoTypeAVCKey &&
-					s->mData[0] != VideoTypeHEVCKey)))
-			{
-				//如果关键帧距离gop小于丢帧长度，只有满足丢帧数大于丢帧长度，而且遇到关键帧才能结束
-				logs->debug(">>>3 %s %s first play task %s 11 should drop slice num %d,have drop %d",
-					mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
-					mdropSliceNum, mhaveDropSliceNum);
-				misSetFirstFrame = false;
-			}
-			else
-			{
-				needDrop = true;
-			}
+			needDrop = true;
 		}
+		//算法2
+// 		if (mdistanceKeyFrame >= mfirstPlaySkipMilSecond)
+// 		{
+// 			//如果关键帧距离gop大于丢帧长度，遇到关键帧肯定丢帧结束
+// 			if (s->mData[0] == VideoTypeAVCKey ||
+// 				s->mData[0] == VideoTypeHEVCKey)
+// 			{
+// 				logs->debug(">>>4 %s %s first play task %s 22 should drop slice num %d,have drop %d",
+// 					mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
+// 					mdropSliceNum, mhaveDropSliceNum);
+// 				misSetFirstFrame = false;
+// 			}
+// 			else
+// 			{
+// 				needDrop = true;
+// 			}
+// 		}
+// 		else
+// 		{
+// 			if (!((mhaveDropSliceNum < mdropSliceNum - 5) ||
+// 				(mhaveDropSliceNum >= mdropSliceNum - 5 &&
+// 					s->mData[0] != VideoTypeAVCKey &&
+// 					s->mData[0] != VideoTypeHEVCKey)))
+// 			{
+// 				//如果关键帧距离gop小于丢帧长度，只有满足丢帧数大于丢帧长度，而且遇到关键帧才能结束
+// 				logs->debug(">>>3 %s %s first play task %s 11 should drop slice num %d,have drop %d",
+// 					mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
+// 					mdropSliceNum, mhaveDropSliceNum);
+// 				misSetFirstFrame = false;
+// 			}
+// 			else
+// 			{
+// 				needDrop = true;
+// 			}
+//		}
 	}
 	if (misSetFirstFrame)
 	{

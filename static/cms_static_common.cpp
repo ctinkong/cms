@@ -55,13 +55,14 @@ OneTask *newOneTask()
 	return otk;
 }
 
-void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove)
+void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove, bool isFromeTask)
 {
 	OneTaskDownload *otd = new OneTaskDownload;
 	otd->packetID = PACKET_ONE_TASK_DOWNLOAD;
 	otd->hash = hash;
 	otd->downloadBytes = downloadBytes;
 	otd->isRemove = isRemove;
+	otd->isFromeTask = isFromeTask;
 
 	CStatic::instance()->push((OneTaskPacket *)otd);
 }

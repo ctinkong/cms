@@ -27,13 +27,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 
 #define TS_CHUNK_SIZE 188
-#define TS_AUDIO_SLICE_LEN	(188*10)
-#define TS_VIDEO_SLICE_LEN  (188*100*2)
+#define TS_SLICE_LEN  (TS_CHUNK_SIZE*100)
 
 typedef struct _TsChunk
 {
 	char *mdata;
-	int  muse;
+	int  muse;		//使用大小
+	int  mchunkSize;//开辟空间
 }TsChunk;
 
 TsChunk *allocTsChunk(int chunkSize);
@@ -42,18 +42,14 @@ void freeTsChunk(TsChunk *tc);
 
 typedef struct _TsChunkArray
 {
-	int mchunkSize;
-	int msliceSize;
-	int mexSliceSize; //被追加的长度
+	int mchunkTotalSize;		//ts 有效数据长度
 	std::vector<TsChunk *> mtsChunkArray;
 }TsChunkArray;
 
-TsChunkArray *allocTsChunkArray(int chunkSize);
+TsChunkArray *allocTsChunkArray();
 void freeTsChunkArray(TsChunkArray *tca);
 
-//writeChunk一次只能写满一个ts 如果需要拆分则需要多次调用 返回值 1 表示写满了一片 否则没写完
-int writeChunk(char *tsHeader, int headerLen, TsChunkArray *tca, TsChunkArray *lastTca, char ch, int &writeLen);
-int writeChunk(char *tsHeader, int headerLen, TsChunkArray *tca, TsChunkArray *lastTca, char *data, int len, int &writeLen);
+int writeChunk(TsChunkArray *tca, char *data, int len);
 int beginChunk(TsChunkArray *tca);
 int endChunk(TsChunkArray *tca);
 int getChunk(TsChunkArray *tca, int i, TsChunk **tc);

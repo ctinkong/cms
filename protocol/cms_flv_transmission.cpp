@@ -465,7 +465,7 @@ int CFlvTransmission::doTransmission(bool &isSendData)
 				}
 				else
 				{
-					//因为是在该函数开辟，释放
+					//因为是在该函数申请的内存，释放
 					atomicDec(s);
 					ss = NULL;
 				}

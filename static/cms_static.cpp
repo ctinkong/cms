@@ -207,7 +207,7 @@ void CStatic::handle(OneTaskDownload *otd)
 	}
 	else
 	{
-		if (!otd->isRemove)
+		if (!otd->isRemove && otd->isFromeTask)
 		{
 			OneTask *otk = newOneTask();
 			otk->mdownloadTick += otd->downloadBytes;

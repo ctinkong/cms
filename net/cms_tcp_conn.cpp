@@ -96,7 +96,7 @@ TCPConn::~TCPConn()
 }
 
 
-int   TCPConn::dialTcp(char *addr, ConnType connectType)
+int TCPConn::dialTcp(char *addr, ConnType connectType)
 {
 	std::string sAddr;
 	sAddr.append(addr);
@@ -160,7 +160,7 @@ int	  TCPConn::connect()
 			logs->info("##### TCPConn connect local addr %s fd=%d #####", mraddr.c_str(), mfd);
 		}
 	}
-	logs->info("##### TCPConn connect ddr %s succ #####", mladdr.c_str());
+	logs->info("##### TCPConn connect addr %s succ #####", mladdr.c_str());
 	return CMS_OK;
 }
 

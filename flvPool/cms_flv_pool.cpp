@@ -653,8 +653,16 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 				transUid = ss->muid;
 				if (isKeyFrame)
 				{
-					logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe",
-						ss->mstrUrl.c_str());
+					if (*s)
+					{
+						logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe, left slice %lld",
+							ss->mstrUrl.c_str(), maxIdx - (*s)->mllIndex);
+					}
+					else
+					{
+						logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe",
+							ss->mstrUrl.c_str());
+					}
 				}
 			}
 			else
@@ -1255,7 +1263,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 				logs->debug(">>>>>[handleSlice] task %s new task and is not h264.", ss->mstrUrl.c_str());
 			}
 			ss->mllMemSize = s->miDataLen;
-		}		
+		}
 		mhashSliceLock[i].WLock();
 		mmapHashSlice[i].insert(make_pair(s->mhHash, ss));
 		mhashSliceLock[i].UnWLock();

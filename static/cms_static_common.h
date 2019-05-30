@@ -47,6 +47,7 @@ struct OneTaskDownload
 	HASH	hash;
 	int32	downloadBytes;					//下载字节数
 	bool	isRemove;
+	bool    isFromeTask;					//是否是直播流下载任务 是则为true，如果是播放请求或者是转推流请求 则为false
 };
 
 struct OneTaskUpload
@@ -150,10 +151,10 @@ typedef struct
 
 OneTask *newOneTask();
 //static 函数
-void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove);										//统计下载任务
+void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove, bool isFromeTask);									//统计下载任务
 void makeOneTaskupload(HASH	&hash, int32 uploadBytes, int connAct);											//统计上传任务
 void makeOneTaskMedia(HASH	&hash, int32 videoFramerate, int32 audioFramerate, int32 iWidth, int32 iHeight,	//统计任务媒体信息
 	int32 audioSamplerate, int32 mediaRate, std::string videoType, std::string audioType, std::string url,
 	std::string remoteAddr, bool isUdp);
-void makeOneTaskMem(HASH &hash, int64 totalMem);																//统计内存占用
+void makeOneTaskMem(HASH &hash, int64 totalMem);															//统计内存占用
 #endif

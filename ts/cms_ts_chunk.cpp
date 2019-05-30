@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 TsChunk *allocTsChunk(int chunkSize)
 {
 	TsChunk *tc = new TsChunk;
+	tc->mchunkSize = chunkSize;
 	tc->mdata = new char[chunkSize];
 	tc->muse = 0;
 	return tc;
@@ -44,12 +45,10 @@ void freeTsChunk(TsChunk *tc)
 	delete tc;
 }
 
-TsChunkArray *allocTsChunkArray(int chunkSize)
+TsChunkArray *allocTsChunkArray()
 {
 	TsChunkArray *tca = new TsChunkArray;
-	tca->mchunkSize = chunkSize;
-	tca->msliceSize = 0;
-	tca->mexSliceSize = 0;
+	tca->mchunkTotalSize = 0;
 	return tca;
 }
 
@@ -63,65 +62,34 @@ void freeTsChunkArray(TsChunkArray *tca)
 	}
 }
 
-int writeChunk(char *tsHeader, int headerLen, TsChunkArray *tca, TsChunkArray *lastTca, char ch, int &writeLen)
+int writeChunk(TsChunkArray *tca, char *data, int len)
 {
-	return writeChunk(tsHeader, headerLen, tca, lastTca, &ch, 1, writeLen);
-}
-
-int writeChunk(char *tsHeader, int headerLen, TsChunkArray *tca, TsChunkArray *lastTca, char *data, int len, int &writeLen)
-{
+	//返回一个ts剩余长度
 	int left = 0;
 	TsChunk *tc;
 	tc = NULL;
-	// 	if (lastTca != NULL && !lastTca->mtsChunkArray.empty())
-	// 	{
-	// 		tc = lastTca->mtsChunkArray.at(lastTca->mtsChunkArray.size()-1);
-	// 		if (tc->muse < lastTca->mchunkSize)
-	// 		{
-	// 			left = TS_CHUNK_SIZE-(tc->muse%TS_CHUNK_SIZE);
-	// 			left = cmsMin(left,len);
-	// 			memcpy(tc->mdata+tc->muse,data,left);
-	// 			tc->muse += left;
-	// 			writeLen = left;
-	// 			lastTca->msliceSize += writeLen;
-	// 			lastTca->mexSliceSize += writeLen;
-	// 			assert(tc->muse <= lastTca->mchunkSize);
-	// 			return (tc->muse%TS_CHUNK_SIZE) == 0 ? 1 : 0;
-	// 		}
-	// 	}
-	// 	tc = NULL;
 	if (tca->mtsChunkArray.empty())
 	{
-		tc = allocTsChunk(tca->mchunkSize);
-		if (headerLen > 0)
-		{
-			memcpy(tc->mdata, tsHeader, headerLen);
-			tc->muse = headerLen;
-		}
+		tc = allocTsChunk(TS_SLICE_LEN);
 		tca->mtsChunkArray.push_back(tc);
 	}
 	else
 	{
 		tc = tca->mtsChunkArray.at(tca->mtsChunkArray.size() - 1);
-		if (tc->muse == tca->mchunkSize)
+		if (tc->mchunkSize - tc->muse < len)
 		{
-			tc = allocTsChunk(tca->mchunkSize);
-			if (headerLen > 0)
-			{
-				memcpy(tc->mdata, tsHeader, headerLen);
-				tc->muse = headerLen;
-			}
+			assert((tc->mchunkSize - tc->muse) % TS_CHUNK_SIZE == 0);
+			tc = allocTsChunk(TS_SLICE_LEN);
 			tca->mtsChunkArray.push_back(tc);
 		}
 	}
 	left = TS_CHUNK_SIZE - (tc->muse%TS_CHUNK_SIZE);
-	left = cmsMin(left, len);
-	memcpy(tc->mdata + tc->muse, data, left);
-	tc->muse += left;
-	writeLen = left;
-	tca->msliceSize += writeLen;
-	assert(tc->muse <= tca->mchunkSize);
-	return (tc->muse%TS_CHUNK_SIZE) == 0 ? 1 : 0;
+	assert(len <= left);
+	int writeLen = cmsMin(left, len);
+	memcpy(tc->mdata + tc->muse, data, writeLen);
+	tc->muse += writeLen;
+	tca->mchunkTotalSize += writeLen;
+	return left - writeLen;
 }
 
 int  beginChunk(TsChunkArray *tca)

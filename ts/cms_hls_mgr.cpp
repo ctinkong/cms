@@ -33,6 +33,10 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <time.h>
 #include <assert.h>
 
+#define M3U8_CONTENT_PART1 "#EXTM3U\n\
+#EXT-X-TARGETDURATION:%d\n\
+#EXT-X-MEDIA-SEQUENCE:%lld\n"
+
 //TEST
 std::map<unsigned long, unsigned long> gmapSendTakeTime;
 int64 gSendTakeTimeTT;
@@ -83,6 +87,7 @@ void atomicDec(SSlice *s)
 			delete tca;
 			itTca = s->marray.erase(itTca);
 		}
+		delete s;
 	}
 }
 
@@ -111,27 +116,20 @@ CMission::CMission(HASH &hash, uint32 hashIdx, std::string url,
 		mtsSaveNum = mtsNum + 2;
 	}
 
-	for (int i = 0; i < mtsSaveNum/*+mtsNum*/ + 1; i++)
-	{
-		msliceList.push_back(NULL);
-	}
-	msliceList[0] = newSSlice();
-
 	misStop = false;
 
 	mreadIndex = -1;		//读取的帧的序号
-
 	mreadFAIndex = -1;	//读取的音频首帧的序号
 	mreadFVIndex = -1;	//读取的视频首帧的序号
 
 	mFAFlag = false;	//是否读到首帧音频
 	mFVFlag = false;	//是否读到首帧视频(SPS/PPS)
 	mbTime = 0;			//最后一个切片的生成时间
-	mMux = new CSMux(); //转码器
-	mlastTca = NULL;
+	mbFIFrame = false;
 	mullTransUid = 0;
-
+	mtimeStamp = 0;
 	mdurationtt = new CDurationTimestamp();
+	initMux();
 }
 
 CMission::~CMission()
@@ -150,6 +148,19 @@ CMission::~CMission()
 		atomicDec(*it);
 		it = msliceList.erase(it);
 	}
+}
+
+void CMission::initMux()
+{
+	mMux = new CMux(); //转码器
+	mlastTca = NULL;
+	SSlice *ss = newSSlice();
+	ss->msliceIndex = msliceIndx;
+	mlastTca = allocTsChunkArray();
+	writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+	writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+	ss->marray.push_back(mlastTca);
+	msliceList.push_back(ss);
 }
 
 int CMission::doFirstVideoAudio(bool isVideo)
@@ -179,7 +190,7 @@ int CMission::doFirstVideoAudio(bool isVideo)
 		mMux->parseAAC((byte *)s->mData, s->miDataLen, &outBuf, outLen);
 		mFAFlag = true;
 	}
-	if (outBuf)
+	if (outLen)
 	{
 		delete[] outBuf;
 	}
@@ -203,6 +214,8 @@ int  CMission::doit()
 	bool isMetaDataChanged = false;
 	bool isFirstVideoAudioChanged = false;
 	int64 llMetaDataIdx = -1;
+	bool needHandle = true;
+	byte frameType;
 	do
 	{
 		isTransPlay = false;
@@ -211,6 +224,7 @@ int  CMission::doit()
 		isTaskRestart = false;
 		isMetaDataChanged = false;
 		isFirstVideoAudioChanged = false;
+		needHandle = true;
 
 		sliceNum = 0;
 		flvPoolCode = CFlvPool::instance()->readSlice(mhashIdx, mhash, mreadIndex, &s, sliceNum, isTransPlay,
@@ -273,33 +287,33 @@ int  CMission::doit()
 				}
 				mreadIndex = s->mllIndex;
 
-
-				byte frameType;
-				uint64 pts64;
-
-				TsChunkArray *tca = NULL;
-
 				if (isAudio) {
 					frameType = 'A';
-					mMux->packTS((byte *)s->mData, s->miDataLen, frameType, uiTimestamp, 0x01, 0x01, &mMux->getAmcc(), Apid, &tca, mlastTca, pts64);
 					if (!mFAFlag)
 					{
+						needHandle = false;
 					}
 				}
 				else if (isVideo)
 				{
 					frameType = 'P';
-					if (s->mData[0] == 0x17)
+					if (s->mData[0] == VideoTypeAVCKey/*0x17*/)
 					{
 						frameType = 'I';
 					}
-					mMux->packTS((byte *)s->mData, s->miDataLen, frameType, uiTimestamp, 0x01, 0x01, &mMux->getVmcc(), Vpid, &tca, mlastTca, pts64);
+					if (s->miDataLen > 0 && frameType == 'I' && mbFIFrame == false) {
+						mbFIFrame = true;
+						logs->debug("[slice][OnTime]Found The First Key Frame !!!DataLen=%d", s->miDataLen);
+					}
 					if (!mFVFlag)
 					{
+						needHandle = false;
+						logs->error("[slice][OnTime] Never Found SPS And PPS!!! %s", murl.c_str());
 					}
 				}
-				if (tca) {
-					pushData(tca, frameType, pts64);
+				if (needHandle) {
+					pushData(s, frameType, s->muiTimestamp);
+					mtimeStamp = s->muiTimestamp;
 				}
 				if (ret == CMS_ERROR)
 				{
@@ -373,21 +387,25 @@ void CMission::stop()
 -- framtype	帧类型(用于切片)
 -- timestamp 时间戳
 */
-int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
+int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 {
-	assert(tca->msliceSize%TS_CHUNK_SIZE == 0);
-	//  	logs->debug(" [CMission::doit] %s pushData enter,len=%d,frameType=%c,timestamp=%d,msliceList[msliceCount]->msliceStart=%d,mtsDuration*90000=%d",
-	//  		murl.c_str(),inLen,frameType,timestamp,msliceList[msliceCount]->msliceStart,mtsDuration*90000);
-	// 	logs->debug(" [CMission::doit] %s pushData (timestamp-msliceList[msliceCount]->msliceStart) > mtsDuration*90000=%s, frameType == 'I'=%s, (mFVFlag == false && frameType == 'A')=%s,frameType=%d,'I'=%d",
-	// 			murl.c_str(),(timestamp-msliceList[msliceCount]->msliceStart) > mtsDuration*90000?"true":"false",
-	// 			frameType == 'I'?"true":"false",(mFVFlag == false && frameType == 'A')?"true":"false",frameType,'I');
+	// 	logs->debug("[CMission::pushData] 1 %s pushData one ts,timestamp=%lu-%lu, fremeType=%c, mFVFlag=%s, tsNum=%d, tsSaveNum=%d, duration=%d",
+	// 		murl.c_str(),
+	// 		timestamp,
+	// 		msliceList[msliceCount]->msliceStart,
+	// 		frameType,
+	// 		mFVFlag ? "true" : "false",
+	// 		mtsNum,
+	// 		mtsSaveNum,
+	// 		mtsDuration);
+
 	SSlice *ss = NULL;
-	if ((msliceList[msliceCount]->msliceStart != 0) && timestamp - msliceList[msliceCount]->msliceStart > (uint64)(mtsDuration * 90000) &&
-		(frameType == 'I' || (mFVFlag == false && frameType == 'A')))
+	if ((msliceList[msliceCount]->msliceStart != 0) &&
+		timestamp - msliceList[msliceCount]->msliceStart > (uint64)(mtsDuration * 900) &&
+		(frameType == 'I' /*|| (mFVFlag == false && frameType == 'A')*/))
 	{
-		// 		logs->debug(" [CMission::pushData] %s pushData if enter,msliceCount+1=%d,mtsSaveNum=%d,timestamp=%llu,msliceStart=%llu,timestamp-msliceStart=%llu,msliceIndx=%lld,msliceList size=%u",
-		// 			murl.c_str(),msliceCount+1,mtsSaveNum,timestamp,msliceList[msliceCount]->msliceStart,timestamp-msliceList[msliceCount]->msliceStart,msliceList[msliceCount]->msliceIndex,msliceList.size());
-		mbTime = time(NULL);
+		int64 now = getTimeUnix();
+		mbTime = now;
 		if (msliceCount + 1 > /*mtsNum+*/mtsSaveNum)
 		{
 			//要加上追加的长度
@@ -396,9 +414,23 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 				ss = msliceList[msliceCount];
 				if (ss != NULL)
 				{
-					ss->msliceLen += mlastTca->mexSliceSize;
+					ss->msliceLen += mlastTca->mchunkTotalSize;
 				}
 			}
+			logs->debug("[CMission::pushData] 1 %s pushData one ts succ, "
+				"count=%d, "
+				"msliceList.size=%u, "
+				"frameType=%c,"
+				"cur timestamp=%lu, "
+				"start timestamp=%lu, "
+				"timestamp=%lu",
+				murl.c_str(),
+				msliceCount,
+				msliceList.size(),
+				frameType,
+				timestamp,
+				msliceList[msliceCount]->msliceStart,
+				timestamp - msliceList[msliceCount]->msliceStart);
 
 			msliceIndx++;
 			ss = newSSlice();
@@ -406,30 +438,20 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 			ss->msliceStart = timestamp;
 			mMux->packPSI();
 
-			int writeLen = 0;
-			TsChunkArray *ttmp = allocTsChunkArray(188 * 2);
-			writeChunk(NULL, 0, ttmp, NULL, (char *)mMux->getPat(), 188, writeLen);
-			writeChunk(NULL, 0, ttmp, NULL, (char *)mMux->getPmt(), 188, writeLen);
+			mlastTca = allocTsChunkArray();
+			writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+			writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
-			ss->msliceLen = 188 * 2;
-			ss->msliceLen += tca->msliceSize;
-
-			ss->marray.push_back(ttmp);
-			ss->marray.push_back(tca);
-
+			ss->marray.push_back(mlastTca);
 			msliceList.push_back(ss);
 
-			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart) / 90000);
-
-			logs->debug("[CMission::pushData] 1 %s pushData one ts succ,timestamp=%d",
-				murl.c_str(), timestamp - msliceList[msliceCount - 1]->msliceStart);
+			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
 
 			std::vector<SSlice *>::iterator it = msliceList.begin();
 			ss = *it;
 			msliceList.erase(it);
 			atomicDec(ss);
-
-			mlastTca = NULL;
 		}
 		else
 		{
@@ -439,9 +461,23 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 				ss = msliceList[msliceCount];
 				if (ss != NULL)
 				{
-					ss->msliceLen += mlastTca->mexSliceSize;
+					ss->msliceLen += mlastTca->mchunkTotalSize;
 				}
 			}
+			logs->debug("[CMission::pushData] 1 %s pushData one ts succ, "
+				"count=%d, "
+				"msliceList.size=%u, "
+				"frameType=%c,"
+				"cur timestamp=%lu, "
+				"start timestamp=%lu, "
+				"timestamp=%lu",
+				murl.c_str(),
+				msliceCount,
+				msliceList.size(),
+				frameType,
+				timestamp,
+				msliceList[msliceCount]->msliceStart,
+				timestamp - msliceList[msliceCount]->msliceStart);
 
 			msliceCount++;
 			msliceIndx++;
@@ -450,25 +486,15 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 			ss->msliceStart = timestamp;
 			mMux->packPSI();
 
-			int writeLen = 0;
-			TsChunkArray *ttmp = allocTsChunkArray(188 * 2);
-			writeChunk(NULL, 0, ttmp, NULL, (char *)mMux->getPat(), 188, writeLen);
-			writeChunk(NULL, 0, ttmp, NULL, (char *)mMux->getPmt(), 188, writeLen);
+			mlastTca = allocTsChunkArray();
+			writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+			writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
-			ss->msliceLen = 188 * 2;
-			ss->msliceLen += tca->msliceSize;
+			ss->marray.push_back(mlastTca);
+			msliceList.push_back(ss);
 
-			ss->marray.push_back(ttmp);
-			ss->marray.push_back(tca);
-
-			msliceList[msliceCount] = ss;
-
-			ss->msliceRange = (float)((timestamp - ss->msliceStart) / 90000);
-
-			logs->debug("[CMission::pushData] 2 %s pushData one ts succ,timestamp=%d",
-				murl.c_str(), timestamp - msliceList[msliceCount - 1]->msliceStart);
-
-			mlastTca = NULL;
+			ss->msliceRange = (float)((timestamp - ss->msliceStart));
 		}
 	}
 	else
@@ -478,16 +504,7 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 		{
 			ss->msliceStart = timestamp;
 		}
-		ss->msliceLen += tca->msliceSize;
-		//要加上追加的长度
-		if (mlastTca != NULL)
-		{
-			ss->msliceLen += mlastTca->mexSliceSize;
-		}
-
-		ss->marray.push_back(tca);
-
-		mlastTca = tca;
+		mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 	}
 	return 0;
 }
@@ -497,9 +514,6 @@ int  CMission::pushData(TsChunkArray *tca, byte frameType, uint64 timestamp)
 */
 int  CMission::getTS(int64 idx, SSlice **s)
 {
-	// 	logs->debug("[CMission::getTS] %s getTS idx=%lld,msliceIndx=%lld,msliceList[0]->msliceIndex=%lld",
-	// 		murl.c_str(),idx,msliceIndx,msliceList[0]->msliceIndex);
-
 	if (idx >= msliceIndx || idx < msliceList[0]->msliceIndex)
 	{
 		return -1;
@@ -514,15 +528,9 @@ int  CMission::getTS(int64 idx, SSlice **s)
 */
 int  CMission::getM3U8(std::string addr, std::string &outData)
 {
+	mm3u8ContentPart2.clear();
 	size_t end = murl.rfind("/");
 	std::string url = murl.substr(7, end - 7);
-	outData += "#EXTM3U\n";
-
-	char szData[30] = { 0 };
-	snprintf(szData, sizeof(szData), "%d", mtsDuration + 1);
-	outData += "#EXT-X-TARGETDURATION:";
-	outData += szData;
-	outData += "\n";
 
 	int pos = 0;
 	if (msliceCount <= mtsNum)
@@ -531,34 +539,55 @@ int  CMission::getM3U8(std::string addr, std::string &outData)
 	}
 	else if (msliceCount >= (mtsSaveNum/* + mtsNum*/))
 	{
-		pos = mtsSaveNum - mtsNum;
+		pos = mtsSaveNum - mtsNum - 1;
 	}
 	else
 	{
-		pos = msliceCount - mtsNum;
+		pos = msliceCount - mtsNum - 1;
 	}
-	snprintf(szData, sizeof(szData), "%lld", msliceList[pos]->msliceIndex);
-	outData += "#EXT-X-MEDIA-SEQUENCE:";
-	outData += szData;
-	outData += "\n";
+	char szData[30] = { 0 };
+	int64 sliceIndex = msliceList[pos]->msliceIndex;
 
-	for (int64 i = msliceList[pos]->msliceIndex; i < msliceIndx; i++)
+	int maxDuration = 0;
+	uint16 range = 0;
+	int count = 0;
+	for (int64 i = msliceList[pos]->msliceIndex; i < msliceIndx && count < mtsNum; i++)
 	{
+		range = 0;
+		if (msliceList[pos]->msliceRange < 500)
+		{
+			range += 500;
+		}
+		else
+		{
+			range = msliceList[pos]->msliceRange;
+		}
+		//ms 转 s
+		range = (range - 1000 / 2) / (1000) + 1;
+		if (range > maxDuration)
+		{
+			maxDuration = range;
+		}
 		//logs->debug("\n\nm3u8 url %s ,murl %s,end %d",url.c_str(),murl.c_str(),end);
-		snprintf(szData, sizeof(szData), "%0.2f", msliceList[pos]->msliceRange);
-		outData += "#EXTINF:";
-		outData += szData;
-		outData += ",\n";
-		outData += "http://";
-		outData += addr;
-		outData += "/";
-		outData += url;
-		outData += "/";
+		snprintf(szData, sizeof(szData), "%d", range);
+		mm3u8ContentPart2 += "#EXTINF:";
+		mm3u8ContentPart2 += szData;
+		mm3u8ContentPart2 += ",\n";
+		mm3u8ContentPart2 += "http://";
+		mm3u8ContentPart2 += addr;
+		mm3u8ContentPart2 += "/";
+		mm3u8ContentPart2 += url;
+		mm3u8ContentPart2 += "/";
 		snprintf(szData, sizeof(szData), "%lld", i);
-		outData += szData;
-		outData += ".ts\n";
+		mm3u8ContentPart2 += szData;
+		mm3u8ContentPart2 += ".ts\n";
+
+		count++;
 		pos++;
 	}
+	snprintf(mszM3u8Buf, sizeof(mszM3u8Buf), M3U8_CONTENT_PART1, maxDuration + 1, sliceIndex);
+	outData = mszM3u8Buf;
+	outData += mm3u8ContentPart2;
 	return 1;
 }
 
@@ -695,7 +724,7 @@ int	 CMissionMgr::create(uint32 i, HASH &hash, std::string url, int tsDuration, 
 	std::map<HASH, CMission *>::iterator it = mMissionMap[ii].find(hash);
 	if (it == mMissionMap[ii].end())
 	{
-		CMission *cm = new CMission(hash, i, url, tsDuration, tsNum, tsSaveNum);		
+		CMission *cm = new CMission(hash, i, url, tsDuration, tsNum, tsSaveNum);
 		mMissionMap[ii][hash] = cm;
 		mMissionUidMap[ii][cm->getUid()] = cm;
 		cm->run(ii, mevLoop[ii]);

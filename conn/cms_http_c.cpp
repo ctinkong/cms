@@ -244,7 +244,7 @@ int ChttpClient::stop(std::string reason)
 		if (misDown8upBytes)
 		{
 			down8upBytes();
-			makeOneTaskDownload(mHash, 0, true);
+			makeOneTaskDownload(mHash, 0, true, true);
 		}
 
 		CTaskMgr::instance()->pullTaskDel(mHash);
@@ -586,7 +586,7 @@ void ChttpClient::down8upBytes()
 		if (bytes > 0 && misPushFlv)
 		{
 			misDown8upBytes = true;
-			makeOneTaskDownload(mHash, bytes, false);
+			makeOneTaskDownload(mHash, bytes, false, true);
 		}
 
 		mxSecdownBytes += bytes;
@@ -655,7 +655,7 @@ std::string ChttpClient::getHost()
 
 void ChttpClient::makeOneTask()
 {
-	makeOneTaskDownload(mHash, 0, false);
+	makeOneTaskDownload(mHash, 0, false, true);
 	makeOneTaskMedia(mHash, mflvPump->getVideoFrameRate(), mflvPump->getAudioFrameRate(), mflvPump->getWidth(), mflvPump->getHeight(),
 		mflvPump->getAudioSampleRate(), mflvPump->getMediaRate(), getVideoType(mflvPump->getVideoType()),
 		getAudioType(mflvPump->getAudioType()), murl, mremoteAddr, mrw->netType() == NetUdp);

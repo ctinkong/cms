@@ -214,7 +214,7 @@ int CConnRtmp::stop(std::string reason)
 		if (misDown8upBytes)
 		{
 			down8upBytes();
-			makeOneTaskDownload(mHash, 0, true);
+			makeOneTaskDownload(mHash, 0, true, isStreamTask());
 		}
 		if (misAddConn)
 		{
@@ -756,7 +756,7 @@ void CConnRtmp::down8upBytes()
 		if (bytes > 0 && misPushFlv)
 		{
 			misDown8upBytes = true;
-			makeOneTaskDownload(mHash, bytes, false);
+			makeOneTaskDownload(mHash, bytes, false, isStreamTask());
 		}
 
 		mxSecdownBytes += bytes;
@@ -824,7 +824,7 @@ std::string CConnRtmp::getHost()
 
 void CConnRtmp::makeOneTask()
 {
-	makeOneTaskDownload(mHash, 0, false);
+	makeOneTaskDownload(mHash, 0, false, isStreamTask());
 	makeOneTaskMedia(mHash, mflvPump->getVideoFrameRate(), mflvPump->getAudioFrameRate(), mflvPump->getWidth(), mflvPump->getHeight(),
 		mflvPump->getAudioSampleRate(), mflvPump->getMediaRate(), getVideoType(mflvPump->getVideoType()),
 		getAudioType(mflvPump->getAudioType()), murl, mremoteAddr, mrw->netType() == NetUdp);
@@ -834,3 +834,12 @@ CReaderWriter *CConnRtmp::rwConn()
 {
 	return mrw;
 }
+
+bool CConnRtmp::isStreamTask()
+{
+	return mrtmpType == RtmpClient2Play ||
+		mrtmpType == RtmpServerBPublish;
+}
+
+
+
