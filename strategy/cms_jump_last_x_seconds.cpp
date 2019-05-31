@@ -115,7 +115,7 @@ bool CJumpLastXSeconds::judge(int32 dataType, int64 &jumpIdx, int64 tt, int slic
 			}
 			if ((int64)(sendTimestamp - mno1VideoTimestamp) < sendBufLen)
 			{
-				//logs->debug("one conn hsc %s,%s %s task before unfluency,tt timestamp=%lu,frame timestamp=%llu",
+				//logs->debug("%s %s %s task before unfluency,tt timestamp=%lu,frame timestamp=%llu",
 				//	mremoteAddr.c_str(), modeName.c_str(), murl.c_str(), sendTimestamp - mno1VideoTimestamp, sendBufLen);
 				sendBufLen = int64(sendTimestamp - mno1VideoTimestamp);		//取时间戳统计与帧率统计最小的时长
 			}
@@ -141,12 +141,12 @@ bool CJumpLastXSeconds::judge(int32 dataType, int64 &jumpIdx, int64 tt, int slic
 				{
 					int64 transIdx = -1;
 					uint32 ts = 0;
-					// 					logs->debug("one conn hsc %s,%s %s task before unfluency,sendTimestamp=%u",
+					// 					logs->debug("%s %s %s task before unfluency,sendTimestamp=%u",
 					// 						mremoteAddr.c_str(), modeName.c_str(), murl.c_str(), sendTimestamp);
 					bool ok = CFlvPool::instance()->justJump2VideoLastXSecond(mhashIdx, mhash, sendTimestamp, ts, transIdx);
 					if (ok)
 					{
-						// 						logs->debug("one conn hsc %s,%s %s task maybe unfluency,ts=%u,sendTimestamp=%u",
+						// 						logs->debug("%s %s %s task maybe unfluency,ts=%u,sendTimestamp=%u",
 						// 							mremoteAddr.c_str(), modeName.c_str(), murl.c_str(), ts, sendTimestamp);
 						mlastJumpXSecondsDropTime = JXDropMaxVideoLoseTime;
 						mlastJumpXMilSeconds = tt;

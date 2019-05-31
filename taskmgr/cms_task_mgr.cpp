@@ -164,42 +164,49 @@ bool CTaskMgr::pop(CreateTaskPacket **ctp)
 void CTaskMgr::pullCreateTask(CreateTaskPacket *ctp)
 {
 	assert(ctp != NULL);
+	string sAddr = CConfig::instance()->upperAddr()->getPull(hash2Idx(ctp->hash));
 	LinkUrl linUrl;
 	if (parseUrl(ctp->pullUrl, linUrl))
 	{
-		if (linUrl.protocol == PROTOCOL_RTMP)
+		if (g_isTestServer)
 		{
-			if (g_isTestServer)
-			{
-				CMaster::instance()->createConn(ctp->hash,
-					(char *)linUrl.addr.c_str(),
-					ctp->pullUrl,
-					"",
-					"",
-					ctp->refer,
-					TypeRtmp, RtmpClient2Play,
-					!CConfig::instance()->udpFlag()->isOpenUdpPull());
-			}
-			else
-			{
-				string sAddr = CConfig::instance()->upperAddr()->getPull(hash2Idx(ctp->hash));
-				if (!sAddr.empty())
-				{
-					logs->debug("[CTaskMgr::pullCreateTask] create pull task %s dial addr %s,is open udp %s.",
-						ctp->pullUrl.c_str(),
-						sAddr.c_str(),
-						CConfig::instance()->udpFlag()->isOpenUdpPull() ? "true" : "false");
+			//测试
+			CMaster::instance()->createConn(ctp->hash,
+				(char *)linUrl.addr.c_str(),
+				ctp->pullUrl,
+				"",
+				"",
+				ctp->refer,
+				TypeRtmp, RtmpClient2Play,
+				!CConfig::instance()->udpFlag()->isOpenUdpPull());
+		}
+		else if (!sAddr.empty())
+		{
+			//配置指定从上层源下载数据
+			logs->debug("[CTaskMgr::pullCreateTask] create pull task %s dial addr %s,is open udp %s.",
+				ctp->pullUrl.c_str(),
+				sAddr.c_str(),
+				CConfig::instance()->udpFlag()->isOpenUdpPull() ? "true" : "false");
 
-					CMaster::instance()->createConn(ctp->hash,
-						sAddr.empty() ? (char *)linUrl.addr.c_str() : (char *)sAddr.c_str(),
-						ctp->pullUrl,
-						"",
-						"",
-						ctp->refer,
-						TypeRtmp, RtmpClient2Play,
-						!CConfig::instance()->udpFlag()->isOpenUdpPull());
-				}
-			}
+			CMaster::instance()->createConn(ctp->hash,
+				sAddr.empty() ? (char *)linUrl.addr.c_str() : (char *)sAddr.c_str(),
+				ctp->pullUrl,
+				"",
+				"",
+				ctp->refer,
+				TypeRtmp, RtmpClient2Play,
+				!CConfig::instance()->udpFlag()->isOpenUdpPull());
+		}
+		else if (linUrl.protocol == PROTOCOL_RTMP)
+		{
+			CMaster::instance()->createConn(ctp->hash,
+				(char *)linUrl.addr.c_str(),
+				ctp->pullUrl,
+				"",
+				"",
+				ctp->refer,
+				TypeRtmp, RtmpClient2Play,
+				!CConfig::instance()->udpFlag()->isOpenUdpPull());
 		}
 		else if (linUrl.protocol == PROTOCOL_HTTP)
 		{

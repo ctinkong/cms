@@ -202,8 +202,13 @@ void CFastBitRate::setChangeBitRate()
 		transCodeSuffix = CFlvPool::instance()->readCodeSuffix(mwaterMarkOriHashIdx, mwaterMarkOriHash);
 	}
 
-	logs->debug("fast bit rate %s mautoBitRateMode=%d,suffixName=%s,transCodeSuffix=%s.",
-		murl.c_str(), mautoBitRateMode, suffixName.c_str(), transCodeSuffix.c_str());
+	logs->info("%s fast bit rate %s mautoBitRateMode=%d,suffixName=%s,transCodeSuffix=%s.",
+		mremoteAddr.c_str(),
+		murl.c_str(),
+		mautoBitRateMode,
+		suffixName.c_str(),
+		transCodeSuffix.c_str());
+
 	if ((mautoBitRateMode == AUTO_CHANGE_BITRATE_OPEN ||
 		mautoBitRateMode == AUTO_DROP_CHANGE_BITRATE_OPEN) &&
 		!suffixName.empty() && transCodeSuffix != suffixName)
@@ -257,8 +262,12 @@ void CFastBitRate::setChangeBitRate()
 		oriUrl += suffixName;
 		mlowBitRateUrl = oriUrl;
 		std::string hashUrlLow = readHashUrl(oriUrl);
-		logs->debug("##### fast bit rate %s low bit rate url %s,low bit rate hash url %s #####",
-			murl.c_str(), mlowBitRateUrl.c_str(), hashUrlLow.c_str());
+		logs->info("%s fast bit rate %s low bit rate url %s,low bit rate hash url %s #####",
+			mremoteAddr.c_str(),
+			murl.c_str(),
+			mlowBitRateUrl.c_str(),
+			hashUrlLow.c_str());
+
 		HASH hashLow = makeHash(hashUrlLow.c_str(), hashUrlLow.length());
 		mhashLowBitRate.push_back(hashLow);
 		uint32 hashIdx = CFlvPool::instance()->hashIdx(hashLow);
@@ -320,7 +329,7 @@ int CFastBitRate::dropFramePer(int64 te, int32 sliceFrameRate)
 			dropPer = mhistoryDropTotal * 100 / int(sliceFrameRate * 120);
 			if (dropPer >= 10)
 			{
-				logs->debug("##### fast bit rate %s need change to lowbit #####", murl.c_str());
+				logs->info("%s fast bit rate %s need change to lowbit #####", mremoteAddr.c_str(), murl.c_str());
 			}
 		}
 	}
@@ -381,7 +390,7 @@ bool CFastBitRate::changeRateBit(uint32 hashIdxOld, HASH &hashOld, bool isReset,
 		res = CFlvPool::instance()->seekKeyFrame(hashIdxRead, hashRead, timestamp, idx); //flv.SeekSlice(r.hashIdxRead, r.hashRead, timestamp)
 		if (!res)
 		{
-			logs->error("***fast bit rate %s changeRateBit not find SeekKeyFrame ***", murl.c_str());
+			logs->error("*** %s fast bit rate %s changeRateBit not find SeekKeyFrame ***", mremoteAddr.c_str(), murl.c_str());
 			break;
 		}
 
@@ -453,7 +462,7 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 					}
 					if (mtransCodeNeedDropVideo || mtransCodeNoNeedDropVideo)
 					{
-						logs->debug("one conn %s,%s %s #####AutoBitRateMode=%d,"\
+						logs->info("%s %s %s AutoBitRateMode=%d,"\
 							" $$$rtmp drop video frame differ=%lld,lastdiffer=%lld,guestBufLen=%d,"\
 							"mloseBufferTimes=%d,int32(edgeCacheTT/2)=%d,te=%lld,r.connectTimestamp=%lld,sendTimestamp=%u,"\
 							"mno1AudioTimestamp=%u,(te - r.connectTimestamp)=%lld,int64(sendTimestamp-mno1AudioTimestamp)=%lld",
@@ -535,7 +544,7 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 
 					if (mtransCodeNeedDropVideo || mtransCodeNoNeedDropVideo)
 					{
-						logs->debug("one conn %s,%s %s #####AutoBitRateMode=%d,"\
+						logs->info("%s %s %s AutoBitRateMode=%d,"\
 							" $$$rtmp drop video frame differ=%lld,lastdiffer=%lld,guestBufLen=%d,"\
 							"mloseBufferTimes=%d,int32(edgeCacheTT/2)=%d,te=%lld,r.connectTimestamp=%lld,sendTimestamp=%u,"\
 							"mno1VideoTimestamp=%u,(te - r.connectTimestamp)=%lld,int64(sendTimestamp-mno1VideoTimestamp)=%lld",

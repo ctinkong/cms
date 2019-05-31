@@ -501,7 +501,7 @@ void ChttpClient::makeHash()
 		mHash = HASH((char *)strHash.c_str());
 		mstrHash = hash2Char(mHash.data);
 		mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-		logs->debug("%s [ChttpClient::makeHash] %s hash url %s,hash=%s",
+		logs->info("%s [ChttpClient::makeHash] %s hash url %s,hash=%s",
 			mremoteAddr.c_str(), murl.c_str(), hashUrl.c_str(), mstrHash.c_str());
 	}
 	else
@@ -601,7 +601,7 @@ void ChttpClient::down8upBytes()
 		mxSecTick++;
 		if (((mxSecTick + (0x0F - (CMS_SPEED_DURATION >= 0x0F ? 10 : CMS_SPEED_DURATION) + 1)) & 0x0F) == 0)
 		{
-			logs->debug("%s [ChttpClient::down8upBytes] http %s download speed %s,upload speed %s",
+			logs->info("%s [ChttpClient::down8upBytes] %s download speed %s,upload speed %s",
 				mremoteAddr.c_str(), murl.c_str(),
 				parseSpeed8Mem(mxSecdownBytes / mxSecTick, true).c_str(),
 				parseSpeed8Mem(mxSecUpBytes / mxSecTick, true).c_str());

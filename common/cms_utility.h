@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <vector>
 #include <map>
 #include <common/cms_type.h>
+#include <protocol/cms_rtmp_const.h>
 
 #define CMS_OK 0
 #define CMS_ERROR -1
@@ -105,4 +106,11 @@ bool readAll(const char* file, char **data);
 void setThreadName(const char *name);
 unsigned long long addr2uid(char *ip, uint16 port);
 unsigned long long addr2uid(uint64 ip, uint16 port);
+std::string getConnType(ConnType &ct);
+std::string getRtmpType(RtmpType &rt);
+bool isHttp(ConnType &ct);
+bool isHttps(ConnType &ct);
+bool isRtmp(ConnType &ct);
+bool isQuery(ConnType &ct);
 #endif
+

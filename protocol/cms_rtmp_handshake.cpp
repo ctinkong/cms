@@ -629,13 +629,13 @@ int c2s2::c2_create(c1s1* s1)
 		logs->error("create c2 temp key failed. ret=%d", ret);
 		return ret;
 	}
-	logs->info("generate c2 temp key success.");
+	logs->debug("generate c2 temp key success.");
 	char _digest[OpensslHashSize];
 	if ((ret = openssl_HMACsha256(random, 1504, temp_key, 32, _digest)) != 0) {
 		logs->error("create c2 digest failed. ret=%d", ret);
 		return ret;
 	}
-	logs->info("generate c2 digest success.");
+	logs->debug("generate c2 digest success.");
 	memcpy(digest, _digest, 32);
 	return ret;
 }
@@ -648,13 +648,13 @@ int c2s2::s2_create(c1s1* c1)
 		logs->error("create s2 temp key failed. ret=%d", ret);
 		return ret;
 	}
-	logs->info("generate s2 temp key success.");
+	logs->debug("generate s2 temp key success.");
 	char _digest[OpensslHashSize];
 	if ((ret = openssl_HMACsha256(random, 1504, temp_key, 32, _digest)) != 0) {
 		logs->error("create s2 digest failed. ret=%d", ret);
 		return ret;
 	}
-	logs->info("generate s2 digest success.");
+	logs->debug("generate s2 digest success.");
 	memcpy(digest, _digest, 32);
 	return ret;
 }
@@ -747,7 +747,7 @@ int c1s1::c1_parse(char* _c1s1, srs_schema_type _schema)
 			logs->error("parse the c1 digest failed. ret=%d", ret);
 			return ret;
 		}
-		logs->info("parse c1 key-digest success");
+		logs->debug("parse c1 key-digest success");
 	}
 	else if (_schema == srs_schema1) {
 		if ((ret = srs_digest_block_parse(&block0.digest, _c1s1 + 8)) != 0) {
@@ -758,7 +758,7 @@ int c1s1::c1_parse(char* _c1s1, srs_schema_type _schema)
 			logs->error("parse the c1 digest failed. ret=%d", ret);
 			return ret;
 		}
-		logs->info("parse c1 digest-key success");
+		logs->debug("parse c1 digest-key success");
 	}
 	else {
 		ret = -1;
@@ -821,13 +821,13 @@ int c1s1::s1_create(c1s1* c1)
 			return ret;
 		}
 	}
-	logs->info("calc s1 key success.");
+	logs->debug("calc s1 key success.");
 	char* s1_digest = NULL;
 	if ((ret = calc_s1_digest(s1_digest)) != 0) {
 		logs->error("calc s1 digest failed. ret=%d", ret);
 		return ret;
 	}
-	logs->info("calc s1 digest success.");
+	logs->debug("calc s1 digest success.");
 	assert(s1_digest != NULL);
 
 	if (schema == srs_schema0) {
@@ -836,7 +836,7 @@ int c1s1::s1_create(c1s1* c1)
 	else {
 		memcpy(block0.digest.digest, s1_digest, 32);
 	}
-	logs->info("copy s1 key success.");
+	logs->debug("copy s1 key success.");
 	delete[] s1_digest;
 	return ret;
 }
@@ -861,7 +861,7 @@ int c1s1::calc_s1_digest(char*& digest)
 		return ret;
 	}
 	delete[] c1s1_joined_bytes;
-	logs->info("digest calculated for s1");
+	logs->debug("digest calculated for s1");
 	return ret;
 }
 
@@ -885,7 +885,7 @@ int c1s1::calc_c1_digest(char*& digest)
 		return ret;
 	}
 	delete[] c1s1_joined_bytes;
-	logs->info("digest calculated for c1");
+	logs->debug("digest calculated for c1");
 	return ret;
 }
 

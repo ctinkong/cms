@@ -181,7 +181,7 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 		mremoteAddr.c_str(), getRtmpType().c_str());
 #endif
 
-	logs->debug("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s",
+	logs->info("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	char szC0 = 0x03;//握手第一字节 0x03
 	int nwrite = 0;
@@ -221,7 +221,7 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 	delete[] pc1;
 	mrtmpStatus = RtmpStatusShakeC0C1;
 
-	logs->debug("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s status change to RtmpStatusShakeC0C1",
+	logs->info("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s status change to RtmpStatusShakeC0C1",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 
 #ifdef __CMS_APP_DEBUG__
@@ -265,7 +265,7 @@ int CRtmpProtocol::c2sComplexShakeS0()
 
 int CRtmpProtocol::c2sComplexShakeS1C2()
 {
-	logs->debug("%s [CRtmpProtocol::c2sComplexShakeS1C2] enter rtmp %s ",
+	logs->info("%s [CRtmpProtocol::c2sComplexShakeS1C2] enter rtmp %s ",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	if (mrdBuff->size() < SHAKE_RAND_DATA_LEN && mrdBuff->grow(SHAKE_RAND_DATA_LEN - mrdBuff->size()) == CMS_ERROR)
 	{
@@ -307,7 +307,7 @@ int CRtmpProtocol::c2sComplexShakeS1C2()
 	delete[] pc2;
 	mrtmpStatus = RtmpStatusShakeS1;
 
-	logs->debug("%s [CRtmpProtocol::c2sComplexShakeS1C2] enter rtmp %s status change to RtmpStatusShakeS1",
+	logs->info("%s [CRtmpProtocol::c2sComplexShakeS1C2] enter rtmp %s status change to RtmpStatusShakeS1",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 
 	return CMS_OK;
@@ -315,7 +315,7 @@ int CRtmpProtocol::c2sComplexShakeS1C2()
 
 int CRtmpProtocol::c2sComplexShakeS2()
 {
-	logs->debug("%s [CRtmpProtocol::c2sComplexShakeS2] enter rtmp %s ",
+	logs->info("%s [CRtmpProtocol::c2sComplexShakeS2] enter rtmp %s ",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 
 	if (mrdBuff->size() < SHAKE_RAND_DATA_LEN && mrdBuff->grow(SHAKE_RAND_DATA_LEN - mrdBuff->size()) == CMS_ERROR)
@@ -349,7 +349,7 @@ int CRtmpProtocol::s2cComplexShakeC012()
 			mremoteAddr.c_str(), getRtmpType().c_str());
 #endif
 
-		logs->error("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s complex shake RtmpStatusShakeNone.",
+		logs->info("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s complex shake RtmpStatusShakeNone.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 
 		if (mrdBuff->size() < SHAKE_RAND_DATA_LEN + 1 && mrdBuff->grow(SHAKE_RAND_DATA_LEN + 1 - mrdBuff->size()) == CMS_ERROR)
@@ -430,7 +430,7 @@ int CRtmpProtocol::s2cComplexShakeC012()
 		delete[] s0s1s2;
 		mrtmpStatus = RtmpStatusShakeC0C1;
 
-		logs->error("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s complex shake change to RtmpStatusShakeC0C1.",
+		logs->info("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s complex shake change to RtmpStatusShakeC0C1.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 
 #ifdef __CMS_APP_DEBUG__
@@ -450,7 +450,7 @@ int CRtmpProtocol::s2cComplexShakeC012()
 			return CMS_OK;
 		}
 		mrdBuff->skip(SHAKE_RAND_DATA_LEN);
-		logs->debug("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s handshake succ.",
+		logs->info("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s handshake succ.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		mrtmpStatus = RtmpStatusShakeSuccess;
 		mfinishShake = true;
@@ -467,7 +467,7 @@ int CRtmpProtocol::s2cSampleShakeC012()
 {
 	if (mrtmpStatus == RtmpStatusShakeNone)
 	{
-		logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s complex shake RtmpStatusShakeNone.",
+		logs->info("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s complex shake RtmpStatusShakeNone.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 
 		if (mrdBuff->size() < SHAKE_RAND_DATA_LEN + 1)
@@ -514,7 +514,7 @@ int CRtmpProtocol::s2cSampleShakeC012()
 		}
 		mrtmpStatus = RtmpStatusShakeC1;
 
-		logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s complex change to RtmpStatusShakeC1.",
+		logs->info("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s complex change to RtmpStatusShakeC1.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	else if (mrtmpStatus == RtmpStatusShakeC1)
@@ -530,7 +530,7 @@ int CRtmpProtocol::s2cSampleShakeC012()
 			return CMS_OK;
 		}
 		mrdBuff->skip(SHAKE_RAND_DATA_LEN);
-		logs->debug("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s handshake succ ",
+		logs->info("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s handshake succ ",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		mrtmpStatus = RtmpStatusShakeSuccess;
 		mfinishShake = true;
@@ -1162,7 +1162,7 @@ int CRtmpProtocol::decodeChunkSize(RtmpMessage *msg)
 {
 	int *chunkSize = (int *)msg->buffer;
 	mreadChunkSize = ntohl(*chunkSize);
-	logs->debug("#####%s [CRtmpProtocol::decodeChunkSize] rtmp %s peer chunk size=%d",
+	logs->info("%s [CRtmpProtocol::decodeChunkSize] rtmp %s peer chunk size=%d",
 		mremoteAddr.c_str(), getRtmpType().c_str(), mreadChunkSize);
 	return CMS_OK;
 }
@@ -1177,7 +1177,7 @@ int CRtmpProtocol::decodeWindowSize(RtmpMessage *msg)
 	}
 	int *pWindowSize = (int *)msg->buffer;
 	mreadWindowSize = ntohl(*pWindowSize);
-	logs->debug("#####%s [CRtmpProtocol::decodeWindowSize] rtmp %s peer windows size=%d",
+	logs->debug("%s [CRtmpProtocol::decodeWindowSize] rtmp %s peer windows size=%d",
 		mremoteAddr.c_str(), getRtmpType().c_str(), mreadWindowSize);
 	return CMS_OK;
 }
@@ -1192,7 +1192,7 @@ int CRtmpProtocol::decodeBandWidth(RtmpMessage *msg)
 	}
 	int *pBandWidth = (int *)msg->buffer;
 	mreadBandWidthSize = ntohl(*pBandWidth);
-	logs->debug("#####%s [CRtmpProtocol::decodeBandWidth] rtmp %s peer bandwidth size=%d",
+	logs->debug("%s [CRtmpProtocol::decodeBandWidth] rtmp %s peer bandwidth size=%d",
 		mremoteAddr.c_str(), getRtmpType().c_str(), mreadBandWidthSize);
 	if (msg->dataLen > 4)
 	{
@@ -1213,19 +1213,19 @@ int CRtmpProtocol::handleUserControlMsg(RtmpMessage *msg)
 	{
 		minStreamID = *((int *)(msg->buffer + sizeof(short)));
 		minStreamID = ntohl(minStreamID);
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream Stream Begin control,stream id=%d",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream Stream Begin control,stream id=%d",
 			mremoteAddr.c_str(), getRtmpType().c_str(), minStreamID);
 	}
 	break;
 	case USER_CONTROL_STREAM_EOF:
 	{
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream eof control,discarding.",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream eof control,discarding.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	break;
 	case USER_CONTROL_STREAM_DRY:
 	{
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream dry control,discarding.",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream dry control,discarding.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	break;
@@ -1234,13 +1234,13 @@ int CRtmpProtocol::handleUserControlMsg(RtmpMessage *msg)
 		char *bit = msg->buffer + sizeof(short);
 		bit = amf0::bit64Reversal(bit);
 		mreadBuffLen = *((float *)bit);
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream set buf len control,buffer len=%f",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream set buf len control,buffer len=%f",
 			mremoteAddr.c_str(), getRtmpType().c_str(), mreadBuffLen);
 	}
 	break;
 	case USER_CONTROL_STREAM_LS_RECORDED:
 	{
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream ls control,discarding.",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream ls control,discarding.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	break;
@@ -1265,12 +1265,12 @@ int CRtmpProtocol::handleUserControlMsg(RtmpMessage *msg)
 	break;
 	case USER_CONTROL_PING_RESPONSE:
 	{
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream ping response control,discarding.",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received stream ping response control,discarding.",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	break;
 	default:
-		logs->debug("#####%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received unknow stream control[ %d ],discarding.",
+		logs->debug("%s [CRtmpProtocol::handleUserControlMsg] rtmp %s received unknow stream control[ %d ],discarding.",
 			mremoteAddr.c_str(), getRtmpType().c_str(), eventType);
 		break;
 	}
@@ -1297,7 +1297,7 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 	int ret = CMS_OK;
 	if (block->cmd == Amf0CommandResult)
 	{
-		logs->debug("%s [CRtmpProtocol::decodeAmf03] rtmp %s result ",
+		logs->info("%s [CRtmpProtocol::decodeAmf03] rtmp %s result ",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		string strEvent;
 		amf0::Amf0Type type = amf0::amf0Block5Value(block, 1, strEvent);
@@ -1321,7 +1321,7 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 		string codeValue, descValue;
 		amf0Block5Value(block, "code", codeValue);
 		amf0Block5Value(block, "description", descValue);
-		logs->warn("### %s [CRtmpProtocol::decodeAmf03] rtmp %s decodeAmf0 recv[ _error ],code %s ,description %s ###",
+		logs->warn("%s [CRtmpProtocol::decodeAmf03] rtmp %s decodeAmf0 recv[ _error ],code %s ,description %s",
 			mremoteAddr.c_str(), getRtmpType().c_str(), codeValue.c_str(), descValue.c_str());
 		if (codeValue != StatusCodeCallFail)
 		{
@@ -1333,7 +1333,7 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 	}
 	else if (block->cmd == Amf0CommandConnect)
 	{
-		logs->debug("### %s [CRtmpProtocol::decodeAmf03] rtmp %s recv connect command ###",
+		logs->info("%s [CRtmpProtocol::decodeAmf03] rtmp %s recv connect command",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		ret = decodeConnect(block);
 	}
@@ -1373,7 +1373,7 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 	}
 	else if (block->cmd == Amf0CommandDeleteStream)
 	{
-		logs->debug("%s [CRtmpProtocol::decodeAmf03] rtmp %s received amf0 deleteStream command,discarding",
+		logs->info("%s [CRtmpProtocol::decodeAmf03] rtmp %s received amf0 deleteStream command,discarding",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 	}
 	else if (block->cmd == Amf0CommandUnpublish)//取消发布
@@ -1447,7 +1447,7 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 	}
 	else
 	{
-		logs->error("%s [CRtmpProtocol::decodeAmf03] rtmp %s received unknow amf0 %s command,discarding",
+		logs->warn("%s [CRtmpProtocol::decodeAmf03] rtmp %s received unknow amf0 %s command,discarding",
 			mremoteAddr.c_str(), getRtmpType().c_str(), block->cmd.c_str());
 	}
 	amf0::amf0BlockRelease(block);
@@ -1562,7 +1562,7 @@ int CRtmpProtocol::doConnect()
 	{
 		strStream << mlinkUrl.protocol << "://" << mlinkUrl.host << ":" << mlinkUrl.port << "/" << mlinkUrl.app;
 	}
-	logs->debug(">>> %s [CRtmpProtocol::doConnect] %s rtmp %s doConnect.",
+	logs->debug("%s [CRtmpProtocol::doConnect] %s rtmp %s doConnect.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1608,7 +1608,7 @@ int CRtmpProtocol::doConnect()
 
 int CRtmpProtocol::doReleaseStream()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doReleaseStream] %s rtmp %s doReleaseStream.",
+	logs->info("%s [CRtmpProtocol::doReleaseStream] %s rtmp %s doReleaseStream.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1643,7 +1643,7 @@ int CRtmpProtocol::doReleaseStream()
 
 int CRtmpProtocol::doFCPublish()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doFCPublish] %s rtmp %s doFCPublish.",
+	logs->info("%s [CRtmpProtocol::doFCPublish] %s rtmp %s doFCPublish.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1678,7 +1678,7 @@ int CRtmpProtocol::doFCPublish()
 
 int CRtmpProtocol::doCreateStream()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doCreateStream] %s rtmp %s doCreateStream.",
+	logs->info("%s [CRtmpProtocol::doCreateStream] %s rtmp %s doCreateStream.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1713,7 +1713,7 @@ int CRtmpProtocol::doCreateStream()
 
 int CRtmpProtocol::doPlay()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doPlay] %s rtmp %s doPlay.",
+	logs->info("%s [CRtmpProtocol::doPlay] %s rtmp %s doPlay.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1753,7 +1753,7 @@ int CRtmpProtocol::doPlay()
 
 int CRtmpProtocol::doPublish()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doPublish] %s rtmp %s doPublish.",
+	logs->info("%s [CRtmpProtocol::doPublish] %s rtmp %s doPublish.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1801,7 +1801,7 @@ int CRtmpProtocol::doPublish()
 
 int CRtmpProtocol::doSetBufLength()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doSetBufLength] %s rtmp %s doSetBufLength.",
+	logs->info("%s [CRtmpProtocol::doSetBufLength] %s rtmp %s doSetBufLength.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	string strRtmpBody;
@@ -1829,7 +1829,7 @@ int CRtmpProtocol::doSetBufLength()
 
 int CRtmpProtocol::doCheckBW()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doCheckBW] %s rtmp %s doCheckBW.",
+	logs->debug("%s [CRtmpProtocol::doCheckBW] %s rtmp %s doCheckBW.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -1863,7 +1863,7 @@ int CRtmpProtocol::doCheckBW()
 
 int CRtmpProtocol::doWindowSize()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doWindowSize] %s rtmp %s doWindowSize.",
+	logs->debug("%s [CRtmpProtocol::doWindowSize] %s rtmp %s doWindowSize.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	string strRtmpBody;
@@ -1888,7 +1888,7 @@ int CRtmpProtocol::doWindowSize()
 
 int CRtmpProtocol::doBandWidth()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doBandWidth] %s rtmp %s bandwidth.",
+	logs->debug("%s [CRtmpProtocol::doBandWidth] %s rtmp %s bandwidth.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	string strRtmpBody;
@@ -1992,7 +1992,7 @@ int CRtmpProtocol::doConnectSucc(int event, int objectEncoding)
 
 int CRtmpProtocol::doOnBWDone()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doOnBWDone] %s rtmp %s doOnBWDone.",
+	logs->debug("%s [CRtmpProtocol::doOnBWDone] %s rtmp %s doOnBWDone.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
@@ -2025,7 +2025,7 @@ int CRtmpProtocol::doOnBWDone()
 
 int CRtmpProtocol::doChunkSize()
 {
-	logs->debug(">>> %s [CRtmpProtocol::doChunkSize] %s rtmp %s doChunkSize.",
+	logs->debug("%s [CRtmpProtocol::doChunkSize] %s rtmp %s doChunkSize.",
 		mremoteAddr.c_str(), msuper->getUrl().c_str(), getRtmpType().c_str());
 
 	string strRtmpBody;
@@ -2303,7 +2303,7 @@ int CRtmpProtocol::doFCUnPublishResult(int event)
 
 int CRtmpProtocol::doStreamBegin()
 {
-	logs->info("#####%s [CRtmpProtocol::doStreamBegin] rtmp %s doStreamBegin #####",
+	logs->info("%s [CRtmpProtocol::doStreamBegin] rtmp %s doStreamBegin",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	string strRtmpBody;
 	char fmt = CHUNK_STREAM_ID_PROTOCOL;
@@ -2327,7 +2327,7 @@ int CRtmpProtocol::doStreamBegin()
 
 int CRtmpProtocol::doPlayReset(std::string instance)
 {
-	logs->info("#####%s [CRtmpProtocol::doPlayReset] rtmp %s doPlayReset #####",
+	logs->info("%s [CRtmpProtocol::doPlayReset] rtmp %s doPlayReset",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
 	amf0::Amf0Data *data = amf0::amf0StringNew((amf0::uint8 *)Amf0CommandOnStatus, strlen(Amf0CommandOnStatus));
@@ -2372,7 +2372,7 @@ int CRtmpProtocol::doPlayReset(std::string instance)
 
 int CRtmpProtocol::doPlayStart(std::string instance)
 {
-	logs->info("#####%s [CRtmpProtocol::doPlayStart] rtmp %s doRtmpPlayStart #####",
+	logs->info("%s [CRtmpProtocol::doPlayStart] rtmp %s doRtmpPlayStart",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
 	amf0::Amf0Data *data = amf0::amf0StringNew((amf0::uint8 *)Amf0CommandOnStatus, strlen(Amf0CommandOnStatus));
@@ -2415,7 +2415,7 @@ int CRtmpProtocol::doPlayStart(std::string instance)
 
 int CRtmpProtocol::doPlayPublishNotify(std::string instance)
 {
-	logs->info("#####%s [CRtmpProtocol::doPlayPublishNotify] rtmp %s doPlayPublishNotify #####",
+	logs->info("%s [CRtmpProtocol::doPlayPublishNotify] rtmp %s doPlayPublishNotify",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
 	amf0::Amf0Data *data = amf0::amf0StringNew((amf0::uint8 *)Amf0CommandOnStatus, strlen(Amf0CommandOnStatus));
@@ -2458,7 +2458,7 @@ int CRtmpProtocol::doPlayPublishNotify(std::string instance)
 
 int CRtmpProtocol::doSampleAccess()
 {
-	logs->info("#####%s [CRtmpProtocol::doSampleAccess] rtmp %s doSampleAccess #####",
+	logs->info("%s [CRtmpProtocol::doSampleAccess] rtmp %s doSampleAccess",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
 	amf0::Amf0Data *data = amf0::amf0StringNew((amf0::uint8 *)Amf0DataSampleAccess, strlen(Amf0DataSampleAccess));
@@ -2491,7 +2491,7 @@ int CRtmpProtocol::doSampleAccess()
 
 int CRtmpProtocol::doStreamDataStart()
 {
-	logs->info("#####%s [CRtmpProtocol::doStreamDataStart] rtmp %s doStreamDataStart #####",
+	logs->info("%s [CRtmpProtocol::doStreamDataStart] rtmp %s doStreamDataStart",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	amf0::Amf0Block *block = amf0::amf0BlockNew();
 	amf0::Amf0Data *data = amf0::amf0StringNew((amf0::uint8 *)Amf0CommandOnStatus, strlen(Amf0CommandOnStatus));
@@ -2522,7 +2522,7 @@ int CRtmpProtocol::doStreamDataStart()
 
 int CRtmpProtocol::decodeConnect(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodeConnect] rtmp %s decodeConnect #####",
+	logs->info("%s [CRtmpProtocol::decodeConnect] rtmp %s decodeConnect",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	int ret = CMS_OK;
 	string strObjectEncoding;
@@ -2560,7 +2560,7 @@ int CRtmpProtocol::decodeConnect(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodeReleaseStream(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodeReleaseStream] rtmp %s releaseStream #####",
+	logs->info("%s [CRtmpProtocol::decodeReleaseStream] rtmp %s releaseStream",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	int ret = CMS_OK;
 	std::string strInstanceName;
@@ -2577,7 +2577,7 @@ int CRtmpProtocol::decodeReleaseStream(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodeFcPublish(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodeFcPublish] rtmp %s fcPublish #####",
+	logs->info("%s [CRtmpProtocol::decodeFcPublish] rtmp %s fcPublish",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	int ret = CMS_OK;
 	amf0::amf0Block5Value(block, 3, mfcPublishInstance);
@@ -2593,7 +2593,7 @@ int CRtmpProtocol::decodeFcPublish(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodeUnPublish(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodeUnPublish] rtmp %s unPublish #####",
+	logs->info("%s [CRtmpProtocol::decodeUnPublish] rtmp %s unPublish",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	int ret = CMS_OK;
 	string strEvent;
@@ -2612,7 +2612,7 @@ int CRtmpProtocol::decodeUnPublish(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodeCreateStream(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodeCreateStream] rtmp %s createStream #####",
+	logs->info("%s [CRtmpProtocol::decodeCreateStream] rtmp %s createStream",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	int ret = CMS_OK;
 	string strEvent;
@@ -2627,7 +2627,7 @@ int CRtmpProtocol::decodeCreateStream(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodePublish(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodePublish] rtmp %s publish #####",
+	logs->info("%s [CRtmpProtocol::decodePublish] rtmp %s publish",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	std::string strInstanceName;
 	amf0::amf0Block5Value(block, 3, strInstanceName);
@@ -2639,7 +2639,7 @@ int CRtmpProtocol::decodePublish(amf0::Amf0Block *block)
 		}
 	}
 	murl += strInstanceName;
-	logs->info(">>> %s [CRtmpProtocol::decodePublish] rtmp %s publish url %s ",
+	logs->info("%s [CRtmpProtocol::decodePublish] rtmp %s publish url %s ",
 		mremoteAddr.c_str(), getRtmpType().c_str(), murl.c_str());
 
 	if (!parseUrl(murl, mlinkUrl))
@@ -2682,7 +2682,7 @@ int CRtmpProtocol::decodePublish(amf0::Amf0Block *block)
 
 int CRtmpProtocol::decodePlay(amf0::Amf0Block *block)
 {
-	logs->info("#####%s [CRtmpProtocol::decodePlay] rtmp %s recv play command ",
+	logs->info("%s [CRtmpProtocol::decodePlay] rtmp %s recv play command ",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	std::string strInstanceName;
 	amf0::amf0Block5Value(block, 3, strInstanceName);
@@ -2928,7 +2928,7 @@ void CRtmpProtocol::shouldCloseNodelay(bool force/* = false*/)
 {
 	if (force)
 	{
-		logs->debug("#####%s [CRtmpProtocol::shouldCloseNodelay] rtmp %s force 2 close conn nodelay ",
+		logs->debug("%s [CRtmpProtocol::shouldCloseNodelay] rtmp %s force 2 close conn nodelay ",
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		mrw->setNodelay(0);
 		misCloseNodelay = true;
@@ -2937,7 +2937,7 @@ void CRtmpProtocol::shouldCloseNodelay(bool force/* = false*/)
 	{
 		if (getTickCount() - mulNodelayEndTime >= 1000 * 3)
 		{
-			logs->debug("#####%s [CRtmpProtocol::shouldCloseNodelay] rtmp %s close conn nodelay ",
+			logs->debug("%s [CRtmpProtocol::shouldCloseNodelay] rtmp %s close conn nodelay ",
 				mremoteAddr.c_str(), getRtmpType().c_str());
 			mrw->setNodelay(0);
 			misCloseNodelay = true;

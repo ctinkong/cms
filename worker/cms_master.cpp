@@ -268,13 +268,32 @@ Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pu
 			delete tcp;
 			return NULL;
 		}
-		if (connectType == TypeHttp || connectType == TypeHttps)
+		logs->info("CMaster create conn hash=%s, "
+			"addr=%s, "
+			"pull url=%s, "
+			"push url=%s, "
+			"ori url=%s, "
+			"referer=%s, "
+			"connectType=%s, "
+			"rtmpType=%s, "
+			"tcp=%s",
+			hash2Char(hash.data).c_str(),
+			addr,
+			pullUrl.c_str(),
+			pushUrl.c_str(),
+			oriUrl.c_str(),
+			strReferer.c_str(),
+			getConnType(connectType).c_str(),
+			getRtmpType(rtmpType).c_str(),
+			isTcp ? "true" : "false");
+
+		if (isHttp(connectType) || isHttps(connectType))
 		{
-			ChttpClient *http = new ChttpClient(hash, tcp, pullUrl, oriUrl, strReferer, connectType == TypeHttp ? false : true);
+			ChttpClient *http = new ChttpClient(hash, tcp, pullUrl, oriUrl, strReferer, isHttps(connectType) ? true : false);
 			uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 			mworker[i]->addOneConn(tcp->fd(), http);
 		}
-		else if (connectType == TypeRtmp)
+		else if (isRtmp(connectType))
 		{
 			CConnRtmp *rtmp = new CConnRtmp(hash, rtmpType, tcp, pullUrl, pushUrl);
 			uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
@@ -331,7 +350,7 @@ void CMaster::masterTcpAcceptCallBack(struct ev_loop *loop, struct ev_io *watche
 		case TypeQuery:
 		{
 			{
-				CHttpServer *hs = new CHttpServer(rw, listenType == TypeHttps);
+				CHttpServer *hs = new CHttpServer(rw, isHttps(listenType));
 				uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 				mworker[i]->addOneConn(rw->fd(), hs);
 			}

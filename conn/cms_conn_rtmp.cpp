@@ -728,7 +728,7 @@ void CConnRtmp::makeHash()
 		mHash = makeUrlHash(murl);
 		mstrHash = hash2Char(mHash.data);
 		mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-		logs->debug("%s [CConnRtmp::makeHash] %s rtmp %s url %s,hash=%s",
+		logs->info("%s [CConnRtmp::makeHash] %s rtmp %s url %s,hash=%s",
 			mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str(), murl.c_str(), mstrHash.c_str());
 	}
 	else
@@ -742,7 +742,7 @@ void CConnRtmp::makePushHash()
 {
 	mpushHash = ::makePushHash(mstrPushUrl);
 	mstrHash = hash2Char(mpushHash.data);
-	logs->debug("%s [CConnRtmp::makePushHash] %s rtmp %s push url %s,hash=%s",
+	logs->info("%s [CConnRtmp::makePushHash] %s rtmp %s push url %s,hash=%s",
 		mremoteAddr.c_str(), mstrPushUrl.c_str(), mrtmp->getRtmpType().c_str(), mstrPushUrl.c_str(), mstrHash.c_str());
 }
 
@@ -771,7 +771,7 @@ void CConnRtmp::down8upBytes()
 		mxSecTick++;
 		if (((mxSecTick + (0x0F - (CMS_SPEED_DURATION >= 0x0F ? 10 : CMS_SPEED_DURATION) + 1)) & 0x0F) == 0)
 		{
-			logs->debug("%s [CConnRtmp::down8upBytes] %s rtmp %s download speed %s,upload speed %s",
+			logs->info("%s [CConnRtmp::down8upBytes] %s rtmp %s download speed %s,upload speed %s",
 				mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str(),
 				parseSpeed8Mem(mxSecdownBytes / mxSecTick, true).c_str(),
 				parseSpeed8Mem(mxSecUpBytes / mxSecTick, true).c_str());

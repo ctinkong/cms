@@ -342,7 +342,7 @@ int CHttpServer::doDecode()
 				mbinaryWriter = new BinaryWriter;
 			}
 		}
-		logs->debug("%s [CHttpServer::doDecode] new httpserver request %s",
+		logs->info("%s [CHttpServer::doDecode] http request %s",
 			mremoteAddr.c_str(), murl.c_str());
 		ret = handle();
 	}
@@ -432,7 +432,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->debug(">>> %s [CHttpServer::handleFlv] http 302 ip url %s ",
+			logs->info("%s [CHttpServer::handleFlv] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
@@ -471,17 +471,17 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONNECTION, "close");
 		}
-		std::string strRspHeader = mhttp->httpResponse()->readResponse();
-		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
-		if (ret < 0)
-		{
-			logs->error("*** %s [CHttpServer::handleFlv] http %s send header fail ***",
-				mremoteAddr.c_str(), murl.c_str());
-			ret = CMS_ERROR;
-			return CMS_ERROR;
-		}
-		//flv header
-		std::string strFlvHeader;
+		std::string strFlvHeader = mhttp->httpResponse()->readResponse();
+// 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
+// 		if (ret < 0)
+// 		{
+// 			logs->error("*** %s [CHttpServer::handleFlv] http %s send header fail ***",
+// 				mremoteAddr.c_str(), murl.c_str());
+// 			ret = CMS_ERROR;
+// 			return CMS_ERROR;
+// 		}
+//		std::string strFlvHeader;
+		//flv header		
 		strFlvHeader.append(1, 0x46);
 		strFlvHeader.append(1, 0x4C);
 		strFlvHeader.append(1, 0x56);
@@ -615,7 +615,7 @@ int  CHttpServer::handleM3U8(int &ret)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->debug(">>> %s [CHttpServer::handleM3U8] http 302 ip url %s ",
+			logs->info(">>> %s [CHttpServer::handleM3U8] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
@@ -724,7 +724,7 @@ int  CHttpServer::handleTS(int &ret)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->debug(">>> %s [CHttpServer::handleTS] http 302 ip url %s ",
+			logs->info(">>> %s [CHttpServer::handleTS] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
@@ -936,7 +936,7 @@ void CHttpServer::makeHash()
 	mHash = HASH((char *)strHash.c_str());
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-	logs->debug("%s [CHttpServer::makeHash] hash url %s,hash=%s",
+	logs->info("%s [CHttpServer::makeHash] hash url %s,hash=%s",
 		mremoteAddr.c_str(), hashUrl.c_str(), mstrHash.c_str());
 	mflvTrans->setHash(mHashIdx, mHash);
 }
@@ -950,7 +950,7 @@ void CHttpServer::makeHash(std::string url)
 	mHash = HASH((char *)strHash.c_str());
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-	logs->debug("%s [CHttpServer::makeHash] 1 hash url %s,hash=%s",
+	logs->info("%s [CHttpServer::makeHash] 1 hash url %s,hash=%s",
 		mremoteAddr.c_str(), hashUrl.c_str(), mstrHash.c_str());
 }
 
@@ -989,7 +989,7 @@ void CHttpServer::down8upBytes()
 			mxSecTick++;
 			if (((mxSecTick + (0x0F - (CMS_SPEED_DURATION >= 0x0F ? 10 : CMS_SPEED_DURATION) + 1)) & 0x0F) == 0)
 			{
-				logs->debug("%s [CHttpServer::down8upBytes] http %s download speed %s,upload speed %s",
+				logs->info("%s [CHttpServer::down8upBytes] %s download speed %s,upload speed %s",
 					mremoteAddr.c_str(), murl.c_str(),
 					parseSpeed8Mem(mxSecdownBytes / mxSecTick, true).c_str(),
 					parseSpeed8Mem(mxSecUpBytes / mxSecTick, true).c_str());

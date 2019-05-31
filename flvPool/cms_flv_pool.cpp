@@ -591,7 +591,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 				}
 				else if (llIdx == -1)
 				{
-					logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s is real time stream=%s",
+					logs->info(">>>>> [CFlvPool::readSlice] readSlice %s is real time stream=%s",
 						ss->mstrUrl.c_str(), ss->misRealTimeStream ? "true" : "false");
 					//出现丢帧情况,为了是播放不花屏，要从关键帧发送（针对H264）
 					if (((ss->misH264 || ss->misH265) && (nkf > 0 || getTimeUnix() - ss->mllCreateTime > duration)) ||
@@ -640,7 +640,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 							*s = ss->mavSlice[(maxIdx - minIdx) / 2];
 							sliceNum = (maxIdx - minIdx) / 2;
 						}
-						logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s 2 jump frame,do not have keyframe ingore.key frame num %d,is h264 %s,is h265 %s",
+						logs->info(">>>>> [CFlvPool::readSlice] readSlice %s 2 jump frame,do not have keyframe ingore.key frame num %d,is h264 %s,is h265 %s",
 							ss->mstrUrl.c_str(), nkf, ss->misH264 ? "true" : "false", ss->misH265 ? "true" : "false");
 					}
 					//出现丢帧情况,为了是播放不花屏，要从关键帧发送（针对H264） 结束
@@ -655,12 +655,12 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 				{
 					if (*s)
 					{
-						logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe, left slice %lld",
+						logs->info(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe, left slice %lld",
 							ss->mstrUrl.c_str(), maxIdx - (*s)->mllIndex);
 					}
 					else
 					{
-						logs->debug(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe",
+						logs->info(">>>>> [CFlvPool::readSlice] readSlice %s find keyframe",
 							ss->mstrUrl.c_str());
 					}
 				}

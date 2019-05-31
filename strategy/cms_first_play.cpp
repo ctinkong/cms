@@ -81,7 +81,7 @@ bool CFirstPlay::checkfirstPlay()
 			mfirstPlaySkipMilSecond = 0;
 		}
 		mbeginTT = getTimeUnix();
-		logs->debug(">>>%s %s first play task %s firstPlaySkipMilSecond=%d,distanceKeyFrame=%d",
+		logs->info("%s %s first play task %s firstPlaySkipMilSecond=%d,distanceKeyFrame=%d",
 			mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
 			mfirstPlaySkipMilSecond, mdistanceKeyFrame);
 	}
@@ -115,7 +115,7 @@ bool CFirstPlay::checkShouldDropFrameCount(int64 &transIdx, Slice *s)
 	{
 		mvideoFrameRate = 30;
 	}
-	logs->debug(">>>%s %s first play task %s video frame rate=%d,audio frame rate=%d",
+	logs->info("%s %s first play task %s video frame rate=%d,audio frame rate=%d",
 		mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
 		mvideoFrameRate, maudioFrameRate);
 	mdropSliceNum = (mvideoFrameRate + maudioFrameRate)*mfirstPlaySkipMilSecond / 1000;
@@ -153,7 +153,7 @@ bool CFirstPlay::checkShouldDropFrameCount(int64 &transIdx, Slice *s)
 		{
 			goto Cancel;
 		}
-		logs->debug(">>>1 %s %s first play task %s should drop slice num %d, "
+		logs->info("%s %s 1 first play task %s should drop slice num %d, "
 			"minIdx=%lld, "
 			"maxIdx=%lld, "
 			"s->mllIndex=%lld, "
@@ -184,7 +184,7 @@ bool CFirstPlay::checkShouldDropFrameCount(int64 &transIdx, Slice *s)
 		{
 			goto Cancel;
 		}
-		logs->debug(">>>2 %s %s first play task %s should drop slice num %d, "
+		logs->info("%s %s 2 first play task %s should drop slice num %d, "
 			"minIdx=%lld, "
 			"maxIdx=%lld, "
 			"s->mllIndex=%lld "
@@ -225,7 +225,7 @@ bool CFirstPlay::needDropFrame(Slice *s)
 			s->mData[0] == VideoTypeHEVCKey) &&
 			s->mllIndex >= mdrop2SliceIdx - 5)
 		{
-			logs->debug(">>>4 %s %s first play task %s 22 should drop slice num %d,have drop %d",
+			logs->info("%s %s first play task %s 22 should drop slice num %d,have drop %d, finish",
 				mremoteAddr.c_str(), modeName.c_str(), murl.c_str(),
 				mdropSliceNum, mhaveDropSliceNum);
 			misSetFirstFrame = false;

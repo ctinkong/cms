@@ -46,6 +46,16 @@ private:
 	int  doMetaData();
 	int  doFirstVideoAudio(bool isVideo);
 	void getSliceFrameRate();
+	void setWriteBuffer();
+	bool checkFirstPlay();
+	bool isFirstPlay8StreamChange(Slice *s);
+	void setRestart();
+	bool checkPush8Missing();//推流任务且源任务丢失
+	void playMagicInit();
+	bool isShouldMergerFrame(Slice *&s, bool &isVideo, bool &isError);
+	void checkFastBitRate(Slice *s, uint32 &uiTimestamp, uint32 &tt, bool &needSend, bool &isVideo, bool &isAudio, int &sliceNum);
+
+
 	CProtocol	*mprotocol;
 	HASH		mreadHash;
 	uint32      mreadHashIdx;

@@ -316,7 +316,7 @@ int getTimeStr(char *dstBuf)
 #ifdef WIN32 /* WIN32 */
 	SYSTEMTIME st;
 	GetLocalTime(&st);
-	sprintf(dstBuf, " %04d-%02d-%02d %02d:%02d:%02d.%03d ",
+	sprintf(dstBuf, "%04d-%02d-%02d %02d:%02d:%02d.%03d ",
 		st.wYear, st.wMonth, st.wDay, st.wHour,
 		st.wMinute, st.wSecond, st.wMilliseconds);
 	return st.wDay;
@@ -332,7 +332,7 @@ int getTimeStr(char *dstBuf)
 	struct tm st;
 	t = time(NULL);
 	localtime_r(&t, &st);
-	sprintf(dstBuf, " %04d-%02d-%02d %02d:%02d:%02d.%03llu ",
+	sprintf(dstBuf, "%04d-%02d-%02d %02d:%02d:%02d.%03llu ",
 		st.tm_year + 1900, st.tm_mon + 1, st.tm_wday, st.tm_hour,
 		st.tm_min, st.tm_sec, getMilSeconds() % 1000);
 	return st.tm_wday;
@@ -1061,5 +1061,83 @@ unsigned long long addr2uid(uint64 ip, uint16 port)
 {
 	return (ip << 16 | (uint64)port);
 }
+
+std::string getConnType(ConnType &ct)
+{
+	std::string strType = "none";
+	switch (ct)
+	{
+	case TypeNetNone:
+		break;
+	case TypeHttp:
+	{
+		strType = "http";
+	}
+	break;
+	case TypeHttps:
+	{
+		strType = "https";
+	}
+	break;
+	case TypeRtmp:
+	{
+		strType = "rtmp";
+	}
+	break;
+	case TypeQuery:
+	{
+		strType = "query";
+	}
+	break;
+	}
+	return strType;
+}
+
+std::string getRtmpType(RtmpType &rt)
+{
+	std::string rtmpType = "unknow rtmp type";
+	if (rt == RtmpClient2Play)
+	{
+		rtmpType = "client 2 play";
+	}
+	if (rt == RtmpClient2Publish)
+	{
+		rtmpType = "client 2 publish";
+	}
+	if (rt == RtmpServerBPlay)
+	{
+		rtmpType = "server be play";
+	}
+	if (rt == RtmpServerBPublish)
+	{
+		rtmpType = "server be publish";
+	}
+	if (rt == RtmpServerBPlayOrPublish)
+	{
+		rtmpType = "server be play or publish";
+	}
+	return rtmpType;
+}
+
+bool isHttp(ConnType &ct)
+{
+	return ct == TypeHttp;
+}
+
+bool isHttps(ConnType &ct)
+{
+	return ct == TypeHttps;
+}
+
+bool isRtmp(ConnType &ct)
+{
+	return ct == TypeRtmp;
+}
+
+bool isQuery(ConnType &ct)
+{
+	return ct == TypeQuery;
+}
+
 
 
