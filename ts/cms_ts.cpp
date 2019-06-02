@@ -131,7 +131,7 @@ CMux::CMux()
 	mvmcc = 0;
 	mpatmcc = 0;
 	mpmtmcc = 0;
-	mAstreamType = 0;
+	mAstreamType = 0x0f;
 }
 
 CMux::~CMux()
@@ -320,6 +320,7 @@ SHead dealHead(byte *inBuf, int inLen) {
 void dealTagSize(byte *inBuf, int inLen, int &pTagSize, int &tagSize) {
 	pTagSize = (int)(inBuf[0]) << 24 | (int)(inBuf[1]) << 16 | (int)(inBuf[2]) << 8 | (int)(inBuf[3]);
 	tagSize = (int)(inBuf[5]) << 16 | (int)(inBuf[6]) << 8 | (int)(inBuf[7]);
+	tagSize += 11;
 	return;
 }
 
@@ -465,11 +466,11 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 	uint64 pts = 0;
 	uint64 dts = 0;
 
-	uint64 cts = uint64(inBuf[2]) << 16 | uint64(inBuf[3]) << 8 | uint64(inBuf[4]); //偏移量cts
+	uint64 cts = (uint64)(inBuf[2]) << 16 | (uint64)(inBuf[3]) << 8 | (uint64)(inBuf[4]); //偏移量cts
 	if (framType == 'A') {
 		cts = 0;
 	}
-	dts = uint64(timeStamp) * 90; //flv中记录的时间戳是DTS(TS中的时间是FLV中的1/90)
+	dts = (uint64)(timeStamp) * 90; //flv中记录的时间戳是DTS(TS中的时间是FLV中的1/90)
 	pts = dts + cts * 90;
 
 	if (pts < dts) {
@@ -538,11 +539,11 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 	if ((PTSDTSflags & 0x02) > 0) {
 		byte PTSbuf[5];
 		//注意前四位的填充
-		PTSbuf[0] = PTSDTSflags << 4 | byte((pts & 0x1C0000000) >> 29) | 0x01; //pts&0x111000000 00000000 00000000 00000000
-		PTSbuf[1] = byte((pts & 0x3fc00000) >> 22);                    //pts&0x 00111111 11000000 00000000 00000000
-		PTSbuf[2] = byte((pts & 0x3f8000) >> 14) | 0x01;                   //pts&0x 00000000 00111111 10000000 00000000
-		PTSbuf[3] = byte((pts & 0x7f80) >> 7);                         //pts&0x 00000000 00000000 01111111 10000000
-		PTSbuf[4] = byte(pts << 1) | 0x01;                             //pts&0x 00000000 00000000 00000000 01111111
+		PTSbuf[0] = PTSDTSflags << 4 | (byte)((pts & 0x1C0000000) >> 29) | 0x01; //pts&0x111000000 00000000 00000000 00000000
+		PTSbuf[1] = (byte)((pts & 0x3fc00000) >> 22);                    //pts&0x 00111111 11000000 00000000 00000000
+		PTSbuf[2] = (byte)((pts & 0x3f8000) >> 14) | 0x01;                   //pts&0x 00000000 00111111 10000000 00000000
+		PTSbuf[3] = (byte)((pts & 0x7f80) >> 7);                         //pts&0x 00000000 00000000 01111111 10000000
+		PTSbuf[4] = (byte)(pts << 1) | 0x01;                             //pts&0x 00000000 00000000 00000000 01111111
 
 		head[8] += 5;
 		memcpy(head + headlen, PTSbuf, sizeof(PTSbuf));
@@ -555,11 +556,11 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 	}
 	if ((PTSDTSflags & 0x01) > 0) {
 		byte DTSbuf[5];
-		DTSbuf[0] = 0x01 << 4 | byte((dts & 0x1C0000000) >> 29) | 0x01;
-		DTSbuf[1] = byte((dts & 0x3fc00000) >> 22);
-		DTSbuf[2] = byte((dts & 0x3f8000) >> 14) | 0x01;
-		DTSbuf[3] = byte((dts & 0x7f80) >> 7);
-		DTSbuf[4] = byte(dts << 1) | 0x01;
+		DTSbuf[0] = 0x01 << 4 | (byte)((dts & 0x1C0000000) >> 29) | 0x01;
+		DTSbuf[1] = (byte)((dts & 0x3fc00000) >> 22);
+		DTSbuf[2] = (byte)((dts & 0x3f8000) >> 14) | 0x01;
+		DTSbuf[3] = (byte)((dts & 0x7f80) >> 7);
+		DTSbuf[4] = (byte)(dts << 1) | 0x01;
 
 		head[8] += 5;
 		memcpy(head + headlen, DTSbuf, sizeof(DTSbuf));
@@ -638,16 +639,16 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 				return 0;
 			}
 			packLen = headlen + AAClen;
-			head[4] = byte((packLen - 6) >> 8);
-			head[5] = byte(packLen - 6);
+			head[4] = (byte)((packLen - 6) >> 8);
+			head[5] = (byte)(packLen - 6);
 			memcpy(pespack, head, headlen);
 			memcpy(pespack + headlen, AACbuf, AAClen);
 		}
 		else if (inBuf[0] >> 4 == 2) { //Mp3
 			mAstreamType = 0x03; //音频编码类型
 			packLen = headlen + inLen - 1;
-			head[4] = byte((packLen - 6) >> 8); //去掉6位头
-			head[5] = byte(packLen - 6);
+			head[4] = (byte)((packLen - 6) >> 8); //去掉6位头
+			head[5] = (byte)(packLen - 6);
 			memcpy(pespack, head, headlen);
 			memcpy(pespack + headlen, inBuf + 1, inLen - 1);
 
@@ -655,8 +656,8 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 		else { //非AAC目前做简单处理
 		 //fmt.Println("[PackPES] Audio Is Not AAC")
 			packLen = headlen + inLen - 1;
-			head[4] = byte((packLen - 6) >> 8);//去掉6位头
-			head[5] = byte(packLen - 6);
+			head[4] = (byte)((packLen - 6) >> 8);//去掉6位头
+			head[5] = (byte)(packLen - 6);
 			memcpy(pespack, head, headlen);
 			memcpy(pespack + headlen, inBuf + 1, inLen - 1);
 		}
@@ -713,11 +714,11 @@ int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
 		outBuf[0] = 0xFF;
 		outBuf[1] = 0xF1;
 		outBuf[2] = ((mAudioSpecificConfig.ObjectType - 1) << 6) |
-			(mAudioSpecificConfig.SamplerateIndex & 0x0F << 2) |
+			((mAudioSpecificConfig.SamplerateIndex & 0x0F) << 2) |
 			(mAudioSpecificConfig.Channels >> 7);
-		outBuf[3] = (mAudioSpecificConfig.Channels << 6) | byte((aacFrameLength & 0x1800) >> 11);
-		outBuf[4] = byte((aacFrameLength & 0x7f8) >> 3);
-		outBuf[5] = byte((aacFrameLength & 0x7) << 5) | 0x1f;
+		outBuf[3] = (mAudioSpecificConfig.Channels << 6) | (byte)((aacFrameLength & 0x1800) >> 11);
+		outBuf[4] = (byte)((aacFrameLength & 0x7f8) >> 3);
+		outBuf[5] = (byte)((aacFrameLength & 0x7) << 5) | 0x1f;
 		outBuf[6] = 0xFC | 0x00;
 		/*
 			//adts_fixed_header
@@ -763,8 +764,8 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 		profile_compatibility := inBuf[7]
 		AVCLevelIndication := inBuf[8]
 		lengthSizeMinusOne := inBuf[9]*/                                 //<- 非常重要，是 H.264 视频中 NALU 的长度，计算方法是 1 + (lengthSizeMinusOne & 3)
-		int numOfSequenceParameterSets = int(inBuf[10] & 0x1F);              //<- SPS 的个数，计算方法是 numOfSequenceParameterSets & 0x1F
-		int sequenceParameterSetLength = int(inBuf[11]) << 8 | int(inBuf[12]); // <- SPS 的长度
+		int numOfSequenceParameterSets = (int)(inBuf[10] & 0x1F);              //<- SPS 的个数，计算方法是 numOfSequenceParameterSets & 0x1F
+		int sequenceParameterSetLength = (int)(inBuf[11]) << 8 | (int)(inBuf[12]); // <- SPS 的长度
 
 		for (int i = 0; i < numOfSequenceParameterSets; i++) {
 			mSpsNal[mSpsNalLen] = 0x00;
@@ -777,8 +778,8 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 
 		pos = 13 + sequenceParameterSetLength * numOfSequenceParameterSets;
 
-		int numOfPictureParameterSets = int(inBuf[pos]);                        //<- PPS 的个数
-		int pictureParameterSetLength = int(inBuf[pos + 1]) << 8 | int(inBuf[pos + 2]); //<- PPS 的长度
+		int numOfPictureParameterSets = (int)(inBuf[pos]);                        //<- PPS 的个数
+		int pictureParameterSetLength = (int)(inBuf[pos + 1]) << 8 | (int)(inBuf[pos + 2]); //<- PPS 的长度
 		for (int i = 0; i < numOfPictureParameterSets; i++) {
 			mPpsNal[mPpsNalLen] = 0x00;
 			mPpsNal[mPpsNalLen + 1] = 0x00;
@@ -792,7 +793,7 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 	}
 	else if (inBuf[1] == 0x01) { //AVCPacketType为slice
 		for (int i = 5; i < inLen - 4;) {
-			NALlen = int(inBuf[i]) << 24 | int(inBuf[i + 1]) << 16 | int(inBuf[i + 2]) << 8 | int(inBuf[i + 3]);
+			NALlen = (int)(inBuf[i]) << 24 | (int)(inBuf[i + 1]) << 16 | (int)(inBuf[i + 2]) << 8 | (int)(inBuf[i + 3]);
 			if (NALlen < 0) {
 				logs->error("[slice][ParserNAL] parse NALlen ERROR: %d", NALlen);
 
@@ -903,8 +904,8 @@ int CMux::packTS(byte *inBuf, int inLen, byte framType, byte pusi, byte afc, byt
 		byte adaptionFieldControl = afc;     //自适应控制 01仅含有效负载，10仅含调整字段，11都有
 		byte continuityCounter = *mcc;      //连续计数器 一个4bit的计数器，范围0-15
 		head[0] = synByte;
-		head[1] = transportErrorIndicator << 7 | payloadUnitStartIndicator << 6 | transport_priority << 5 | byte((PID << 3) >> 11);
-		head[2] = byte(PID);
+		head[1] = transportErrorIndicator << 7 | payloadUnitStartIndicator << 6 | transport_priority << 5 | (byte)((PID << 3) >> 11);
+		head[2] = (byte)(PID);
 		head[3] = transportScramblingControl << 6 | adaptionFieldControl << 4 | continuityCounter;
 		headlen += 4;
 
@@ -982,7 +983,7 @@ int CMux::packTS(byte *inBuf, int inLen, byte framType, byte pusi, byte afc, byt
 				}
 				adaptationFiledLength += StuffLen;
 			}
-			adaptionFiled[0] = byte(adaptationFiledLength - 1);
+			adaptionFiled[0] = (byte)(adaptationFiledLength - 1);
 			memcpy(TSpack + 4, adaptionFiled, adaptationFiledLength);
 			headlen += int(adaptationFiledLength);
 		}
@@ -1012,14 +1013,14 @@ int CMux::packTS(byte *inBuf, int inLen, byte framType, byte pusi, byte afc, byt
 void CMux::setPcr(uint64 DTS, byte **outBuf, int &outLen) {
 	uint64 pcr = DTS;
 	uint64 pcrExt = pcr >> 33;
-	mPCR[0] = byte(pcr >> 25 & 0xff);
-	mPCR[1] = byte(pcr >> 17 & 0xff);
-	mPCR[2] = byte(pcr >> 9 & 0xff);
-	mPCR[3] = byte(pcr >> 1 & 0xff);
+	mPCR[0] = (byte)(pcr >> 25 & 0xff);
+	mPCR[1] = (byte)(pcr >> 17 & 0xff);
+	mPCR[2] = (byte)(pcr >> 9 & 0xff);
+	mPCR[3] = (byte)(pcr >> 1 & 0xff);
 
-	byte PCRbase2 = byte(pcr & 0x01);
-	byte PCRExt1 = byte(pcrExt >> 8 & 0x01);
-	byte PCRExt2 = byte(pcrExt & 0xff);
+	byte PCRbase2 = (byte)(pcr & 0x01);
+	byte PCRExt1 = (byte)(pcrExt >> 8 & 0x01);
+	byte PCRExt2 = (byte)(pcrExt & 0xff);
 
 	mPCR[4] = PCRbase2 << 7 | 0 | PCRExt1;
 	mPCR[5] = PCRExt2;
@@ -1120,10 +1121,10 @@ void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
 	byte prograNumber1 = 0x00; //节目号
 	byte programNumber2 = 0x01;
 
-	byte programMapPID1 = byte(pmtPid >> 8) & 0x1f; //节目映射表的PID 节目号为0时对应的PID为network_PID
+	byte programMapPID1 = (byte)(pmtPid >> 8) & 0x1f; //节目映射表的PID 节目号为0时对应的PID为network_PID
 	byte reserved3 = 0x07;                       // 保留位
 
-	byte programMapPID2 = byte(pmtPid & 0xff); // program_map_PID1 << 8 | program_map_PID2
+	byte programMapPID2 = (byte)(pmtPid & 0xff); // program_map_PID1 << 8 | program_map_PID2
 
 	PATpack[0] = tableId;
 	PATpack[1] = sectionSyntaxIndicator << 7 | zero << 6 | reserved1 << 4 | sectionLength1;
@@ -1139,10 +1140,10 @@ void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
 	PATpack[11] = programMapPID2;
 
 	uint32 crc32 = crc32S(PATpack, 12);
-	PATpack[12] = byte(crc32 >> 24);
-	PATpack[13] = byte(crc32 >> 16);
-	PATpack[14] = byte(crc32 >> 8);
-	PATpack[15] = byte(crc32);
+	PATpack[12] = (byte)(crc32 >> 24);
+	PATpack[13] = (byte)(crc32 >> 16);
+	PATpack[14] = (byte)(crc32 >> 8);
+	PATpack[15] = (byte)(crc32);
 	PATlen = 16;
 	return;
 	/*
@@ -1187,12 +1188,12 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 	int sectionLen = 16 - 3;
 
 	byte tableId = 0x02;                              //0固定为0x02, 表示PMT表
-	byte sectionLength1 = byte(sectionLen >> 8) & 0x0f; //1首先两位bit置为00，它指示段的byte数，由该域开始，包含CRC。
+	byte sectionLength1 = (byte)(sectionLen >> 8) & 0x0f; //1首先两位bit置为00，它指示段的byte数，由该域开始，包含CRC。
 	byte reserved1 = 0x03;                            //1 0x03
 	byte zero = 0x00;                                 //1 0x01
 	byte sectionSyntaxIndicator = 0x01;               //1 固定为0x01
 
-	byte sectionLength2 = byte(sectionLen & 0xff); //2 (section_length1 & 0x0F) << 8 | section_length2;
+	byte sectionLength2 = (byte)(sectionLen & 0xff); //2 (section_length1 & 0x0F) << 8 | section_length2;
 
 	byte programNumber1 = 0x00; //3 指出该节目对应于可应用的Program map PID
 	byte programNumber2 = 0x01;
@@ -1205,10 +1206,10 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 
 	byte lastSectionNumber = 0x00; //7 固定为0x00
 
-	byte pcrPID1 = byte(PCRpid >> 8) & 0x1f; //8 指明TS包的PID值，该TS包含有PCR域，
+	byte pcrPID1 = (byte)(PCRpid >> 8) & 0x1f; //8 指明TS包的PID值，该TS包含有PCR域，
 	byte reserved3 = 0x07;                 //8 0x07
 
-	byte pcrPID2 = byte(PCRpid & 0xff); //9 PCR_PID1 << 8 | PCR_PID2
+	byte pcrPID2 = (byte)(PCRpid & 0xff); //9 PCR_PID1 << 8 | PCR_PID2
 	//该PCR值对应于由节目号指定的对应节目。
 	//如果对于私有数据流的节目定义与PCR无关，这个域的值将为0x1FFF。
 	byte programInfoLength1 = 0x00; //10 前两位bit为00。该域指出跟随其后对节目信息的描述的byte
@@ -1221,10 +1222,10 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 		//视频信息
 		byte videoStreamType = 0x1b; //17指示特定PID的节目元素包的类型。该处PID由elementary PID指定
 
-		byte videoElementaryPID1 = byte((vPid >> 8) & 0x1f); //18该域指示TS包的PID值。这些TS包含有相关的节目元素
+		byte videoElementaryPID1 = (byte)((vPid >> 8) & 0x1f); //18该域指示TS包的PID值。这些TS包含有相关的节目元素
 		byte videoReserved1 = 0x07;
 
-		byte videoElementaryPID2 = byte(vPid & 0xff); //19 m_elementary_PID1 <<8 | m_elementary_PID2
+		byte videoElementaryPID2 = (byte)(vPid & 0xff); //19 m_elementary_PID1 <<8 | m_elementary_PID2
 
 		byte videoESnfoLength1 = 0x00; //20前两位bit为00。该域指示跟随其后的描述相关节目元素的byte数
 		byte videoReserved2 = 0x0f;
@@ -1243,10 +1244,10 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 		//音频信息
 		byte audioStreamType = AstreamType; //12指示特定PID的节目元素包的类型。该处PID由elementary PID指定
 
-		byte audioElementaryPID1 = byte((aPid >> 8) & 0x1f); //13该域指示TS包的PID值。这些TS包含有相关的节目元素
+		byte audioElementaryPID1 = (byte)((aPid >> 8) & 0x1f); //13该域指示TS包的PID值。这些TS包含有相关的节目元素
 		byte audioReserved1 = 0x07;
 
-		byte audioElementaryPID2 = byte(aPid & 0xff); //14 m_elementary_PID1 <<8 | m_elementary_PID2
+		byte audioElementaryPID2 = (byte)(aPid & 0xff); //14 m_elementary_PID1 <<8 | m_elementary_PID2
 
 		byte audioESnfoLength1 = 0x00; //15前两位bit为00。该域指示跟随其后的描述相关节目元素的byte数
 		byte audioReserved2 = 0x0f;
@@ -1263,8 +1264,8 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 		//audio_descriptor;  //丢弃
 	}
 
-	sectionLength2 = byte(sectionLen & 0xff);
-	sectionLength1 = byte(sectionLen >> 8) & 0x0f;
+	sectionLength2 = (byte)(sectionLen & 0xff);
+	sectionLength1 = (byte)(sectionLen >> 8) & 0x0f;
 
 	PMTpack[0] = tableId;
 	PMTpack[1] = sectionSyntaxIndicator << 7 | zero << 6 | reserved1 << 4 | sectionLength1;
@@ -1280,10 +1281,10 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 	PMTpack[11] = programInfoLength2;
 
 	uint32 crc32 = crc32S(PMTpack, Pos);
-	PMTpack[Pos] = byte(crc32 >> 24);
-	PMTpack[Pos + 1] = byte(crc32 >> 16);
-	PMTpack[Pos + 2] = byte(crc32 >> 8);
-	PMTpack[Pos + 3] = byte(crc32);
+	PMTpack[Pos] = (byte)(crc32 >> 24);
+	PMTpack[Pos + 1] = (byte)(crc32 >> 16);
+	PMTpack[Pos + 2] = (byte)(crc32 >> 8);
+	PMTpack[Pos + 3] = (byte)(crc32);
 
 	PMTlen = sectionLen + 3;
 
@@ -1333,7 +1334,7 @@ uint32 crc32S(uint8 *data, int inLen) {
 	int i = 0;
 	uint32 crc = 0xFFFFFFFF;
 	for (i = 0; i < inLen; i++) {
-		crc = (crc << 8) ^ crc32table[((crc >> 24) ^ uint32(data[i])) & 0xFF];
+		crc = (crc << 8) ^ crc32table[((crc >> 24) ^ (uint32)(data[i])) & 0xFF];
 	}
 
 	return crc;
@@ -1363,8 +1364,8 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 
 	int PackRemain = 0;
 
-	uint64 dts = uint64(timestamp) * 90;
-	uint64 cts = uint64(inBuf[2]) << 16 | uint64(inBuf[3]) << 8 | uint64(inBuf[4]); //偏移量cts
+	uint64 dts = (uint64)(timestamp) * 90;
+	uint64 cts = (uint64)(inBuf[2]) << 16 | (uint64)(inBuf[3]) << 8 | (uint64)(inBuf[4]); //偏移量cts
 
 	if (framType == 'I') {
 		PcrFlag = 1;
@@ -1416,7 +1417,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 	uint64 pts = dts + cts * 90;
 	byte PESHead[64] = { 0 };
 	int PESHeadLen = 0;
-	pesHeadPack(DTSFlag, pts, dts, dataLen*(int)(~DTSFlag & 0x01), PESHead, PESHeadLen);
+	pesHeadPack(DTSFlag, pts, dts, dataLen*((int)(~(DTSFlag & 0x01))), PESHead, PESHeadLen);
 	pesLen += PESHeadLen;
 	byte pusi = 1;
 	byte afc = 0x03;
@@ -1553,8 +1554,8 @@ void CMux::tsHeadPack(byte afc, byte pusi, byte* mcc, int16 pid, byte PcrFlag, b
 	byte continuityCounter = *mcc;         //连续计数器 一个4bit的计数器，范围0-15
 
 	head[0] = synByte;
-	head[1] = transportErrorIndicator << 7 | payloadUnitStartIndicator << 6 | transport_priority << 5 | byte((PID << 3) >> 11);
-	head[2] = byte(PID);
+	head[1] = transportErrorIndicator << 7 | payloadUnitStartIndicator << 6 | transport_priority << 5 | (byte)((PID << 3) >> 11);
+	head[2] = (byte)(PID);
 	head[3] = transportScramblingControl << 6 | adaptionFieldControl << 4 | continuityCounter;
 	headlen += 4;
 
@@ -1587,7 +1588,7 @@ void CMux::tsHeadPack(byte afc, byte pusi, byte* mcc, int16 pid, byte PcrFlag, b
 			adaptationFiledLength += StuffLen;
 		}
 	}
-	head[headlen] = byte(adaptationFiledLength - 1);
+	head[headlen] = (byte)(adaptationFiledLength - 1);
 	headlen += int(adaptationFiledLength);
 	*mcc = (*mcc + 1) % 16;
 
@@ -1664,11 +1665,11 @@ void CMux::pesHeadPack(byte DTSFlag, uint64 pts, uint64 dts, int dataLen, byte *
 
 	if ((PTSDTSflags & 0x02) > 0) {
 		byte PTSbuf[5] = { 0 };
-		PTSbuf[0] = PTSDTSflags << 4 | byte((pts & 0x1C0000000) >> 29) | 0x01;	//pts&0x111000000 00000000 00000000 00000000
-		PTSbuf[1] = byte((pts & 0x3fc00000) >> 22);								//pts&0x 00111111 11000000 00000000 00000000
-		PTSbuf[2] = byte((pts & 0x3f8000) >> 14) | 0x01;						//pts&0x 00000000 00111111 10000000 00000000
-		PTSbuf[3] = byte((pts & 0x7f80) >> 7);									//pts&0x 00000000 00000000 01111111 10000000
-		PTSbuf[4] = byte(pts << 1) | 0x01;										//pts&0x 00000000 00000000 00000000 01111111
+		PTSbuf[0] = PTSDTSflags << 4 | (byte)((pts & 0x1C0000000) >> 29) | 0x01;	//pts&0x111000000 00000000 00000000 00000000
+		PTSbuf[1] = (byte)((pts & 0x3fc00000) >> 22);								//pts&0x 00111111 11000000 00000000 00000000
+		PTSbuf[2] = (byte)((pts & 0x3f8000) >> 14) | 0x01;						//pts&0x 00000000 00111111 10000000 00000000
+		PTSbuf[3] = (byte)((pts & 0x7f80) >> 7);									//pts&0x 00000000 00000000 01111111 10000000
+		PTSbuf[4] = (byte)(pts << 1) | 0x01;										//pts&0x 00000000 00000000 00000000 01111111
 
 		head[8] += 5;
 		memcpy(head + headlen, PTSbuf, sizeof(PTSbuf));
@@ -1677,11 +1678,11 @@ void CMux::pesHeadPack(byte DTSFlag, uint64 pts, uint64 dts, int dataLen, byte *
 	}
 	if ((PTSDTSflags & 0x01) > 0) {
 		byte DTSbuf[5];
-		DTSbuf[0] = 0x01 << 4 | byte((dts & 0x1C0000000) >> 29) | 0x01;
-		DTSbuf[1] = byte((dts & 0x3fc00000) >> 22);
-		DTSbuf[2] = byte((dts & 0x3f8000) >> 14) | 0x01;
-		DTSbuf[3] = byte((dts & 0x7f80) >> 7);
-		DTSbuf[4] = byte(dts << 1) | 0x01;
+		DTSbuf[0] = 0x01 << 4 | (byte)((dts & 0x1C0000000) >> 29) | 0x01;
+		DTSbuf[1] = (byte)((dts & 0x3fc00000) >> 22);
+		DTSbuf[2] = (byte)((dts & 0x3f8000) >> 14) | 0x01;
+		DTSbuf[3] = (byte)((dts & 0x7f80) >> 7);
+		DTSbuf[4] = (byte)(dts << 1) | 0x01;
 
 		head[8] += 5;
 		memcpy(head + headlen, DTSbuf, sizeof(DTSbuf));
@@ -1690,8 +1691,8 @@ void CMux::pesHeadPack(byte DTSFlag, uint64 pts, uint64 dts, int dataLen, byte *
 
 	if (dataLen > 0) {
 		int packLen = headlen + dataLen;
-		head[4] = byte((packLen - 6) >> 8);
-		head[5] = byte(packLen - 6);
+		head[4] = (byte)((packLen - 6) >> 8);
+		head[5] = (byte)(packLen - 6);
 	}
 	else {
 		head[4] = 0;

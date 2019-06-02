@@ -58,7 +58,8 @@ CConnRtmp::CConnRtmp(HASH &hash, RtmpType rtmpType, CReaderWriter *rw, std::stri
 	mwrBuff = new CBufferWriter(rw, DEFAULT_BUFFER_SIZE);
 	assert(mwrBuff);
 	mrw = rw;
-	mrtmp = new CRtmpProtocol(this, rtmpType, mrdBuff, mwrBuff, rw, mremoteAddr);
+	mrtmpType = rtmpType;
+	mrtmp = new CRtmpProtocol(this, mrtmpType, mrdBuff, mwrBuff, rw, mremoteAddr);
 	murl = pullUrl;
 	misChangeMediaInfo = false;
 	misPublish = false;
@@ -68,8 +69,7 @@ CConnRtmp::CConnRtmp(HASH &hash, RtmpType rtmpType, CReaderWriter *rw, std::stri
 	misDown8upBytes = false;
 	misAddConn = false;
 	mflvTrans = new CFlvTransmission(mrtmp, mrtmpType == RtmpClient2Publish);
-	misStop = false;
-	mrtmpType = rtmpType;
+	misStop = false;	
 	misPush = false;
 	mspeedTick = 0;
 	mcreateTT = getTimeUnix();

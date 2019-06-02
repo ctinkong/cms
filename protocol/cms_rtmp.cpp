@@ -42,15 +42,15 @@ using namespace std;
 
 #define SHAKE_RAND_DATA_LEN	1536
 
-CRtmpProtocol::CRtmpProtocol(void *super, RtmpType rtmpType, CBufferReader *rd,
-	CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr)
+CRtmpProtocol::CRtmpProtocol(void *super, RtmpType &rtmpType, CBufferReader *rd,
+	CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr):
+	mrtmpType(rtmpType)
 {
 	mremoteAddr = remoteAddr;
 	msuper = (CConnRtmp *)super;
 	mrdBuff = rd;
 	mwrBuff = wr;
 	mrw = rw;
-	mrtmpType = rtmpType;
 	mrtmpStatus = RtmpStatusShakeNone;
 	mreadChunkSize = DEFAULT_CHUNK_SIZE;
 	mreadTotalBytes = 0;
@@ -184,12 +184,11 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 	logs->info("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s",
 		mremoteAddr.c_str(), getRtmpType().c_str());
 	char szC0 = 0x03;//握手第一字节 0x03
-	int nwrite = 0;
-	int ret = mrw->write(&szC0, 1, nwrite);
-	if (ret != CMS_OK)
+	int ret = mwrBuff->writeByte(szC0);
+	if (ret == CMS_ERROR)
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s write 0x03 fail,errno=%d,strerrno=%s ***",
-			mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 		return CMS_ERROR;
 	}
 	if (mc1.c1_create(srs_schema1) == -1)
@@ -209,12 +208,11 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 		delete[] pc1;
 		return CMS_ERROR;
 	}
-	nwrite = 0;
-	ret = mrw->write(pc1, SHAKE_RAND_DATA_LEN, nwrite);
-	if (ret != CMS_OK || nwrite != SHAKE_RAND_DATA_LEN)
+	ret = mwrBuff->writeBytes(pc1, SHAKE_RAND_DATA_LEN);
+	if (ret == CMS_ERROR)
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s write c1 fail,errno=%d,strerrno=%s ***",
-			mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 		delete[] pc1;
 		return CMS_ERROR;
 	}
@@ -295,12 +293,11 @@ int CRtmpProtocol::c2sComplexShakeS1C2()
 	}
 	char *pc2 = new char[SHAKE_RAND_DATA_LEN];
 	c2.dump(pc2);
-	int nwrite = 0;
-	ret = mrw->write(pc2, SHAKE_RAND_DATA_LEN, nwrite);
-	if (ret != CMS_OK || nwrite != SHAKE_RAND_DATA_LEN)
+	ret = mwrBuff->writeBytes(pc2, SHAKE_RAND_DATA_LEN);
+	if (ret == CMS_ERROR)
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s write c2 fail,errno=%d,strerrno=%s ***",
-			mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 		delete[] pc2;
 		return CMS_ERROR;
 	}
@@ -418,12 +415,11 @@ int CRtmpProtocol::s2cComplexShakeC012()
 		s1.dump(s0s1s2 + 1);
 		s2.dump(s0s1s2 + 1537);
 
-		int nwrite = 0;
-		int ret = mrw->write(s0s1s2, 3073, nwrite);
-		if (ret != CMS_OK || nwrite != 3073)
+		int ret = mwrBuff->writeBytes(s0s1s2, 3073);
+		if (ret == CMS_ERROR)
 		{
 			logs->error("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s write s0s1s2 fail,errno=%d,strerrno=%s ***",
-				mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 			delete[] s0s1s2;
 			return CMS_ERROR;
 		}
@@ -486,30 +482,27 @@ int CRtmpProtocol::s2cSampleShakeC012()
 		mps1 = new char[SHAKE_RAND_DATA_LEN];
 		memcpy(mps1, c1, SHAKE_RAND_DATA_LEN);
 
-		int nwrite = 0;
 		char s0 = c0;
-		int ret = mrw->write(&s0, 1, nwrite);
-		if (ret != CMS_OK || nwrite != 1)
+		int ret = mwrBuff->writeByte(s0);
+		if (ret == CMS_ERROR)
 		{
 			logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s write s0 fail,errno=%d,strerrno=%s ***",
-				mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 			return CMS_ERROR;
 		}
-		nwrite = 0;
-		ret = mrw->write(mps1, SHAKE_RAND_DATA_LEN, nwrite);
-		if (ret != CMS_OK || nwrite != SHAKE_RAND_DATA_LEN)
+		ret = mwrBuff->writeBytes(mps1, SHAKE_RAND_DATA_LEN);
+		if (ret == CMS_ERROR)
 		{
 			logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s write s1 fail,errno=%d,strerrno=%s ***",
-				mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 			return CMS_ERROR;
 		}
 		//s2
-		nwrite = 0;
-		ret = mrw->write(c1, SHAKE_RAND_DATA_LEN, nwrite);
-		if (ret != CMS_OK || nwrite != SHAKE_RAND_DATA_LEN)
+		ret = mwrBuff->writeBytes(c1, SHAKE_RAND_DATA_LEN);
+		if (ret == CMS_ERROR )
 		{
 			logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s write s2 fail,errno=%d,strerrno=%s ***",
-				mremoteAddr.c_str(), getRtmpType().c_str(), mrw->errnos(), mrw->errnoCode());
+				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
 			return CMS_ERROR;
 		}
 		mrtmpStatus = RtmpStatusShakeC1;
@@ -577,6 +570,13 @@ int CRtmpProtocol::want2Write()
 	logs->debug("%s [CRtmpProtocol::want2Write] rtmp %s want2Write is timeout %s",
 		mremoteAddr.c_str(), getRtmpType().c_str(), isTimeout ? "true" : "false");
 #endif // __CMS_APP_DEBUG__
+	int ret = mwrBuff->flush();
+	if (ret == CMS_ERROR)
+	{
+		logs->error("%s [CRtmpProtocol::want2Write] rtmp %s flush fail,errno=%d,strerrno=%s ***",
+			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
+		return CMS_ERROR;
+	}
 	if (!mfinishShake)
 	{
 		if (handShake() == CMS_ERROR)
@@ -590,14 +590,7 @@ int CRtmpProtocol::want2Write()
 				return CMS_ERROR;
 			}
 		}
-	}
-	int ret = mwrBuff->flush();
-	if (ret == CMS_ERROR)
-	{
-		logs->error("%s [CRtmpProtocol::want2Write] rtmp %s flush fail,errno=%d,strerrno=%s ***",
-			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-		return CMS_ERROR;
-	}
+	}	
 	//do write
 	if (mrtmpType == RtmpClient2Play ||
 		mrtmpType == RtmpServerBPublish ||
@@ -1357,9 +1350,9 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 		mrtmpType = RtmpServerBPublish;
 	}
 	else if (block->cmd == Amf0CommandPlay)
-	{
-		mrtmpType = RtmpServerBPlay;
+	{		
 		ret = decodePlay(block);
+		mrtmpType = RtmpServerBPlay;
 	}
 	else if (block->cmd == "play2")
 	{

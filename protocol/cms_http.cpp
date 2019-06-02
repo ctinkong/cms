@@ -887,8 +887,6 @@ int CHttp::want2Write()
 			}
 			if (ret == 0 || ret == 2)
 			{
-				//logs->debug("%s [CRtmpProtocol::doRtmpConnect] rtmp %s not have buffer",
-				//	mremoteAddr.c_str(),getRtmpType().c_str());
 			}
 			msuper->down8upBytes();
 		}

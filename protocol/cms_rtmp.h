@@ -41,7 +41,7 @@ class CConnRtmp;
 class CRtmpProtocol :public CProtocol
 {
 public:
-	CRtmpProtocol(void *super, RtmpType rtmpType, CBufferReader *rd,
+	CRtmpProtocol(void *super, RtmpType &rtmpType, CBufferReader *rd,
 		CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr);
 	~CRtmpProtocol();
 
@@ -136,7 +136,7 @@ private:
 	CBufferReader	*mrdBuff;
 	CBufferWriter	*mwrBuff;
 	CReaderWriter	*mrw;
-	RtmpType		mrtmpType;
+	RtmpType		&mrtmpType;
 	RtmpConnStatus	mrtmpStatus;
 
 	bool			misCanDoTransmission;

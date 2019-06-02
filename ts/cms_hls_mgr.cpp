@@ -153,6 +153,7 @@ CMission::~CMission()
 void CMission::initMux()
 {
 	mMux = new CMux(); //×ªÂëÆ÷
+	mMux->init();
 	mlastTca = NULL;
 	SSlice *ss = newSSlice();
 	ss->msliceIndex = msliceIndx;
@@ -161,6 +162,7 @@ void CMission::initMux()
 	writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 	ss->marray.push_back(mlastTca);
 	msliceList.push_back(ss);
+	mMux->packPSI();
 }
 
 int CMission::doFirstVideoAudio(bool isVideo)

@@ -391,8 +391,13 @@ std::string CStatic::dump()
 		st.tm_year + 1900, st.tm_mon + 1, st.tm_mday, st.tm_hour, st.tm_min, st.tm_sec);
 	cJSON_AddItemToObject(root, "update_data_time", cJSON_CreateString(szUpdateTime));
 
-	std::string strJson = cJSON_PrintUnformatted(root);
-
+	std::string strJson;
+	char *s = cJSON_PrintUnformatted(root);
+	if (s)
+	{
+		strJson.append(s);
+		free(s);
+	}
 	cJSON_Delete(root);
 
 	return strJson;
