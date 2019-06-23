@@ -1,6 +1,6 @@
 # cms
 cms is an industrial-strength live streaming server,support rtmp,http-flv,hls.in the future,it will support more protocol.
-# Building cms with make new version number
+# Building cms with new version number
 ```shell
 git clone https://github.com/ctinkong/cms.git
 cd cms
