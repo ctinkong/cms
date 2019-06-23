@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_char_int.h>
 #include <static/cms_static_common.h>
 #include <app/cms_app_info.h>
+#include <app/cms_parse_args.h>
 using namespace std;
 
 #define MapHashStreamIter map<HASH,StreamSlice *>::iterator
@@ -1248,7 +1249,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			}
 			else
 			{
-				//不是h264
+				//不是h264和h265
 				ss->mllLastSliceIdx = s->mllIndex;
 				ss->mavSlice.push_back(s);
 				ss->mavSliceIdx.push_back(s->mllIndex);
@@ -1260,7 +1261,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 				{
 					ss->mllAudioAbsoluteTimestamp = (int64)s->muiTimestamp;
 				}
-				logs->debug(">>>>>[handleSlice] task %s new task and is not h264.", ss->mstrUrl.c_str());
+				logs->debug(">>>>>[handleSlice] task %s new task and is not h264 or h265.", ss->mstrUrl.c_str());
 			}
 			ss->mllMemSize = s->miDataLen;
 		}

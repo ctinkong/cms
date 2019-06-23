@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <static/cms_static.h>
 #include <common/cms_time.h>
 #include <app/cms_app_info.h>
+#include <app/cms_parse_args.h>
 #include <common/cms_utility.h>
 #include <map>
 #include <string>
@@ -46,13 +47,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <fcntl.h>
 #include <sys/resource.h>
 using namespace std;
-
-bool g_isDebug = false;
-std::string g_testUrl;
-int  g_testTaskNum = 0;
-std::string g_pidPath = "/var/lock/cms.pid";
-std::string g_configPath = "config.json";
-std::string g_appName;
 
 void inorgSignal()
 {
@@ -120,6 +114,9 @@ int daemon()
 
 void initInstance()
 {
+	//必须先初始化日志，否则会崩溃
+	cmsLogInit(CConfig::instance()->clog()->path(), CConfig::instance()->clog()->level(),
+		CConfig::instance()->clog()->console(), CConfig::instance()->clog()->size());
 	CConfig::instance();
 	CFlvPool::instance();
 	CMaster::instance();
@@ -128,6 +125,42 @@ void initInstance()
 	CTaskMgr::instance();
 	CStatic::instance();
 	CMissionMgr::instance();
+
+	CStatic::instance()->setAppName(g_appName.c_str());
+}
+
+void runInstance()
+{
+	if (!CStatic::instance()->run())
+	{
+		logs->error("*** CStatic::instance()->run() fail ***");
+		cmsSleep(1000 * 1);
+		exit(0);
+	}
+	if (!CFlvPool::instance()->run())
+	{
+		logs->error("*** CFlvPool::instance()->run() fail ***");
+		cmsSleep(1000 * 1);
+		exit(0);
+	}
+	if (!CMissionMgr::instance()->run())
+	{
+		logs->error("*** CMissionMgr::instance()->run() fail ***");
+		cmsSleep(1000 * 1);
+		exit(0);
+	}
+	if (!CMaster::instance()->run())
+	{
+		logs->error("*** CMaster::instance()->run() fail ***");
+		cmsSleep(1000 * 1);
+		exit(0);
+	}
+	if (!CTaskMgr::instance()->run())
+	{
+		logs->error("*** CTaskMgr::instance()->run() fail ***");
+		cmsSleep(1000 * 1);
+		exit(0);
+	}
 }
 
 void cycleServer()
@@ -264,6 +297,10 @@ int checkRunningPid()
 
 static void writePid()
 {
+	if (g_pidPath.empty())
+	{
+		return;
+	}
 	FILE *fppid = fopen(g_pidPath.c_str(), "w");
 	if (!fppid)
 	{
@@ -274,134 +311,15 @@ static void writePid()
 	fclose(fppid);
 }
 
-int parseOptions(int argc, char ** argv)
+void runAsTestServer()
 {
-	const char *help = "Usage: cms [-hvdt][-i pidf][-c conf][-u url -n tasknum]\n"
-		"\th: print help\n"
-		"\tv: print version\n"
-		"\td: no debug mode\n"
-		"\tt: as test server\n"
-		"\tu: test url(t should be set)\n"
-		"\tn: test task num(t should be set)\n"
-		"\ti: set pid file       [cms.pid]\n"
-		"\tc: set configure file [config.json]\n";
-	/* parse and process options */
-	int ch;
-	char *p;
-	while ((ch = getopt(argc, argv, "i:c:t:u:n:hvd")) != -1) {
-		switch (ch) {
-		case 'h':
-			printf("%s", help);
-			exit(0);
-		case 'v':
-			printf("%s version %s, builded on %s\n", argv[0], APP_VERSION, __DATE__);
-			exit(0);
-		case 'd':
-			g_isDebug = true;
-			break;
-		case 'i':
-			p = strdup(optarg);
-			g_pidPath = p;
-			free(p);
-			break;
-		case 'c':
-			p = strdup(optarg);
-			g_configPath = p;
-			free(p);
-			break;
-		case 't':
-			g_isTestServer = true;
-			break;
-		case 'u':
-			p = strdup(optarg);
-			g_testUrl = p;
-			free(p);
-			break;
-		case 'n':
-			g_testTaskNum = atoi(optarg);
-			break;
-		default:
-			printf("%s", help);
-			exit(0);
-		}
-	}
-	return 0;
-}
-
-int main(int argc, char *argv[])
-{
-	parseOptions(argc, argv);
-	char *pPos = strrchr(argv[0], '/');
-	if (pPos)
-	{
-		++pPos;
-		g_appName = pPos;
-	}
-	else
-	{
-		g_appName = argv[0];
-	}
-	if (checkRunningPid())
-	{
-		printf("%s is already running!\n", g_appName.c_str());
-		return 0;
-	}
-	if (!g_isDebug)
-	{
-		daemon();
-	}
-#ifdef _CMS_APP_USE_TIME_
-	cmsTimeRun();
-#endif
-	writePid();
-	inorgSignal();
-	if (!CConfig::instance()->init(g_configPath.c_str()))
-	{
-		return 0;
-	}
-	cmsLogInit(CConfig::instance()->clog()->path(), CConfig::instance()->clog()->level(),
-		CConfig::instance()->clog()->console(), CConfig::instance()->clog()->size());
-	setRlimit();
-	//必须先初始化日志，否则会崩溃
-	initInstance();
-	CStatic::instance()->setAppName(g_appName.c_str());
-	if (!CStatic::instance()->run())
-	{
-		logs->error("*** CStatic::instance()->run() fail ***");
-		cmsSleep(1000 * 3);
-		return 0;
-	}
-	if (!CFlvPool::instance()->run())
-	{
-		logs->error("*** CFlvPool::instance()->run() fail ***");
-		cmsSleep(1000 * 3);
-		return 0;
-	}
-	if (!CMissionMgr::instance()->run())
-	{
-		logs->error("*** CMissionMgr::instance()->run() fail ***");
-		cmsSleep(1000 * 3);
-		return 0;
-	}
-	if (!CMaster::instance()->run())
-	{
-		logs->error("*** CMaster::instance()->run() fail ***");
-		cmsSleep(1000 * 3);
-		return 0;
-	}
-	if (!CTaskMgr::instance()->run())
-	{
-		logs->error("*** CTaskMgr::instance()->run() fail ***");
-		cmsSleep(1000 * 3);
-		return 0;
-	}
 	//作为压测服务
 	if (g_isTestServer)
 	{
 		if (g_testUrl.empty())
 		{
 			printf("***** app as test server.but url is empty *****\n");
-			return 0;
+			exit(0);
 		}
 		if (g_testTaskNum <= 0)
 		{
@@ -413,10 +331,62 @@ int main(int argc, char *argv[])
 		if (!parseUrl(g_testUrl, linkUrl))
 		{
 			printf("***** app as test server.but url %s parse error *****\n", g_testUrl.c_str());
-			return 0;
+			exit(0);
 		}
 		createTestTask();
 	}
+}
+
+void initConfig()
+{
+	if (!CConfig::instance()->init(g_configPath.c_str()))
+	{
+		printf("***** initConfig fail *****\n");
+		exit(0);
+	}
+}
+
+void getAppName(char *binPath)
+{
+	char *pPos = strrchr(binPath, '/');
+	if (pPos)
+	{
+		++pPos;
+		g_appName = pPos;
+	}
+	else
+	{
+		g_appName = binPath;
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	//必须先获取appname 否则help显示异常
+	getAppName(argv[0]);
+	parseOptions(argc, argv);
+	if (checkRunningPid())
+	{
+		printf("%s is already running!\n", g_appName.c_str());
+		return 0;
+	}
+	initConfig();
+	if (!g_isDebug)
+	{
+		daemon();
+	}
+
+#ifdef _CMS_APP_USE_TIME_
+	cmsTimeRun();
+#endif
+
+	writePid();
+	inorgSignal();
+	initInstance();
+	setRlimit();
+	runInstance();
+	runAsTestServer();
 	cycleServer();
 	logs->debug("cms app exit.");
 }
+

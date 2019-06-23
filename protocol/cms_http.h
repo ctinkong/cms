@@ -115,7 +115,6 @@ public:
 	void setWriteBuffer(int size);
 	std::string remoteAddr();
 	std::string getUrl();
-	void syncIO();
 	bool isCmsConnection();
 	std::string protocol();
 

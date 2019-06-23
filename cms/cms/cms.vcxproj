@@ -98,7 +98,6 @@
     <ClInclude Include="..\..\config\cms_config.h" />
     <ClInclude Include="..\..\conn\cms_conn_common.h" />
     <ClInclude Include="..\..\conn\cms_conn_rtmp.h" />
-    <ClInclude Include="..\..\conn\cms_conn_var.h" />
     <ClInclude Include="..\..\conn\cms_http_c.h" />
     <ClInclude Include="..\..\conn\cms_http_s.h" />
     <ClInclude Include="..\..\core\cms_buffer.h" />
@@ -138,6 +137,7 @@
     <ClInclude Include="..\..\protocol\cms_flv_pump.h" />
     <ClInclude Include="..\..\protocol\cms_flv_transmission.h" />
     <ClInclude Include="..\..\protocol\cms_http.h" />
+    <ClInclude Include="..\..\protocol\cms_http_const.h" />
     <ClInclude Include="..\..\protocol\cms_rtmp.h" />
     <ClInclude Include="..\..\protocol\cms_rtmp_const.h" />
     <ClInclude Include="..\..\protocol\cms_rtmp_handshake.h" />

@@ -80,18 +80,23 @@ bool CDnsCache::host2ip(const char* host, unsigned long &ip)
 		mHostInfoLock.Unlock();
 		if (needGetHost)
 		{
-			struct hostent *hp;
 			struct sockaddr_in saddr;
-			if ((hp = gethostbyname(host)) == NULL)
+			struct addrinfo hints, *ares;
+			int err;
+			memset(&hints, 0, sizeof(struct addrinfo));
+			hints.ai_socktype = SOCK_STREAM;
+			hints.ai_family = AF_INET;
+			if ((err = getaddrinfo(host, NULL, &hints, &ares)) != 0)
 			{
 				logs->error("*** [CDnsCache::host2ip] can't resolve address: %s,errno=%d,strerrno=%s ***", host, errno, strerror(errno));
 				return false;
 			}
-			memcpy(&saddr.sin_addr, hp->h_addr, hp->h_length);
+			saddr.sin_addr.s_addr = ((struct sockaddr_in*)(ares->ai_addr))->sin_addr.s_addr;
 			ip = saddr.sin_addr.s_addr;
-			char szIP[23] = { 0 };
+			char szIP[30] = { 0 };
 			ipInt2ipStr(ip, szIP);
-			logs->debug(">>>>>>[CDnsCache::host2ip] host %s gethostbyname ip %s <<<<<", host, szIP);
+			
+			logs->debug(">>>>>>[CDnsCache::host2ip] host %s resolve ip %s <<<<<", host, szIP);
 			mHostInfoLock.Lock();
 			MapHostInfoIter it = mmapHostInfo.find(host);
 			if (it != mmapHostInfo.end())
@@ -107,6 +112,7 @@ bool CDnsCache::host2ip(const char* host, unsigned long &ip)
 				mmapHostInfo.insert(make_pair(host, hi));
 			}
 			mHostInfoLock.Unlock();
+			freeaddrinfo(ares);
 		}
 	}
 	return true;

@@ -27,7 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_utility.h>
 #include <taskmgr/cms_task_mgr.h>
 #include <enc/cms_sha1.h>
-#include <conn/cms_conn_var.h>
+#include <protocol/cms_http_const.h>
 #include <flvPool/cms_flv_pool.h>
 #include <protocol/cms_amf0.h>
 #include <common/cms_char_int.h>
@@ -494,15 +494,11 @@ void ChttpClient::makeHash()
 	HASH tmpHash;
 	if (mHash == tmpHash)
 	{
-		string hashUrl = readHashUrl(murl);
-		CSHA1 sha;
-		sha.write(hashUrl.c_str(), hashUrl.length());
-		string strHash = sha.read();
-		mHash = HASH((char *)strHash.c_str());
+		mHash = makeUrlHash(murl);
 		mstrHash = hash2Char(mHash.data);
 		mHashIdx = CFlvPool::instance()->hashIdx(mHash);
 		logs->info("%s [ChttpClient::makeHash] %s hash url %s,hash=%s",
-			mremoteAddr.c_str(), murl.c_str(), hashUrl.c_str(), mstrHash.c_str());
+			mremoteAddr.c_str(), murl.c_str(), readHashUrl(murl).c_str(), mstrHash.c_str());
 	}
 	else
 	{

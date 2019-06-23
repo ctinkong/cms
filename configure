@@ -39,7 +39,6 @@ echo "#include <string>" >> $AppInfo
 echo "#define  APP_ALL_MODULE_THREAD_NUM 4" >> $AppInfo
 echo "#define  APP_NAME \"cms(TK-Blue)\"" >> $AppInfo
 echo "#define  APP_VERSION \"$CmsVersion\"" >> $AppInfo
-echo "extern bool g_isTestServer;" >> $AppInfo
 echo "#endif" >> $AppInfo
 
 make && echo "$CmsVersion" > version.in

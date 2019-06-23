@@ -385,7 +385,6 @@ int CFlvTransmission::doTransmission(bool &isSendData)
 			break;
 		}
 	} while (true);
-	mprotocol->syncIO();
 	return ret;
 }
 

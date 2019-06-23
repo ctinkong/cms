@@ -48,11 +48,20 @@ enum RtmpConnStatus
 enum RtmpType
 {
 	RtmpTypeNone,
-	RtmpClient2Play,			//作为客户端去play流
-	RtmpClient2Publish,			//作为客户端去publish流
-	RtmpServerBPlay,			//作为服务端响应play命令
-	RtmpServerBPublish,			//作为服务端响应publish命令
-	RtmpServerBPlayOrPublish	//作为服务端开始状态还不确定
+	RtmpAsClient2Play,			//作为客户端去play流
+	RtmpAsClient2Publish,			//作为客户端去publish流
+	RtmpAsServerBPlay,			//作为服务端响应play命令
+	RtmpAsServerBPublish,			//作为服务端响应publish命令
+	RtmpAsServerBPlayOrPublish	//作为服务端开始状态还不确定
+};
+
+const std::string RtmpTypeString[] = {
+	"rtmp unknow type",
+	"rtmp as client 2 play",
+	"rtmp as client 2 publish",
+	"rtmp as server be played",
+	"rtmp as server be published",
+	"rtmp as server be played or published"
 };
 
 //时间戳
@@ -199,7 +208,7 @@ enum RtmpCommand
 	// the signature for packets to client.
 #define 	RtmpSigFmsVer    "3,5,3,888"
 #define 	RtmpSigAmf0Ver   0
-#define 	RtmpSigClientId  "quick rtmp"
+#define 	RtmpSigClientId  "cms rtmp"
 	// onStatus consts.
 #define 	StatusLevel        "level"
 #define 	StatusCode         "code"

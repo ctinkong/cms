@@ -37,6 +37,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <map>
 #include <string>
 
+const std::string &getRtmpTypeStr(RtmpType &rtmpType);
+
 class CConnRtmp;
 class CRtmpProtocol :public CProtocol
 {
@@ -50,7 +52,7 @@ public:
 	int want2Write();
 	int wait2Read();
 	int wait2Write();
-	std::string getRtmpType();
+	const std::string &getRtmpType();
 	int decodeChunkSize(RtmpMessage *msg);
 	int decodeWindowSize(RtmpMessage *msg);
 	int decodeBandWidth(RtmpMessage *msg);
@@ -63,7 +65,6 @@ public:
 	std::string getUrl();
 	int writeBuffSize();
 	void setWriteBuffer(int size);
-	void syncIO();
 	bool isCmsConnection();
 	std::string protocol();
 
@@ -180,3 +181,4 @@ private:
 	std::string		msProtocol;
 };
 #endif
+

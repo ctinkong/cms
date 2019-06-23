@@ -3,6 +3,5 @@
 #include <string>
 #define  APP_ALL_MODULE_THREAD_NUM 4
 #define  APP_NAME "cms(TK-Blue)"
-#define  APP_VERSION "1.0.0.94"
-extern bool g_isTestServer;
+#define  APP_VERSION "1.0.0.101"
 #endif

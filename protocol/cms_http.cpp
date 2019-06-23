@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <protocol/cms_http.h>
 #include <log/cms_log.h>
 #include <common/cms_utility.h>
-#include <conn/cms_conn_var.h>
+#include <protocol/cms_http_const.h>
 #include <common/cms_char_int.h>
 #include <sstream>
 #include <assert.h>
@@ -874,8 +874,7 @@ int CHttp::want2Write()
 			}
 			if (mwrBuff->size() == 0 && msuper->isFinish())
 			{
-				reset();
-				msuper->reset();
+				reset();				
 				return CMS_OK;
 			}
 			ret = msuper->doTransmission();
@@ -896,6 +895,7 @@ int CHttp::want2Write()
 
 void CHttp::reset()
 {
+	msuper->reset();
 	mrequest->reset();
 	mresponse->reset();
 	misReadHeader = false;
@@ -1138,31 +1138,10 @@ int CHttp::write(const char *data, int &len)
 		if (mwrBuff->size() == 0 && msuper->isFinish())
 		{
 			reset();
-			msuper->reset();
 			return CMS_OK;
 		}
 	}
 	return CMS_OK;
-}
-
-void CHttp::syncIO()
-{
-	int leftSize = 0;
-	if (misTls)
-	{
-		leftSize = mssl->bufferWriteSize();
-	}
-	else
-	{
-		leftSize = mwrBuff->size();
-	}
-	if (leftSize > 0)
-	{
-		//“Ï≤Ω
-	}
-	else if (!misClient)
-	{
-	}
 }
 
 bool CHttp::isCmsConnection()

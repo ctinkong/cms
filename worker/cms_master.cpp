@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <log/cms_log.h>
 #include <common/cms_utility.h>
 #include <config/cms_config.h>
+#include <protocol/cms_rtmp.h>
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -284,7 +285,7 @@ Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pu
 			oriUrl.c_str(),
 			strReferer.c_str(),
 			getConnType(connectType).c_str(),
-			getRtmpType(rtmpType).c_str(),
+			getRtmpTypeStr(rtmpType).c_str(),
 			isTcp ? "true" : "false");
 
 		if (isHttp(connectType) || isHttps(connectType))
@@ -359,7 +360,7 @@ void CMaster::masterTcpAcceptCallBack(struct ev_loop *loop, struct ev_io *watche
 		case TypeRtmp:
 		{
 			HASH hash;
-			CConnRtmp *rtmp = new CConnRtmp(hash, RtmpServerBPlayOrPublish, rw, "", "");
+			CConnRtmp *rtmp = new CConnRtmp(hash, RtmpAsServerBPlayOrPublish, rw, "", "");
 			uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 			mworker[i]->addOneConn(rw->fd(), rtmp);
 		}

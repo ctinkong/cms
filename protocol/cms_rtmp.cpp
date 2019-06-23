@@ -36,6 +36,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/time.h>
 using namespace std;
 
+
+const std::string &getRtmpTypeStr(RtmpType &rtmpType)
+{
+	if (rtmpType >= RtmpTypeNone && rtmpType <= RtmpAsServerBPlayOrPublish)
+	{
+		return RtmpTypeString[rtmpType];
+	}
+	return RtmpTypeString[0];
+}
+
 #define  MapInIterator  std::map<int,InboundChunkStream *>::iterator 
 #define  MapOutIterator std::map<int,OutBoundChunkStream *>::iterator
 #define  MapTransactionIterator std::map<int,RtmpCommand>::iterator
@@ -43,7 +53,7 @@ using namespace std;
 #define SHAKE_RAND_DATA_LEN	1536
 
 CRtmpProtocol::CRtmpProtocol(void *super, RtmpType &rtmpType, CBufferReader *rd,
-	CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr):
+	CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr) :
 	mrtmpType(rtmpType)
 {
 	mremoteAddr = remoteAddr;
@@ -130,7 +140,7 @@ bool CRtmpProtocol::run()
 
 int CRtmpProtocol::handShake()
 {
-	if ((mrtmpType == RtmpClient2Play || mrtmpType == RtmpClient2Publish))
+	if ((mrtmpType == RtmpAsClient2Play || mrtmpType == RtmpAsClient2Publish))
 	{
 		if (mrtmpStatus == RtmpStatusShakeNone)
 		{
@@ -158,7 +168,7 @@ int CRtmpProtocol::handShake()
 			}
 		}
 	}
-	if (mrtmpType == RtmpServerBPlayOrPublish)
+	if (mrtmpType == RtmpAsServerBPlayOrPublish)
 	{
 		if (mcomplexShake)
 		{
@@ -499,7 +509,7 @@ int CRtmpProtocol::s2cSampleShakeC012()
 		}
 		//s2
 		ret = mwrBuff->writeBytes(c1, SHAKE_RAND_DATA_LEN);
-		if (ret == CMS_ERROR )
+		if (ret == CMS_ERROR)
 		{
 			logs->error("%s [CRtmpProtocol::s2cSampleShakeC012] rtmp %s write s2 fail,errno=%d,strerrno=%s ***",
 				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
@@ -590,11 +600,11 @@ int CRtmpProtocol::want2Write()
 				return CMS_ERROR;
 			}
 		}
-	}	
+	}
 	//do write
-	if (mrtmpType == RtmpClient2Play ||
-		mrtmpType == RtmpServerBPublish ||
-		mrtmpType == RtmpServerBPlayOrPublish)
+	if (mrtmpType == RtmpAsClient2Play ||
+		mrtmpType == RtmpAsServerBPublish ||
+		mrtmpType == RtmpAsServerBPlayOrPublish)
 	{
 		return CMS_OK;
 	}
@@ -609,8 +619,8 @@ int CRtmpProtocol::want2Write()
 		}
 
 		//只有播放连接或者转推任务才需要发送流数据
-		if (mrtmpType == RtmpServerBPlay ||
-			(mrtmpType == RtmpClient2Publish && misCanDoTransmission))
+		if (mrtmpType == RtmpAsServerBPlay ||
+			(mrtmpType == RtmpAsClient2Publish && misCanDoTransmission))
 		{
 			int ret = msuper->doTransmission();
 			if (ret < 0)
@@ -725,7 +735,7 @@ int CRtmpProtocol::readBasicHeader(char &fmt, int &cid, int &handleLen)
 		{
 			return CMS_OK;//没读到数据
 		}
-		char *u16 = mrdBuff->peek(3) + 1;
+		char *u16 = mrdBuff->peek(handleLen + 3) + 1;
 		cid = 256 * u16[1] + u16[0] + 64;
 		handleLen += 2;
 	}
@@ -1347,12 +1357,12 @@ int CRtmpProtocol::decodeAmf03(RtmpMessage *msg, bool isAmf3)
 	{
 		moutStreamID = msg->streamId;
 		ret = decodePublish(block);
-		mrtmpType = RtmpServerBPublish;
+		mrtmpType = RtmpAsServerBPublish;
 	}
 	else if (block->cmd == Amf0CommandPlay)
-	{		
+	{
 		ret = decodePlay(block);
-		mrtmpType = RtmpServerBPlay;
+		mrtmpType = RtmpAsServerBPlay;
 	}
 	else if (block->cmd == "play2")
 	{
@@ -1454,14 +1464,14 @@ int CRtmpProtocol::decodeCommandResult(RtmpCommand cmd)
 	{
 	case RtmpCommandConnect:
 	{
-		if (mrtmpType == RtmpClient2Play)
+		if (mrtmpType == RtmpAsClient2Play)
 		{
 			if (doCreateStream() == CMS_ERROR)
 			{
 				ret = CMS_ERROR;
 			}
 		}
-		else if (mrtmpType == RtmpClient2Publish)
+		else if (mrtmpType == RtmpAsClient2Publish)
 		{
 			if (doReleaseStream() == CMS_ERROR ||
 				doFCPublish() == CMS_ERROR ||
@@ -1480,7 +1490,7 @@ int CRtmpProtocol::decodeCommandResult(RtmpCommand cmd)
 	break;
 	case RtmpCommandCreateStream:
 	{
-		if (mrtmpType == RtmpClient2Play)
+		if (mrtmpType == RtmpAsClient2Play)
 		{
 			if (doPlay() == CMS_ERROR ||
 				doSetBufLength() == CMS_ERROR)
@@ -1488,7 +1498,7 @@ int CRtmpProtocol::decodeCommandResult(RtmpCommand cmd)
 				ret = CMS_ERROR;
 			}
 		}
-		else if (mrtmpType == RtmpClient2Publish)
+		else if (mrtmpType == RtmpAsClient2Publish)
 		{
 			ret = doPublish();
 		}
@@ -1522,13 +1532,13 @@ int CRtmpProtocol::decodeCommandResult(RtmpCommand cmd)
 
 int CRtmpProtocol::doConnect()
 {
-	/*if (mrtmpType == RtmpClient2Play &&
+	/*if (mrtmpType == RtmpAsClient2Play &&
 		msuper->setPlayTask() == CMS_ERROR)
 	{
 		//拉流任务判断是否已经存在
 		return CMS_ERROR;
 	}*/
-	if (mrtmpType == RtmpClient2Play)
+	if (mrtmpType == RtmpAsClient2Play)
 	{
 		if (!parseUrl(msuper->getUrl(), mlinkUrl))
 		{
@@ -1537,7 +1547,7 @@ int CRtmpProtocol::doConnect()
 			return CMS_ERROR;
 		}
 	}
-	else if (mrtmpType == RtmpClient2Publish)
+	else if (mrtmpType == RtmpAsClient2Publish)
 	{
 		if (!parseUrl(msuper->getUrl(), mlinkUrl))
 		{
@@ -2868,23 +2878,11 @@ bool CRtmpProtocol::sendPacket(char fmt, const char *timestamp, char *extentimes
 	{
 		//异步
 	}
-	else if (mrtmpType == RtmpClient2Publish || mrtmpType == RtmpServerBPlay)
+	else if (mrtmpType == RtmpAsClient2Publish || mrtmpType == RtmpAsServerBPlay)
 	{
 		//没有数据可读
 	}
 	return true;
-}
-
-void CRtmpProtocol::syncIO()
-{
-	if (mwrBuff->size() > 0)
-	{
-		//异步
-	}
-	else if (mrtmpType == RtmpClient2Publish || mrtmpType == RtmpServerBPlay)
-	{
-		//没有数据可写
-	}
 }
 
 bool CRtmpProtocol::isCmsConnection()
@@ -2938,29 +2936,9 @@ void CRtmpProtocol::shouldCloseNodelay(bool force/* = false*/)
 	}
 }
 
-string CRtmpProtocol::getRtmpType()
+const std::string &CRtmpProtocol::getRtmpType()
 {
-	if (mrtmpType == RtmpClient2Play)
-	{
-		return "client 2 play";
-	}
-	if (mrtmpType == RtmpClient2Publish)
-	{
-		return "client 2 publish";
-	}
-	if (mrtmpType == RtmpServerBPlay)
-	{
-		return "server be play";
-	}
-	if (mrtmpType == RtmpServerBPublish)
-	{
-		return "server be publish";
-	}
-	if (mrtmpType == RtmpServerBPlayOrPublish)
-	{
-		return "server be play or publish";
-	}
-	return "unknow server tyep";
+	return getRtmpTypeStr(mrtmpType);
 }
 
 

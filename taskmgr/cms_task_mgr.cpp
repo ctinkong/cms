@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <log/cms_log.h>
 #include <config/cms_config.h>
 #include <app/cms_app_info.h>
+#include <app/cms_parse_args.h>
 #include <common/cms_utility.h>
 #include <common/cms_url.h>
 #include <unistd.h>
@@ -177,7 +178,7 @@ void CTaskMgr::pullCreateTask(CreateTaskPacket *ctp)
 				"",
 				"",
 				ctp->refer,
-				TypeRtmp, RtmpClient2Play,
+				TypeRtmp, RtmpAsClient2Play,
 				!CConfig::instance()->udpFlag()->isOpenUdpPull());
 		}
 		else if (!sAddr.empty())
@@ -194,7 +195,7 @@ void CTaskMgr::pullCreateTask(CreateTaskPacket *ctp)
 				"",
 				"",
 				ctp->refer,
-				TypeRtmp, RtmpClient2Play,
+				TypeRtmp, RtmpAsClient2Play,
 				!CConfig::instance()->udpFlag()->isOpenUdpPull());
 		}
 		else if (linUrl.protocol == PROTOCOL_RTMP)
@@ -205,7 +206,7 @@ void CTaskMgr::pullCreateTask(CreateTaskPacket *ctp)
 				"",
 				"",
 				ctp->refer,
-				TypeRtmp, RtmpClient2Play,
+				TypeRtmp, RtmpAsClient2Play,
 				!CConfig::instance()->udpFlag()->isOpenUdpPull());
 		}
 		else if (linUrl.protocol == PROTOCOL_HTTP)
@@ -257,7 +258,7 @@ void CTaskMgr::pushCreateTask(CreateTaskPacket *ctp)
 				ctp->pushUrl,
 				"",
 				ctp->refer,
-				TypeRtmp, RtmpClient2Publish,
+				TypeRtmp, RtmpAsClient2Publish,
 				!CConfig::instance()->udpFlag()->isOpenUdpPush());
 		}
 	}

@@ -395,9 +395,6 @@
     <ClInclude Include="..\..\interface\cms_protocol.h">
       <Filter>interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\conn\cms_conn_var.h">
-      <Filter>conn</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\taskmgr\cms_task_mgr.h">
       <Filter>taskmgr</Filter>
     </ClInclude>
@@ -517,6 +514,9 @@
     </ClInclude>
     <ClInclude Include="..\..\ts\cms_ts_callback.h">
       <Filter>ts</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\protocol\cms_http_const.h">
+      <Filter>protocol</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

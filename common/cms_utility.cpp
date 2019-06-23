@@ -1093,32 +1093,6 @@ std::string getConnType(ConnType &ct)
 	return strType;
 }
 
-std::string getRtmpType(RtmpType &rt)
-{
-	std::string rtmpType = "unknow rtmp type";
-	if (rt == RtmpClient2Play)
-	{
-		rtmpType = "client 2 play";
-	}
-	if (rt == RtmpClient2Publish)
-	{
-		rtmpType = "client 2 publish";
-	}
-	if (rt == RtmpServerBPlay)
-	{
-		rtmpType = "server be play";
-	}
-	if (rt == RtmpServerBPublish)
-	{
-		rtmpType = "server be publish";
-	}
-	if (rt == RtmpServerBPlayOrPublish)
-	{
-		rtmpType = "server be play or publish";
-	}
-	return rtmpType;
-}
-
 bool isHttp(ConnType &ct)
 {
 	return ct == TypeHttp;

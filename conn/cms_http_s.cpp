@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <conn/cms_http_s.h>
 #include <log/cms_log.h>
 #include <enc/cms_sha1.h>
-#include <conn/cms_conn_var.h>
+#include <protocol/cms_http_const.h>
 #include <common/cms_utility.h>
 #include <taskmgr/cms_task_mgr.h>
 #include <static/cms_static.h>
@@ -69,10 +69,10 @@ CHttpServer::CHttpServer(CReaderWriter *rw, bool isTls)
 	assert(mwrBuff);
 	mrw = rw;
 	mhttp = new CHttp(this, mrdBuff, mwrBuff, rw, mremoteAddr, false, isTls);
+	mflvTrans = new CFlvTransmission(mhttp);
 	mllIdx = 0;
 	misDecodeHeader = false;
-	misWebSocket = false;
-	mflvTrans = new CFlvTransmission(mhttp);
+	misWebSocket = false;	
 	mbinaryWriter = NULL;
 	misAddConn = false;
 	misFlvRequest = false;
@@ -117,14 +117,13 @@ CHttpServer::~CHttpServer()
 
 void CHttpServer::reset()
 {
+	//目前只有CHttp反调该函数，这里千万不要调用 mhttp->reset() 否则死循环
 	misHttpResponseFinish = false;
 	misDecodeHeader = false;
 	murl.clear();
 	mreferer.clear();
-	misDecodeHeader = false;
 	misFlvRequest = false;;
-	misM3U8TSRequest = false;
-	mhttp->reset();
+	misM3U8TSRequest = false;	
 	logs->debug("######### %s [CHttpServer::reset] http has been reseted",
 		mremoteAddr.c_str());
 }
@@ -929,29 +928,21 @@ bool CHttpServer::isWebsocket()
 
 void CHttpServer::makeHash()
 {
-	string hashUrl = readHashUrl(murl);
-	CSHA1 sha;
-	sha.write(hashUrl.c_str(), hashUrl.length());
-	string strHash = sha.read();
-	mHash = HASH((char *)strHash.c_str());
+	mHash = makeUrlHash(murl);
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
 	logs->info("%s [CHttpServer::makeHash] hash url %s,hash=%s",
-		mremoteAddr.c_str(), hashUrl.c_str(), mstrHash.c_str());
+		mremoteAddr.c_str(), readHashUrl(murl).c_str(), mstrHash.c_str());
 	mflvTrans->setHash(mHashIdx, mHash);
 }
 
 void CHttpServer::makeHash(std::string url)
 {
-	string hashUrl = readHashUrl(url);
-	CSHA1 sha;
-	sha.write(hashUrl.c_str(), hashUrl.length());
-	string strHash = sha.read();
-	mHash = HASH((char *)strHash.c_str());
+	mHash = makeUrlHash(url);
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
 	logs->info("%s [CHttpServer::makeHash] 1 hash url %s,hash=%s",
-		mremoteAddr.c_str(), hashUrl.c_str(), mstrHash.c_str());
+		mremoteAddr.c_str(), readHashUrl(url).c_str(), mstrHash.c_str());
 }
 
 void CHttpServer::tryCreateTask()

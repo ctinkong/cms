@@ -35,7 +35,6 @@ public:
 	virtual int sendMetaData(Slice *s) = 0;
 	virtual int sendVideoOrAudio(Slice *s,uint32 uiTimestamp) = 0;
 	virtual int writeBuffSize() = 0;
-	virtual void syncIO() = 0;
 	virtual void setWriteBuffer(int size) = 0;
 	virtual std::string remoteAddr() = 0;
 	virtual std::string getUrl() = 0;

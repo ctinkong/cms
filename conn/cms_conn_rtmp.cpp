@@ -33,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_hls_mgr.h>
 #include <conn/cms_conn_common.h>
 #include <app/cms_app_info.h>
+#include <app/cms_parse_args.h>
 #include <worker/cms_master_callback.h>
 #include <config/cms_config.h>
 #include <assert.h>
@@ -68,8 +69,8 @@ CConnRtmp::CConnRtmp(HASH &hash, RtmpType rtmpType, CReaderWriter *rw, std::stri
 	misPushFlv = false;
 	misDown8upBytes = false;
 	misAddConn = false;
-	mflvTrans = new CFlvTransmission(mrtmp, mrtmpType == RtmpClient2Publish);
-	misStop = false;	
+	mflvTrans = new CFlvTransmission(mrtmp, mrtmpType == RtmpAsClient2Publish);
+	misStop = false;
 	misPush = false;
 	mspeedTick = 0;
 	mcreateTT = getTimeUnix();
@@ -164,7 +165,7 @@ int CConnRtmp::activateEV(void *base, struct ev_loop *evLoop)
 
 int CConnRtmp::doit()
 {
-	if (mrtmpType == RtmpClient2Publish)
+	if (mrtmpType == RtmpAsClient2Publish)
 	{
 		if (!CTaskMgr::instance()->pushTaskAdd(mpushHash, this))
 		{
@@ -177,7 +178,7 @@ int CConnRtmp::doit()
 			misPush = true;
 		}
 	}
-	else if (mrtmpType == RtmpClient2Play)
+	else if (mrtmpType == RtmpAsClient2Play)
 	{
 		if (/*!CTaskMgr::instance()->pullTaskAdd(mHash,this)*/setPlayTask() != CMS_OK)
 		{
@@ -214,7 +215,7 @@ int CConnRtmp::stop(std::string reason)
 		if (misDown8upBytes)
 		{
 			down8upBytes();
-			makeOneTaskDownload(mHash, 0, true, isStreamTask());
+			makeOneTaskDownload(mHash, 0, true, isStreamTask(), misPublish);
 		}
 		if (misAddConn)
 		{
@@ -756,7 +757,7 @@ void CConnRtmp::down8upBytes()
 		if (bytes > 0 && misPushFlv)
 		{
 			misDown8upBytes = true;
-			makeOneTaskDownload(mHash, bytes, false, isStreamTask());
+			makeOneTaskDownload(mHash, bytes, false, isStreamTask(), misPublish);
 		}
 
 		mxSecdownBytes += bytes;
@@ -824,7 +825,7 @@ std::string CConnRtmp::getHost()
 
 void CConnRtmp::makeOneTask()
 {
-	makeOneTaskDownload(mHash, 0, false, isStreamTask());
+	makeOneTaskDownload(mHash, 0, false, isStreamTask(), misPublish);
 	makeOneTaskMedia(mHash, mflvPump->getVideoFrameRate(), mflvPump->getAudioFrameRate(), mflvPump->getWidth(), mflvPump->getHeight(),
 		mflvPump->getAudioSampleRate(), mflvPump->getMediaRate(), getVideoType(mflvPump->getVideoType()),
 		getAudioType(mflvPump->getAudioType()), murl, mremoteAddr, mrw->netType() == NetUdp);
@@ -837,8 +838,8 @@ CReaderWriter *CConnRtmp::rwConn()
 
 bool CConnRtmp::isStreamTask()
 {
-	return mrtmpType == RtmpClient2Play ||
-		mrtmpType == RtmpServerBPublish;
+	return mrtmpType == RtmpAsClient2Play ||
+		mrtmpType == RtmpAsServerBPublish;
 }
 
 

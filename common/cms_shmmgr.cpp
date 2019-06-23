@@ -125,7 +125,7 @@ void CShmMgr::createShmKey(int entityNum, std::string key)
 
 	for (i = 0; i < SHM_TYPE_MAX; i++)
 	{
-		snprintf(m_key[i].keyFilename, sizeof(m_key[i].keyFilename) - 1, "YF_%s_RTMP_LIVE_%d",
+		snprintf(m_key[i].keyFilename, sizeof(m_key[i].keyFilename) - 1, "TinKong_%s_RTMP_LIVE_%d",
 			key.c_str(), i);
 		logs->info("+++ [CShmMgr::CreateShmKey] key name %s +++", m_key[i].keyFilename);
 	}

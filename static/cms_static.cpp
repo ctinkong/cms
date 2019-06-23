@@ -196,7 +196,7 @@ void CStatic::handle(OneTaskDownload *otd)
 		{
 			it->second->mdownloadTick += otd->downloadBytes;
 			it->second->mdownloadTotal += otd->downloadBytes;
-
+			it->second->misPublishTask = otd->isPublishTask;
 			if (tt - it->second->mdownloadTT >= 1000 * 5)
 			{
 				it->second->mdownloadSpeed = it->second->mdownloadTick * 1000 / (tt - it->second->mdownloadTT);
@@ -213,6 +213,7 @@ void CStatic::handle(OneTaskDownload *otd)
 			otk->mdownloadTick += otd->downloadBytes;
 			otk->mdownloadTotal += otd->downloadBytes;
 			otk->mdownloadTT = (uint64)getTickCount();
+			otk->misPublishTask = otd->isPublishTask;
 			mmapHashTask[otd->hash] = otk;
 		}
 	}
@@ -437,6 +438,7 @@ int CStatic::getTaskInfo(cJSON **value)
 		cJSON_AddItemToObject(v, "audio_type", cJSON_CreateString(otk->maudioType.c_str()));
 
 		cJSON_AddItemToObject(v, "udp", cJSON_CreateBool(otk->misUDP ? 1 : 0));
+		cJSON_AddItemToObject(v, "is_publish", cJSON_CreateBool(otk->misPublishTask ? 1 : 0));
 
 		cJSON_AddItemToObject(v, "download_speed", cJSON_CreateNumber(otk->mdownloadSpeed));
 		cJSON_AddItemToObject(v, "download_speed_s", cJSON_CreateString(parseSpeed8Mem(otk->mdownloadSpeed, true).c_str()));

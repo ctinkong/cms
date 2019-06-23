@@ -173,6 +173,8 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 		isChangeMediaInfo = true;
 	}
 	bool isKeyFrame = false;
+	bool isH264 = false;
+	bool isH265 = false;
 	FlvPoolDataType dataType = DATA_TYPE_VIDEO;
 	if (vType == 0x02)
 	{
@@ -180,8 +182,6 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 		{
 			return 0; //ПежЁ
 		}
-		misH264 = false;
-		misH265 = false;
 	}
 	else if (vType == VideoTypeAVC || vType == VideoTypeHEVC)
 	{
@@ -191,11 +191,11 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 		}
 		if (vType == VideoTypeAVC)
 		{
-			misH264 = true;
+			isH264 = true;
 		}
 		else if (vType == VideoTypeHEVC)
 		{
-			misH265 = true;
+			isH265 = true;
 		}
 		if (data[0] == VideoTypeAVCKey || data[0] == VideoTypeHEVCKey)
 		{
@@ -228,14 +228,11 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 			}
 		}
 	}
-	else
-	{
-		misH264 = false;
-		misH265 = false;
-	}
 	Slice *s = newSlice();
 	if (isChangeMediaInfo)
 	{
+		misH264 = isH264;
+		misH265 = isH265;
 		copy2Slice(s);
 	}
 	s->mData = data;

@@ -55,7 +55,11 @@ OneTask *newOneTask()
 	return otk;
 }
 
-void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove, bool isFromeTask)
+void makeOneTaskDownload(HASH &hash, 
+	int32 downloadBytes, 
+	bool isRemove, 
+	bool isFromeTask,
+	bool isPublishTask/* = false*/)
 {
 	OneTaskDownload *otd = new OneTaskDownload;
 	otd->packetID = PACKET_ONE_TASK_DOWNLOAD;
@@ -63,11 +67,14 @@ void makeOneTaskDownload(HASH &hash, int32 downloadBytes, bool isRemove, bool is
 	otd->downloadBytes = downloadBytes;
 	otd->isRemove = isRemove;
 	otd->isFromeTask = isFromeTask;
+	otd->isPublishTask = isPublishTask;
 
 	CStatic::instance()->push((OneTaskPacket *)otd);
 }
 
-void makeOneTaskupload(HASH	&hash, int32 uploadBytes, int connAct)
+void makeOneTaskupload(HASH	&hash, 
+	int32 uploadBytes, 
+	int connAct)
 {
 	OneTaskUpload *otu = new OneTaskUpload;
 	otu->packetID = PACKET_ONE_TASK_UPLOAD;
@@ -77,9 +84,18 @@ void makeOneTaskupload(HASH	&hash, int32 uploadBytes, int connAct)
 	CStatic::instance()->push((OneTaskPacket *)otu);
 }
 
-void makeOneTaskMedia(HASH	&hash, int32 videoFramerate, int32 audioFramerate, int32 iWidth, int32 iHeight,
-	int32 audioSamplerate, int32 mediaRate, std::string videoType, std::string audioType, std::string url,
-	std::string remoteAddr, bool isUdp)
+void makeOneTaskMedia(HASH	&hash, 
+	int32 videoFramerate, 
+	int32 audioFramerate, 
+	int32 iWidth, 
+	int32 iHeight,
+	int32 audioSamplerate, 
+	int32 mediaRate, 
+	std::string videoType, 
+	std::string audioType, 
+	std::string url,
+	std::string remoteAddr, 
+	bool isUdp)
 {
 	OneTaskMeida *otm = new OneTaskMeida;
 	otm->packetID = PACKET_ONE_TASK_MEDIA;
@@ -98,7 +114,8 @@ void makeOneTaskMedia(HASH	&hash, int32 videoFramerate, int32 audioFramerate, in
 	CStatic::instance()->push((OneTaskPacket *)otm);
 }
 
-void makeOneTaskMem(HASH	&hash, int64	totalMem)
+void makeOneTaskMem(HASH &hash, 
+	int64 totalMem)
 {
 	OneTaskMem *otm = new OneTaskMem;
 	otm->packetID = PACKET_ONE_TASK_MEM;

@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <flvPool/cms_flv_var.h>
 #include <flvPool/cms_flv_pool.h>
 #include <app/cms_app_info.h>
+#include <app/cms_parse_args.h>
 #include <ts/cms_ts_callback.h>
 #include <time.h>
 #include <assert.h>
