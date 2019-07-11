@@ -46,7 +46,7 @@ and current version,s2n is builded with openssl-1.1.1b.
     "count": 4				//thread worker number
   },
   "media": {
-    "first_play_milsecond": 1000,	//the first time to play skip millseconds video
+    "first_play_milsecond": 1000,	//skip millseconds of video,when the first time to play 
     "reset_timestamp": true,		//should reset timestamp,which timestamp will be increase from 0,when be played
     "no_timeout": false,		//
     "stream_timeout": 30000,		//stream should be timeout,when no data recv for long time
