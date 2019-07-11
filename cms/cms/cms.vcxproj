@@ -12,7 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\app\cms_app.cpp" />
-    <ClCompile Include="..\..\app\cms_app_info.cpp" />
+    <ClCompile Include="..\..\app\cms_parse_args.cpp" />
     <ClCompile Include="..\..\cJSON\cJSON.c" />
     <ClCompile Include="..\..\common\cms_binary_reader.cpp" />
     <ClCompile Include="..\..\common\cms_binary_writer.cpp" />
@@ -86,6 +86,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\app\cms_app_info.h" />
     <ClInclude Include="..\..\app\cms_build_config.h" />
+    <ClInclude Include="..\..\app\cms_parse_args.h" />
     <ClInclude Include="..\..\cJSON\cJSON.h" />
     <ClInclude Include="..\..\common\cms_binary_reader.h" />
     <ClInclude Include="..\..\common\cms_binary_writer.h" />

@@ -29,12 +29,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <app/cms_app_info.h>
 #include <assert.h>
 
-CSSL::CSSL(int fd, std::string remoteAddr, bool isClient)
+CSSL::CSSL(int fd, std::string remoteAddr, bool isAsClient)
 {
 	ms2nConn = NULL;
 	mconfig = NULL;
 	misTlsHandShake = false;
-	misClient = isClient;
+	misAsClient = isAsClient;
 	mfd = fd;
 	mremoteAddr = remoteAddr;
 	mrdBuff = NULL;
@@ -55,7 +55,7 @@ CSSL::~CSSL()
 	}
 	if (mconfig)
 	{
-		assert(misClient);
+		assert(misAsClient);
 		if (s2n_config_free(mconfig) < 0)
 		{
 			logs->error("***** %s [CSSL::CSSL] error freeing configuration: '%s' *****",
@@ -82,7 +82,7 @@ CSSL::~CSSL()
 
 bool CSSL::run()
 {
-	if (misClient)
+	if (misAsClient)
 	{
 		ms2nConn = s2n_connection_new(S2N_CLIENT);
 		mconfig = s2n_config_new();
@@ -144,7 +144,7 @@ bool CSSL::isHandShake()
 
 int CSSL::read(char **data, int &len)
 {
-	if (/*!misClient && */!misTlsHandShake)
+	if (/*!misAsClient && */!misTlsHandShake)
 	{
 		int ret = handShakeTLS();
 		if (ret == -1)
@@ -170,7 +170,7 @@ int CSSL::read(char **data, int &len)
 
 int	CSSL::peek(char **data, int &len)
 {
-	if (!misClient && !misTlsHandShake)
+	if (!misAsClient && !misTlsHandShake)
 	{
 		int ret = handShakeTLS();
 		if (ret == -1)
@@ -201,7 +201,7 @@ void CSSL::skip(int len)
 
 int CSSL::write(const char *data, int &len)
 {
-	if (/*misClient && */!misTlsHandShake)
+	if (/*misAsClient && */!misTlsHandShake)
 	{
 		int ret = handShakeTLS();
 		if (ret == -1)

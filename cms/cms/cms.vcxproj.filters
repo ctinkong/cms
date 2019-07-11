@@ -243,9 +243,6 @@
     <ClCompile Include="..\..\common\cms_time.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\app\cms_app_info.cpp">
-      <Filter>app</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\strategy\cms_jump_last_x_seconds.cpp">
       <Filter>strategy</Filter>
     </ClCompile>
@@ -287,6 +284,9 @@
     </ClCompile>
     <ClCompile Include="..\..\ts\cms_ts_callback.cpp">
       <Filter>ts</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\app\cms_parse_args.cpp">
+      <Filter>app</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -517,6 +517,9 @@
     </ClInclude>
     <ClInclude Include="..\..\protocol\cms_http_const.h">
       <Filter>protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\app\cms_parse_args.h">
+      <Filter>app</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

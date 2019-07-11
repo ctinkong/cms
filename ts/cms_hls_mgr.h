@@ -64,6 +64,7 @@ public:
 	void stop();
 	int  pushData(Slice *s, byte frameType, uint64 timestamp);
 	int  getTS(int64 idx, SSlice **s);
+	int  getLastTS(SSlice **s);
 	int  getM3U8(std::string addr, std::string &outData);
 	int64 getLastTsTime();
 	int64 getUid();
@@ -138,8 +139,13 @@ public:
 	-- hash 任务哈希
 	-- url m3u8或者ts的地址
 	*/
-	int  readM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt);
-	int  readTS(uint32 i, HASH &hash, std::string url, std::string addr, SSlice **ss, int64 &tt);
+	int  readHlsM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt);
+	int  readHlsTS(uint32 i, HASH &hash, std::string url, std::string addr, SSlice **ss, int64 &tt);
+	/*根据任务读取ts流
+	-- hash 任务哈希
+	-- url ts的地址
+	*/
+	int  readTsStream(uint32 i, HASH &hash, std::string url, std::string addr, int64 lastIdx, SSlice **ss, int64 &tt);
 	/*管理器的释放，管理器会有一些超时数据的缓存*/
 	void release();
 	void tick(uint32 i, uint64 uid);

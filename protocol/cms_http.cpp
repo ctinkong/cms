@@ -438,14 +438,14 @@ void Response::reset()
 
 CHttp::CHttp(Conn *super, CBufferReader *rd,
 	CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr,
-	bool isClient, bool isTls)
+	bool isAsClient, bool isTls)
 {
 	msuper = super;
 	mremoteAddr = remoteAddr;
 	mrdBuff = rd;
 	mwrBuff = wr;
 	mrw = rw;
-	misClient = isClient;
+	misAsClient = isAsClient;
 	misTls = isTls;
 	mrequest = new Request;
 	mresponse = new Response;
@@ -502,7 +502,7 @@ bool CHttp::run()
 {
 	if (misTls)
 	{
-		mssl = new CSSL(mrw->fd(), mremoteAddr, misClient);
+		mssl = new CSSL(mrw->fd(), mremoteAddr, misAsClient);
 		if (!mssl->run())
 		{
 			logs->error("***** %s [CHttp::run] %s cssl run fail *****",
@@ -588,7 +588,7 @@ int CHttp::want2Read()
 		if (mheaderEnd == 4)
 		{
 			misReadHeader = true;
-			if (misClient)
+			if (misAsClient)
 			{
 				if (!mresponse->parseHeader(mstrHeader.c_str(), mstrHeader.length()))
 				{
@@ -789,7 +789,7 @@ int CHttp::want2Write()
 		}
 	}
 	int ret = CMS_OK;
-	if (misClient)
+	if (misAsClient)
 	{
 		if (misTls)
 		{
@@ -1133,7 +1133,7 @@ int CHttp::write(const char *data, int &len)
 	{
 		//Òì²½
 	}
-	else if (!misClient)
+	else if (!misAsClient)
 	{
 		if (mwrBuff->size() == 0 && msuper->isFinish())
 		{

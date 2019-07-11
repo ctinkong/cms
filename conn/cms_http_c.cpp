@@ -286,7 +286,7 @@ int ChttpClient::doDecode()
 			mhttp->httpResponse()->getStatusCode() == HTTP_CODE_206)
 		{
 			//succ
-			std::string transferEncoding = mhttp->httpResponse()->getHeader(HTTP_HEADER_RSP_TRANSFER_ENCODING);
+			std::string transferEncoding = mhttp->httpResponse()->getHeader(HTTP_HEADER_RSP_TRANSFER_ENCODING_L);
 			if (transferEncoding == HTTP_VALUE_CHUNKED)
 			{
 				mhttp->setChunked();

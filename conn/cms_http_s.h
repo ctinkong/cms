@@ -65,8 +65,9 @@ private:
 	int  handleCrossDomain(int &ret);
 	int	 handleFlv(int &ret, bool isDefault = false);
 	int  handleQuery(int &ret);
-	int  handleM3U8(int &ret);
-	int  handleTS(int &ret);
+	int  handleHlsM3U8(int &ret);
+	int  handleHlsTS(int &ret);
+	int  handleTsStream(int &ret);
 	void makeHash();
 	void makeHash(std::string url);
 	void tryCreateTask();
@@ -88,6 +89,10 @@ private:
 	bool			misFlvRequest;
 	bool			misM3U8TSRequest;
 	bool			misStop;
+
+	bool			misTsStreamRequest; //是否是ts直播流
+	int64			mtsStreamIdx;
+	bool			misSendChunkedData; //数据用chunked编码响应
 
 	int64           mllIdx;
 	CFlvTransmission *mflvTrans;
@@ -111,5 +116,7 @@ private:
 	unsigned long   mspeedTick;
 	int64			mtimeoutTick;
 	bool			misHttpResponseFinish;
+
+	char			mpublicShortBuf[50];
 };
 #endif

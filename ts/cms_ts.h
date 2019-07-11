@@ -44,6 +44,7 @@ public:
 	void packPSI();
 	byte *getPAT() { return mPAT; };
 	byte *getPMT() { return mPMT; };
+	void setAudioType(byte a) { mAstreamType = a; };
 private:
 	int  packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte **outBuf, int &outLen);
 	void setPcr(uint64 DTS, byte **outBuf, int &outLen);

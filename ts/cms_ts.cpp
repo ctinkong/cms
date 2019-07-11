@@ -692,6 +692,7 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 //
 int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
 	*out = new byte[inLen + 128];
+	memset(*out, 0, inLen + 128);
 	byte *&outBuf = *out;
 	outLen = 0;
 	if (inBuf[1] == 0x00) { //AACPacketType为0x00说明是AAC sequence header
@@ -749,6 +750,7 @@ int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
 //解FLV中H264的NAL
 int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 	*out = new byte[inLen + 256];
+	memset(*out, 0, inLen + 256);
 	byte *&outBuf = *out;
 	outLen = 0;
 	int NALlen = 0;
@@ -1036,7 +1038,7 @@ void CMux::packPSI() {
 	byte *tPAT = NULL;
 	byte *tPMT = NULL;
 	//PAT
-	byte head[5];
+	byte head[5] = { 0 };
 
 	/*byte synByte  = 0x47 ;              //同步字节, 固定为0x47,表示后面的是一个TS分组
 	byte transportErrorIndicator  = 0 ;   //传输误码指示符
@@ -1095,6 +1097,7 @@ void CMux::packPSI() {
 //设置PAT的包负载信息
 void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
 	*outBuf = new byte[TS_CHUNK_SIZE];
+	memset(*outBuf, 0, TS_CHUNK_SIZE);
 	outLen = 0;
 	byte *&PATpack = *outBuf;
 	int &PATlen = outLen;
@@ -1179,6 +1182,7 @@ void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
 //设置PMT的包负载信息
 void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBuf, int &outLen) {
 	*outBuf = new byte[TS_CHUNK_SIZE];
+	memset(*outBuf, 0, TS_CHUNK_SIZE);
 	outLen = 0;
 	bool VFlag = true;
 	bool AFlag = true;
@@ -1391,9 +1395,9 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 			parseAAC(inBuf, inLen, &data, dataLen);
 		}
 		else {
-			data = new byte[inLen - 1];
-			memcpy(data, inBuf + 1, inLen - 1);
 			dataLen = inLen - 1;
+			data = new byte[dataLen];
+			memcpy(data, inBuf + 1, dataLen);
 		}
 
 		if (dataLen <= 0) {
@@ -1453,8 +1457,9 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 				tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
 				PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
 				int writeLen = PackRemain;
-				if (mSpsNalLen - totalWriteLen < 184) {
+				if (mSpsNalLen - totalWriteLen < writeLen/*184*/) {
 					writeLen = mSpsNalLen - totalWriteLen;
+					logs->debug("[CMux::onData] writeLen = mSpsNalLen - totalWriteLen");
 				}
 				PackRemain = writeChunk(tca, (char *)mSpsNal + totalWriteLen, writeLen);
 				totalWriteLen += writeLen;
@@ -1471,8 +1476,9 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 				tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
 				PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
 				int writeLen = PackRemain;
-				if (mPpsNalLen - totalWriteLen < 184) {
+				if (mPpsNalLen - totalWriteLen < writeLen/*184*/) {
 					writeLen = mSpsNalLen - totalWriteLen;
+					logs->debug("[CMux::onData] writeLen = mSpsNalLen - totalWriteLen");
 				}
 				PackRemain = writeChunk(tca, (char *)mPpsNal + totalWriteLen, writeLen);
 				totalWriteLen += writeLen;

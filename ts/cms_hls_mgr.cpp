@@ -119,7 +119,7 @@ CMission::CMission(HASH &hash, uint32 hashIdx, std::string url,
 
 	misStop = false;
 
-	mreadIndex = -1;		//读取的帧的序号
+	mreadIndex = -1;	//读取的帧的序号
 	mreadFAIndex = -1;	//读取的音频首帧的序号
 	mreadFVIndex = -1;	//读取的视频首帧的序号
 
@@ -155,6 +155,7 @@ void CMission::initMux()
 {
 	mMux = new CMux(); //转码器
 	mMux->init();
+	mMux->packPSI();
 	mlastTca = NULL;
 	SSlice *ss = newSSlice();
 	ss->msliceIndex = msliceIndx;
@@ -162,8 +163,7 @@ void CMission::initMux()
 	writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
 	writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 	ss->marray.push_back(mlastTca);
-	msliceList.push_back(ss);
-	mMux->packPSI();
+	msliceList.push_back(ss);	
 }
 
 int CMission::doFirstVideoAudio(bool isVideo)
@@ -292,6 +292,15 @@ int  CMission::doit()
 
 				if (isAudio) {
 					frameType = 'A';
+					if ((s->mData[0] & 0xF0) >> 4 == 10)
+					{
+						mMux->setAudioType(0x0f);
+					}
+					else if ((s->mData[0] & 0xF0) >> 4 == 2)
+					{
+						mMux->setAudioType(0x03);
+						mFAFlag = true;
+					}
 					if (!mFAFlag)
 					{
 						needHandle = false;
@@ -523,6 +532,17 @@ int  CMission::getTS(int64 idx, SSlice **s)
 	}
 	int64 pos = idx - msliceList[0]->msliceIndex;
 	*s = msliceList[pos];
+	atomicInc(*s);
+	return 1;
+}
+/*获取最后一个切片*/
+int  CMission::getLastTS(SSlice **s)
+{
+	if (msliceCount <= 0)
+	{
+		return -1;
+	}
+	*s = msliceList[msliceCount - 1];
 	atomicInc(*s);
 	return 1;
 }
@@ -758,7 +778,7 @@ void CMissionMgr::destroy(uint32 i, HASH &hash)
 	mMissionMapLock[i].UnWLock();
 }
 
-int CMissionMgr::readM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt)
+int CMissionMgr::readHlsM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt)
 {
 	i = i % APP_ALL_MODULE_THREAD_NUM;
 	int ret = -1;
@@ -774,7 +794,7 @@ int CMissionMgr::readM3U8(uint32 i, HASH &hash, std::string url, std::string add
 	return ret;
 }
 
-int CMissionMgr::readTS(uint32 i, HASH &hash, std::string url, std::string addr, SSlice **ss, int64 &tt)
+int CMissionMgr::readHlsTS(uint32 i, HASH &hash, std::string url, std::string addr, SSlice **ss, int64 &tt)
 {
 	i = i % APP_ALL_MODULE_THREAD_NUM;
 	int ret = -1;
@@ -795,6 +815,27 @@ int CMissionMgr::readTS(uint32 i, HASH &hash, std::string url, std::string addr,
 		string strIdx = url.substr(start, end);
 		int64 llIdx = _atoi64(strIdx.c_str());
 		ret = it->second->getTS(llIdx, ss);
+	}
+	mMissionMapLock[i].UnRLock();
+	return ret;
+}
+
+int CMissionMgr::readTsStream(uint32 i, HASH &hash, std::string url, std::string addr, int64 lastIdx, SSlice **ss, int64 &tt)
+{
+	i = i % APP_ALL_MODULE_THREAD_NUM;
+	int ret = -1;
+	mMissionMapLock[i].RLock();
+	std::map<HASH, CMission *>::iterator it = mMissionMap[i].find(hash);
+	if (it != mMissionMap[i].end())
+	{
+		if (lastIdx == -1)
+		{
+			ret = it->second->getLastTS(ss);
+		}
+		else
+		{
+			ret = it->second->getTS(lastIdx, ss);
+		}
 	}
 	mMissionMapLock[i].UnRLock();
 	return ret;

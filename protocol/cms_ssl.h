@@ -31,7 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 class CSSL
 {
 public:
-	CSSL(int fd, std::string remoteAddr, bool isClient);
+	CSSL(int fd, std::string remoteAddr, bool isAsClient);
 	~CSSL();
 	bool	run();
 	int		read(char **data, int &len);
@@ -48,7 +48,7 @@ private:
 	struct s2n_connection	*ms2nConn;
 	struct s2n_config		*mconfig;
 	struct s2n_cert_chain_and_key *mchain8Key;
-	bool					misClient;
+	bool					misAsClient;
 	int						mfd;
 	std::string				mremoteAddr;
 

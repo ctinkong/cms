@@ -94,7 +94,7 @@ class CHttp : public CProtocol
 public:
 	CHttp(Conn *super, CBufferReader *rd,
 		CBufferWriter *wr, CReaderWriter *rw, std::string remoteAddr,
-		bool isClient, bool isTls);
+		bool isAsClient, bool isTls);
 	~CHttp();
 
 	bool        run();
@@ -147,7 +147,7 @@ private:
 	std::string		mstrRequestHeader;
 
 	Conn			*msuper;
-	bool			misClient;
+	bool			misAsClient;
 	std::string		mreferUrl;
 	std::string		moriUrl;
 
