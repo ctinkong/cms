@@ -1,6 +1,23 @@
 #!/bin/bash
-if [ "$1" == "clean" ];then
-	make -f cms.make clean
+MEMCHECK=""
+CLEAN=""
+DEBUG=""
+for line in $*
+do
+    if [ $line == "clean" ];then
+		CLEAN="clean"
+	elif [ $line == "memcheck" ];then
+		MEMCHECK="memcheck"
+	elif [ $line == "debug" ];then
+		DEBUG="debug"
+	fi
+done
+
+export MemCheck=$MEMCHECK
+export Debug=$DEBUG
+
+if [ $CLEAN == "clean" ];then
+	make clean
 fi
 version_file="./version.in"
 

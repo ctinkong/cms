@@ -35,6 +35,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <worker/cms_master_callback.h>
 #include <config/cms_config.h>
 #include <conn/cms_conn_common.h>
+#include <mem/cms_mf_mem.h>
 #include <ts/cms_hls_mgr.h>
 
 ChttpClient::ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std::string oriUrl,
@@ -123,7 +124,7 @@ ChttpClient::~ChttpClient()
 	}
 	if (mtagFlv != NULL)
 	{
-		delete[] mtagFlv;
+		xfree(mtagFlv);
 	}
 	delete mhttp;
 	delete mrdBuff;
@@ -367,7 +368,7 @@ int ChttpClient::doReadData()
 			p[0] = tagHeader[6];
 			p[3] = tagHeader[7];
 			misReadTagHeader = true;
-			mtagFlv = new char[mtagLen];
+			mtagFlv = (char*)xmalloc(mtagLen);
 			mtagReadLen = 0;
 		}
 
@@ -522,7 +523,7 @@ int ChttpClient::decodeMetaData(char *data, int len)
 	{
 		misPushFlv = true;
 	}
-	delete[] data;
+	xfree(data);
 	return CMS_OK;
 }
 
@@ -536,7 +537,7 @@ int  ChttpClient::decodeVideo(char *data, int len, uint32 timestamp)
 	}
 	else
 	{
-		delete[] data;
+		xfree(data);
 	}
 	if (misOpenHls && !misCreateHls)
 	{
@@ -559,7 +560,7 @@ int  ChttpClient::decodeAudio(char *data, int len, uint32 timestamp)
 	}
 	else
 	{
-		delete[] data;
+		xfree(data);
 	}
 	if (misOpenHls && !misCreateHls)
 	{

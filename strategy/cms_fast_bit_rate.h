@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_FAST_BIT_RATE_H__
 #define __CMS_FAST_BIT_RATE_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <vector>
 #include <queue>
@@ -72,6 +73,8 @@ public:
 	void	setTransCodeNoNeedDropVideo(bool is);
 	int32	getLoseBufferTimes();
 	bool	isChangeVideoBit();
+
+	OperatorNewDelete
 private:
 	bool			misInit;
 	std::string		murl;

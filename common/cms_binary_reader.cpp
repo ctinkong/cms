@@ -23,6 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <common/cms_binary_reader.h>
+#include <mem/cms_mf_mem.h>
 #include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -35,7 +36,7 @@ BinaryReader::BinaryReader(int sock)
 	m_bError = false;
 	m_iLen = 0;
 	int iCurrLen = 0;
-	m_pHead = (char*)malloc(1024);
+	m_pHead = (char*)xmalloc(1024);
 
 	while (iCurrLen < m_iLen || m_iLen == 0)
 	{
@@ -49,7 +50,7 @@ BinaryReader::BinaryReader(int sock)
 				break;
 			iCurrLen += iRecv;
 			if (iCurrLen < m_iLen)
-				m_pHead = (char*)realloc(m_pHead, iCurrLen + 1024);
+				m_pHead = (char*)xrealloc(m_pHead, iCurrLen + 1024);
 			else
 				break;
 		}
@@ -70,7 +71,7 @@ BinaryReader::BinaryReader(int sock)
 
 BinaryReader::~BinaryReader()
 {
-	free(m_pHead);
+	xfree(m_pHead);
 }
 
 

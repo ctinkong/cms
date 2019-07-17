@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_STATIC_COMMON_H__
 #define __CMS_STATIC_COMMON_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 #define PACKET_ONE_TASK_DOWNLOAD	0x00
@@ -49,6 +50,8 @@ struct OneTaskDownload
 	bool	isRemove;
 	bool    isFromeTask;					//是否是直播流下载任务 是则为true，如果是播放请求或者是转推流请求 则为false
 	bool    isPublishTask;					//是否推流任务
+
+	OperatorNewDelete
 };
 
 struct OneTaskUpload
@@ -57,6 +60,8 @@ struct OneTaskUpload
 	HASH	hash;
 	int32	uploadBytes;					//上传字节数
 	int		connAct;
+
+	OperatorNewDelete
 };
 
 struct OneTaskMeida
@@ -74,6 +79,8 @@ struct OneTaskMeida
 	std::string		remoteAddr;				//对端ip:port
 	std::string		url;					//url地址
 	bool			isUdp;				    //是否是udp连接
+
+	OperatorNewDelete
 };
 
 struct OneTaskMem
@@ -81,6 +88,8 @@ struct OneTaskMem
 	int		packetID;
 	HASH	hash;
 	int64	totalMem;
+
+	OperatorNewDelete
 };
 
 struct OneTask
@@ -115,6 +124,8 @@ struct OneTask
 
 	bool			misUDP;
 	bool			misPublishTask;
+
+	OperatorNewDelete
 };
 
 struct CpuInfo
@@ -123,6 +134,8 @@ struct CpuInfo
 	long long nice;
 	long long sys;
 	long long idle;
+
+	OperatorNewDelete
 };
 
 typedef struct
@@ -148,6 +161,8 @@ typedef struct
 	/** 15 */ unsigned long transmit_collisions;
 	/** 16 */ unsigned long transmit_carrier;
 	/** 17 */ unsigned long transmit_compressed;
+
+	OperatorNewDelete
 }net_info_t;
 
 
@@ -173,6 +188,6 @@ void makeOneTaskMedia(HASH	&hash,
 	std::string url,
 	std::string remoteAddr, 
 	bool isUdp);
-void makeOneTaskMem(HASH &hash, 
+void makeOneTaskMem(HASH hash, 
 	int64 totalMem);										//统计内存占用
 #endif

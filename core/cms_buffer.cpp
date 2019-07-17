@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_buffer.h>
 #include <common/cms_utility.h>
 #include <core/cms_errno.h>
+#include <mem/cms_mf_mem.h>
 #include <log/cms_log.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -33,7 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 CBufferReader::CBufferReader(CReaderWriter *rd, int size)
 {
 	mbufferSize = size;
-	mbuffer = (char *)malloc(size);
+	mbuffer = (char *)xmalloc(size);
 	mb = me = 0;
 	mrd = rd;
 	ms2nConn = NULL;
@@ -44,7 +45,7 @@ CBufferReader::CBufferReader(CReaderWriter *rd, int size)
 CBufferReader::CBufferReader(s2n_connection *s2nConn, int size)
 {
 	mbufferSize = size;
-	mbuffer = (char *)malloc(size);
+	mbuffer = (char *)xmalloc(size);
 	mb = me = 0;
 	mrd = NULL;
 	ms2nConn = s2nConn;
@@ -54,7 +55,7 @@ CBufferReader::CBufferReader(s2n_connection *s2nConn, int size)
 
 CBufferReader::~CBufferReader()
 {
-	free(mbuffer);
+	xfree(mbuffer);
 	mbuffer = NULL;
 	mb = me = 0;
 	mbufferSize = 0;
@@ -199,7 +200,7 @@ int   CBufferReader::size()
 void   CBufferReader::resize()
 {
 	assert(mbufferSize >= 0);
-	mbuffer = (char *)realloc(mbuffer, mbufferSize);
+	mbuffer = (char *)xrealloc(mbuffer, mbufferSize);
 }
 
 char  *CBufferReader::errnoCode()
@@ -259,7 +260,7 @@ int32 CBufferReader::readBytesNum()
 CBufferWriter::CBufferWriter(CReaderWriter *rd, int size)
 {
 	mbufferSize = size;
-	mbuffer = (char *)malloc(size);
+	mbuffer = (char *)xmalloc(size);
 	mb = me = 0;
 	mrd = rd;
 	ms2nConn = NULL;
@@ -269,7 +270,7 @@ CBufferWriter::CBufferWriter(CReaderWriter *rd, int size)
 CBufferWriter::CBufferWriter(s2n_connection *s2nConn, int size)
 {
 	mbufferSize = size;
-	mbuffer = (char *)malloc(size);
+	mbuffer = (char *)xmalloc(size);
 	mb = me = 0;
 	mrd = NULL;
 	ms2nConn = s2nConn;
@@ -278,7 +279,7 @@ CBufferWriter::CBufferWriter(s2n_connection *s2nConn, int size)
 
 CBufferWriter::~CBufferWriter()
 {
-	free(mbuffer);
+	xfree(mbuffer);
 	mbuffer = NULL;
 	mb = me = 0;
 	mbufferSize = 0;
@@ -378,7 +379,7 @@ int CBufferWriter::writeBytes(const char *data, int n)
 		memcpy(mbuffer + me, p, n);
 		me += n;
 	}
-	return nn - n;
+	return nn;
 }
 
 int CBufferWriter::writeByte(char ch)
@@ -444,7 +445,7 @@ bool CBufferWriter::isUsable()
 void  CBufferWriter::resize()
 {
 	assert(mbufferSize >= 0);
-	mbuffer = (char *)realloc(mbuffer, mbufferSize);
+	mbuffer = (char *)xrealloc(mbuffer, mbufferSize);
 }
 
 char *CBufferWriter::errnoCode()
@@ -509,13 +510,13 @@ int32 CBufferWriter::writeBytesNum()
 CByteReaderWriter::CByteReaderWriter(int size)
 {
 	mbufferSize = size;
-	mbuffer = (char *)malloc(size);
+	mbuffer = (char *)xmalloc(size);
 	mb = me = 0;
 }
 
 CByteReaderWriter::~CByteReaderWriter()
 {
-	free(mbuffer);
+	xfree(mbuffer);
 	mbuffer = NULL;
 	mb = me = 0;
 	mbufferSize = 0;
@@ -600,7 +601,7 @@ void  CByteReaderWriter::skip(int n)
 void CByteReaderWriter::resize()
 {
 	assert(mbufferSize >= 0);
-	mbuffer = (char *)realloc(mbuffer, mbufferSize);
+	mbuffer = (char *)xrealloc(mbuffer, mbufferSize);
 }
 
 int CByteReaderWriter::size()

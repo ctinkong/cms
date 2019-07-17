@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <protocol/cms_amf0.h>
 #include <conn/cms_conn_rtmp.h>
 #include <flvPool/cms_flv_pool.h>
+#include <mem/cms_mf_mem.h>
 #include <map>
 #include <string>
 
@@ -69,6 +70,8 @@ public:
 	std::string protocol();
 
 	void shouldCloseNodelay(bool force = false);
+
+	OperatorNewDelete
 private:
 	//Œ’ ÷
 	int handShake();

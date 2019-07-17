@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <enc/cms_base64.h>
 #include <log/cms_log.h>
 #include <common/cms_time.h>
+#include <mem/cms_mf_mem.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -125,11 +126,11 @@ std::string getUrlDecode(std::string strUrl)
 		return "";
 	}
 	int len = strUrl.length() + 10;
-	char *pUrlDecode = new char[len];
+	char *pUrlDecode = (char*)xmalloc(len);
 	memset(pUrlDecode, 0, len);
 	urlDecode(strUrl.c_str(), strUrl.length(), pUrlDecode, len);
 	string strUrlDecode = pUrlDecode;
-	delete[] pUrlDecode;
+	xfree(pUrlDecode);
 	return strUrlDecode;
 }
 
@@ -140,11 +141,11 @@ std::string getUrlEncode(std::string strUrl)
 		return "";
 	}
 	int len = strUrl.length() * 3 + 10;
-	char *pUrlEncode = new char[len];
+	char *pUrlEncode = (char*)xmalloc(len);
 	memset(pUrlEncode, 0, len);
 	urlEncode(strUrl.c_str(), strUrl.length(), pUrlEncode, len);
 	string strUrlEncode = pUrlEncode;
-	delete[] pUrlEncode;
+	xfree(pUrlEncode);
 	return strUrlEncode;
 }
 
@@ -152,11 +153,11 @@ std::string getBase64Decode(std::string strUrl)
 {
 	int iEncLen = strUrl.length();
 	int iEncDataLen = Base64::GetDataLength(iEncLen);
-	char *pDecBase64 = new char[iEncDataLen + 1];
+	char *pDecBase64 = (char*)xmalloc(iEncDataLen + 1);
 	int iRet = Base64::Decode((char *)strUrl.c_str(), iEncLen, pDecBase64);
 	pDecBase64[iRet] = '\0';
 	string strRet = pDecBase64;
-	delete[] pDecBase64;
+	xfree(pDecBase64);
 	return strRet;
 }
 
@@ -164,11 +165,11 @@ std::string getBase64Encode(std::string strUrl)
 {
 	int iEncLen = strUrl.length();
 	int iEncCodeLen = Base64::GetCodeLength(iEncLen);
-	char *pEncBase64 = new char[iEncCodeLen + 1];
+	char *pEncBase64 = (char*)xmalloc(iEncCodeLen + 1);
 	int iRet = Base64::Encode((char *)strUrl.c_str(), iEncLen, pEncBase64);
 	pEncBase64[iRet] = '\0';
 	string strRet = pEncBase64;
-	delete[] pEncBase64;
+	xfree(pEncBase64);
 	return strRet;
 }
 
@@ -717,8 +718,8 @@ HASH makePushHash(std::string url)
 	return hash;
 }
 
-const char *g_Speed[] = { (char *)"Byte/s", "KB/s", "MB/s", "GB/s" };
-const char *g_Mem[] = { "Byte", "KB", "MB", "GB" };
+const char *g_Speed[] = { (char *)" Byte/s", " KB/s", " MB/s", " GB/s" };
+const char *g_Mem[] = { " Byte", " KB", " MB", " GB" };
 std::string parseSpeed8Mem(int64 speed, bool isSpeed)
 {
 	float fSpeed = (float)speed;
@@ -745,6 +746,33 @@ std::string parseSpeed8Mem(int64 speed, bool isSpeed)
 		value += g_Mem[i];
 	}
 	return value;
+}
+
+void parseSpeed8Mem(int64 speed, bool isSpeed, std::string &c, std::string &unit)
+{
+	float fSpeed = (float)speed;
+	int i = 0;
+	for (; i < 4;)
+	{
+		float sp = fSpeed / (float)(1024);
+		if (int64(sp) == 0)
+		{
+			break;
+		}
+		fSpeed = sp;
+		i++;
+	}
+	char szValue[128] = { 0 };
+	snprintf(szValue, sizeof(szValue), "%.02f", fSpeed);
+	c = szValue;
+	if (isSpeed)
+	{
+		unit = g_Speed[i];
+	}
+	else
+	{
+		unit = g_Mem[i];
+	}
 }
 
 bool nonblocking(int fd)
@@ -1035,7 +1063,7 @@ bool readAll(const char* file, char **data)
 	fseek(fp, 0, SEEK_END);
 	int len = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	p = new char[len + 1];
+	p = (char *)xmalloc(len + 1);
 	fread(p, 1, len, fp);
 	p[len] = '\0';
 	fclose(fp);
@@ -1113,5 +1141,35 @@ bool isQuery(ConnType &ct)
 	return ct == TypeQuery;
 }
 
+void xCopyString(char **dst, const char *src, int len)
+{
+	if (*dst)
+	{
+		xfree(*dst);
+	}
+	*dst = (char*)xmalloc(len + 1);
+	memcpy(*dst, src, len);
+	(*dst)[len] = '\0';
+}
+
+void xCopyMem(char **dst, char *src, int len)
+{
+	if (*dst)
+	{
+		xfree(*dst);
+	}
+	*dst = (char*)xmalloc(len);
+	memcpy(*dst, src, len);
+}
+
+void xCopyHash(char **dst, HASH &hash)
+{
+	if (*dst)
+	{
+		xfree(*dst);
+	}
+	*dst = (char*)xmalloc(sizeof(hash.data));
+	memcpy(*dst, hash.data, sizeof(hash.data));
+}
 
 

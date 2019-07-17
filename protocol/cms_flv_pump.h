@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <flvPool/cms_flv_pool.h>
 #include <protocol/cms_amf0.h>
 #include <interface/cms_stream_info.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CFlvPump
@@ -54,6 +55,8 @@ public:
 	byte getAudioType();
 	void stop();
 	void setPublish();
+
+	OperatorNewDelete
 private:
 	void copy2Slice(Slice *s);
 	HASH	mhash;

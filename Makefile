@@ -1,32 +1,70 @@
 CC = g++
 
-ifeq ($(CONFIG), )
-	CONFIG = None
+ifeq ($(MemCheck), )
+	MemCheck = None
 endif
 
-ifeq ($(CONFIG), $(strip $(filter $(CONFIG), Debug Check)))
-CFLAGS = -ggdb -o0 -D__CMS_DEBUG__
+ifeq ($(Debug), )
+	Debug = None
+endif
+
+ifeq ($(CONFIG), debug)
+$(warning "making debug version")
+CFLAGS = -ggdb \
+	-o0 \
+	-rdynamic \
+	-D__CMS_DEBUG__
 else
-CFLAGS = -ggdb -o2
+CFLAGS = -ggdb \
+	-o2 \
+	-rdynamic
 endif
 
-ifeq ($(CONFIG),Check)
-CFLAGS += -D__CMS_LEAK_CHECK__
+ifeq ($(MemCheck),memcheck)
+$(warning "making memory check version")
+CFLAGS += -DCMS_LEAK_CHECK
 endif
 
-CFLAGS += -Wall  -D_REENTRANT -D_POSIX_C_SOURCE=200112L -D_FILE_OFFSET_BITS=64 -D_CMS_APP_USE_TIME_ -I./
+CFLAGS += -Wall \
+	-D_REENTRANT \
+	-D_POSIX_C_SOURCE=200112L \
+	-D_FILE_OFFSET_BITS=64 \
+	-D_CMS_APP_USE_TIME_ \
+	-I./
 
 LINK = $(CC)
 
-LDFLAGS = -lpthread -ldl -lrt -ls2n -L./lib/ ./lib/libssl.a ./lib/libcrypto.a ./lib/libev.a ./decode/libH264_5.a -fPIC
+LDFLAGS = -lpthread \
+	-ldl \
+	-lrt \
+	-ls2n \
+	-L./lib/ \
+	./lib/libssl.a \
+	./lib/libcrypto.a \
+	./lib/libev.a \
+	./decode/libH264_5.a \
+	-fPIC \
+	-rdynamic
 
 CSRCS = $(wildcard cJSON/*.c) 
-CPPSRCS = $(wildcard app/*.cpp) $(wildcard common/*.cpp) $(wildcard config/*.cpp) \
-		$(wildcard conn/*.cpp) $(wildcard core/*.cpp) \
-		$(wildcard dnscache/*.cpp) $(wildcard enc/*.cpp) $(wildcard flvPool/*.cpp) \
-		$(wildcard interface/*.cpp) $(wildcard log/*.cpp) $(wildcard net/*.cpp) \
-		$(wildcard protocol/*.cpp) $(wildcard static/*.cpp) $(wildcard strategy/*.cpp) \
-		$(wildcard taskmgr/*.cpp) $(wildcard ts/*.cpp) $(wildcard worker/*.cpp)
+CPPSRCS = $(wildcard app/*.cpp) \
+		$(wildcard common/*.cpp) \
+		$(wildcard config/*.cpp) \
+		$(wildcard conn/*.cpp) \
+		$(wildcard core/*.cpp) \
+		$(wildcard dnscache/*.cpp) \
+		$(wildcard enc/*.cpp) \
+		$(wildcard flvPool/*.cpp) \
+		$(wildcard interface/*.cpp) \
+		$(wildcard log/*.cpp) \
+		$(wildcard mem/*.cpp) \
+		$(wildcard net/*.cpp) \
+		$(wildcard protocol/*.cpp) \
+		$(wildcard static/*.cpp) \
+		$(wildcard strategy/*.cpp) \
+		$(wildcard taskmgr/*.cpp) \
+		$(wildcard ts/*.cpp) \
+		$(wildcard worker/*.cpp)
 
 
 COBJS := $(CSRCS:.c=.o)

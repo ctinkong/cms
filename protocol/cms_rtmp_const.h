@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #ifndef __RTMP_CONST_H__
 #define __RTMP_CONST_H__
+#include <mem/cms_mf_mem.h>
 
 enum RtmpConnStatus
 {
@@ -245,6 +246,8 @@ typedef struct _RtmpHeader
 	unsigned int msgStreamID;
 	unsigned int timestamp;
 	unsigned int extendedTimestamp;
+
+	OperatorNewDelete
 }RtmpHeader;
 
 typedef struct
@@ -256,6 +259,7 @@ typedef struct
 	unsigned int    bufLen;
 	unsigned int	dataLen;
 	char			*buffer;
+	OperatorNewDelete
 }RtmpMessage;
 
 typedef struct _OutBoundChunkStream
@@ -265,6 +269,7 @@ typedef struct _OutBoundChunkStream
 	unsigned int	lastOutAbsoluteTimestamp;
 	unsigned int	lastInAbsoluteTimestamp;
 	unsigned int	startAtTimestamp;
+	OperatorNewDelete
 }OutBoundChunkStream;
 
 typedef struct _InboundChunkStream
@@ -274,6 +279,7 @@ typedef struct _InboundChunkStream
 	unsigned int	lastOutAbsoluteTimestamp;
 	unsigned int	lastInAbsoluteTimestamp;
 	RtmpMessage		*currentMessage;
+	OperatorNewDelete
 }InboundChunkStream;
 
 #endif

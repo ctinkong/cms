@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_type.h>
 #include <protocol/cms_http.h>
 #include <strategy/cms_jitter.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class ChttpClient :public Conn, public CStreamInfo
@@ -78,6 +79,7 @@ public:
 	int doRead();
 	int doWrite();
 
+	OperatorNewDelete
 private:
 	void initMediaConfig();
 	int  request();

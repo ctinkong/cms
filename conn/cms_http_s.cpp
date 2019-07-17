@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_hls_mgr.h>
 #include <app/cms_app_info.h>
 #include <worker/cms_master_callback.h>
+#include <mem/cms_mf_mem.h>
 #include <regex.h>
 
 std::string gCrossDomainRsp = "HTTP/1.1 200 OK\r\nServer: cms\r\nConnection: keep-alive\r\nContent-Length: 189\r\nContent-Type: text/xml\r\n\r\n<?xml version=\"1.0\"?><!DOCTYPE cross-domain-policy SYSTEM \"http://www.adobe.com/xml/dtds/cross-domain-policy.dtd\"><cross-domain-policy><allow-access-from domain=\"*\" /></cross-domain-policy>";
@@ -381,6 +382,10 @@ int CHttpServer::handle()
 		{
 			break;
 		}
+		if (handleMemCheck(ret) != 0)
+		{
+			break;
+		}
 		//Ä¬ÈÏ²¥·Åhttp-flv
 		if (handleFlv(ret, true) != 0)
 		{
@@ -584,6 +589,68 @@ int CHttpServer::handleQuery(int &ret)
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
+		}
+		ret = CMS_OK;
+		misHttpResponseFinish = true;
+		return 1;
+	}
+	return 0;
+}
+
+int CHttpServer::handleMemCheck(int &ret)
+{
+	if (murl.find("/mem/check") != string::npos)
+	{
+#ifdef CMS_LEAK_CHECK
+		std::string strDump = printfMemUsage();
+#else
+		std::string strDump = "mem info:\n";
+#endif
+		char szLength[20] = { 0 };
+		snprintf(szLength, sizeof(szLength), "%lu", strDump.length());
+		//succ
+		if (misWebSocket)
+		{
+			mhttp->httpResponse()->setStatus(HTTP_CODE_101, "Switching Protocols");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_UPGRADE, "websocket");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONNECTION, "Upgrade");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SEC_WEBSOCKET_ACCEPT, msecWebSocketAccept);
+			if (!msecWebSocketProtocol.empty())
+			{
+				mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SEC_WEBSOCKET_PROTOCOL, msecWebSocketProtocol);
+			}
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SERVER, APP_NAME);
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "text/plain");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_LENGTH, szLength);
+		}
+		else
+		{
+			mhttp->httpResponse()->setStatus(HTTP_CODE_200, "OK");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SERVER, APP_NAME);
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONNECTION, "close");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "text/plain");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_LENGTH, szLength);
+		}
+		std::string strRspHeader = mhttp->httpResponse()->readResponse();
+		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
+		if (ret < 0)
+		{
+			logs->error("*** %s [CHttpServer::handleMemCheck] http %s send header fail ***",
+				mremoteAddr.c_str(), murl.c_str());
+			ret = CMS_ERROR;
+			return CMS_ERROR;
+		}
+		if (strDump.length())
+		{
+			ret = sendBefore(strDump.c_str(), strDump.length());
+			if (ret < 0)
+			{
+				logs->error("*** %s [CHttpServer::handleMemCheck] http %s send body fail ***",
+					mremoteAddr.c_str(), murl.c_str());
+				ret = CMS_ERROR;
+				return CMS_ERROR;
+			}
 		}
 		ret = CMS_OK;
 		misHttpResponseFinish = true;
@@ -913,7 +980,7 @@ int CHttpServer::handleTsStream(int &ret)
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_TRANSFER_ENCODING, HTTP_VALUE_CHUNKED);
 			//chunked±àÂë·¢ËÍ
 			misSendChunkedData = true;
-		}		
+		}
 
 		std::string strRspHeader = mhttp->httpResponse()->readResponse();
 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
@@ -950,14 +1017,16 @@ int CHttpServer::doTransmission()
 	}
 	else if (misTsStreamRequest)
 	{
-		int64 outTT;
 		SSlice *ss;
-		ret = CMissionMgr::instance()->readTsStream(mHashIdx, mHash, murl, mlocalAddr, mtsStreamIdx, &ss, outTT);
+		ret = CMissionMgr::instance()->readTsStream(mHashIdx, mHash, mtsStreamIdx, &ss);
 		if (ret > 0)
 		{
-			logs->debug(" %s [CHttpServer::handleTsStream] ori http %s ts stream cur idx=%lld, next idx=%lld.",
-				mremoteAddr.c_str(), murl.c_str(),
-				mtsStreamIdx, ss->msliceIndex + 1);
+			logs->debug(" %s [CHttpServer::handleTsStream] ori http %s ts stream cur idx=%lld, next idx=%lld, ts duration=%lld.",
+				mremoteAddr.c_str(),
+				murl.c_str(),
+				mtsStreamIdx,
+				ss->msliceIndex + 1,
+				ss->msliceRange);
 
 			mtsStreamIdx = ss->msliceIndex + 1;
 			bool isError = false;

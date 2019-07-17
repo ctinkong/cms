@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_SSL_H__
 #define __CMS_SSL_H__
 #include <core/cms_buffer.h>
+#include <mem/cms_mf_mem.h>
 #include <s2n/s2n.h>
 #include <string>
 
@@ -42,6 +43,8 @@ public:
 	bool    isHandShake();
 	int		flush();
 	bool	isUsable();
+
+	OperatorNewDelete
 private:
 	int		handShakeTLS();
 	bool					misTlsHandShake;

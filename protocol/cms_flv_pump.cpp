@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_utility.h>
 #include <protocol/cms_flv.h>
 #include <decode/decode.h>
+#include <mem/cms_mf_mem.h>
 
 CFlvPump::CFlvPump(CStreamInfo *super, HASH &hash, uint32 &hashIdx, std::string remoteAddr, std::string modeName, std::string url)
 {
@@ -67,7 +68,7 @@ CFlvPump::~CFlvPump()
 
 int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 {
-	char *saveData = new char[len];
+	char *saveData = (char*)xmalloc(len);
 	memcpy(saveData, data, len);
 	amf0::Amf0Block *block = NULL;
 	block = amf0::amf0Parse(data, len);
@@ -75,7 +76,7 @@ int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 	{
 		logs->error("***** %s [CFlvPump::decodeMetaData] %s parse metaData fail *****",
 			mremoteAddr.c_str(), murl.c_str());
-		delete[] saveData;
+		xfree(saveData);
 		return 0;
 	}
 	std::string strRtmpContent = amf0::amf0BlockDump(block);
@@ -127,7 +128,7 @@ int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 	}
 	s->mData = saveData;
 	s->miDataLen = len;
-	s->mhHash = mhash;
+	xCopyHash(&s->mpHash, mhash);
 	s->misMetaData = true;
 	s->mllIndex = mllIdx;
 	s->misPushTask = misPublish;
@@ -237,7 +238,7 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 	}
 	s->mData = data;
 	s->miDataLen = len;
-	s->mhHash = mhash;
+	xCopyHash(&s->mpHash, mhash);
 	s->miDataType = dataType;
 	s->misKeyFrame = isKeyFrame;
 	s->mllIndex = mllIdx;
@@ -327,7 +328,7 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 	}
 	s->mData = data;
 	s->miDataLen = len;
-	s->mhHash = mhash;
+	xCopyHash(&s->mpHash, mhash);
 	s->miDataType = dataType;
 	s->mllIndex = mllIdx;
 	s->misPushTask = misPublish;
@@ -396,7 +397,7 @@ byte CFlvPump::getAudioType()
 void CFlvPump::stop()
 {
 	Slice *s = newSlice();
-	s->mhHash = mhash;
+	xCopyHash(&s->mpHash, mhash);
 	s->misPushTask = misPublish;
 	s->misRemove = true;
 	CFlvPool::instance()->push(mhashIdx, s);
@@ -409,6 +410,7 @@ void CFlvPump::setPublish()
 
 void CFlvPump::copy2Slice(Slice *s)
 {
+	std::string strTmp;
 	s->misHaveMediaInfo = true;
 	s->miVideoFrameRate = miVideoFrameRate;
 	s->miVideoRate = miVideoRate;
@@ -416,22 +418,28 @@ void CFlvPump::copy2Slice(Slice *s)
 	s->miAudioRate = miAudioRate;
 	s->miFirstPlaySkipMilSecond = msuper->firstPlaySkipMilSecond();
 	s->misResetStreamTimestamp = msuper->isResetStreamTimestamp();
-	s->mstrUrl = murl;
+	xCopyString(&s->mpUrl, murl.c_str(), murl.length());
 	s->miMediaRate = miMediaRate;
 	s->miVideoRate = miVideoRate;
 	s->miAudioRate = miAudioRate;
 	s->miVideoFrameRate = miVideoFrameRate;
 	s->miAudioFrameRate = miAudioFrameRate;
 	s->misNoTimeout = msuper->isNoTimeout();
-	s->mstrVideoType = ::getVideoType(mvideoType);
-	s->mstrAudioType = ::getAudioType(maudioType);
+	strTmp = ::getVideoType(mvideoType);
+	xCopyString(&s->mpVideoType, strTmp.c_str(), strTmp.length());
+	strTmp = ::getAudioType(maudioType);
+	xCopyString(&s->mpAudioType, strTmp.c_str(), strTmp.length());
 	s->miLiveStreamTimeout = msuper->liveStreamTimeout();
 	s->miNoHashTimeout = msuper->noHashTimeout();
-	s->mstrRemoteIP = msuper->getRemoteIP();
-	s->mstrHost = msuper->getHost();
+	strTmp = msuper->getRemoteIP();
+	xCopyString(&s->mpRemoteIP, strTmp.c_str(), strTmp.length());
+	strTmp = msuper->getHost();
+	xCopyString(&s->mpHost, strTmp.c_str(), strTmp.length());
 	s->misRealTimeStream = msuper->isRealTimeStream();
 	s->mllCacheTT = msuper->cacheTT();
 	s->misH264 = misH264;
 	s->misH265 = misH265;
 	msuper->makeOneTask();
 }
+
+

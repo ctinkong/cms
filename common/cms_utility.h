@@ -97,6 +97,7 @@ HASH makeHash(const char *bytes, int len);
 HASH makeUrlHash(std::string url);
 HASH makePushHash(std::string url);
 std::string parseSpeed8Mem(int64 speed, bool isSpeed);
+void parseSpeed8Mem(int64 speed, bool isSpeed, std::string &c, std::string &unit);
 bool nonblocking(int fd);
 bool blocking(int fd);
 void printTakeTime(std::map<unsigned long, unsigned long> &mapSendTakeTime, unsigned long ttB, unsigned long ttE, char *str, bool bPrint);
@@ -111,5 +112,10 @@ bool isHttp(ConnType &ct);
 bool isHttps(ConnType &ct);
 bool isRtmp(ConnType &ct);
 bool isQuery(ConnType &ct);
+//拷贝可是字符串，如果dst不为空，则会释放
+void xCopyString(char **dst, const char *src, int len);
+//拷贝内存，如果dst不为空，则会释放
+void xCopyMem(char **dst, char *src, int len);
+void xCopyHash(char **dst, HASH &hash);
 #endif
 

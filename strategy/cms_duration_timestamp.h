@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_DURATION_TIMESTAMP_H__
 #define __CMS_DURATION_TIMESTAMP_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CDurationTimestamp
@@ -39,6 +40,8 @@ public:
 	uint32  resetTimestamp(uint32 timestamp, bool isVideo);
 	void	resetDeltaTimestamp(uint32 timestamp);
 	uint32	keepTimestampIncrease(bool isVideo, uint32 timestamp);
+
+	OperatorNewDelete
 private:
 	bool			misInit;
 	std::string		murl;

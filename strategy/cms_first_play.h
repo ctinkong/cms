@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define __CMS_FIRST_PLAY_H__
 #include <common/cms_type.h>
 #include <flvPool/cms_flv_pool.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CFirstPlay
@@ -39,6 +40,8 @@ public:
 	bool	checkfirstPlay();
 	bool	checkShouldDropFrameCount(int64 &transIdx, Slice *s);
 	bool	needDropFrame(Slice *s);
+
+	OperatorNewDelete
 private:
 	bool			misInit;
 	std::string		murl;

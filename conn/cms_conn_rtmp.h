@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <strategy/cms_jitter.h>
 #include <common/cms_type.h>
 #include <protocol/cms_flv_pump.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CRtmpProtocol;
@@ -83,6 +84,8 @@ public:
 	int  setPlayTask();
 	void tryCreatePullTask();
 	void tryCreatePushTask(bool isRetry = false);
+
+	OperatorNewDelete
 private:
 	void initMediaConfig();
 	int  decodeVideo(RtmpMessage *msg, bool &isSave);

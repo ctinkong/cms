@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_ts_chunk.h>
 #include <log/cms_log.h>
 #include <common/cms_utility.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <string.h>
 
@@ -204,7 +205,7 @@ int CMux::tag2Ts(byte *inBuf, int inLen, byte *outBuf, int &outLen, byte &outTyp
 	int TSlen = -1;
 
 	byte *&TsStream = outBuf;
-	TsStream = new byte[int(inLen / 184 + 2) * TS_CHUNK_SIZE + TS_CHUNK_SIZE * 2];
+	TsStream = (byte*)xmalloc(sizeof(byte)*(int(inLen / 184 + 2) * TS_CHUNK_SIZE + TS_CHUNK_SIZE * 2));
 	int &StreamLen = outLen;
 	outPts = 0;
 	outType = 'A';
@@ -602,7 +603,7 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 		parseNAL(inBuf, inLen, &NALbuf, NALlen);
 		if (NALlen <= 0) { //为SPS/PPS的Tag，不单独写成PES包(放在I帧前和I帧一起打包)
 // 			logs->error("ts error parseNAL file %s line %d", __FILE__, __LINE__);
-			delete[] * outBuf;
+			xfree(*outBuf);
 			outLen = 0;
 			return 0;
 		}
@@ -634,7 +635,7 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 			if (AAClen <= 0)
 			{
 				// 				logs->error("ts error parseAAC file %s line %d", __FILE__, __LINE__);
-				delete[] * outBuf;
+				xfree(*outBuf);
 				outLen = 0;
 				return 0;
 			}
@@ -669,7 +670,7 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 		if (NALlen <= 0)
 		{
 			// 			logs->error("ts error parseNAL file %s line %d", __FILE__, __LINE__);
-			delete[] * outBuf;
+			xfree(*outBuf);
 			outLen = 0;
 			return 0;
 		}
@@ -691,7 +692,7 @@ int CMux::packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte 
 
 //
 int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
-	*out = new byte[inLen + 128];
+	*out = (byte*)xmalloc(sizeof(byte)*(inLen + 128));
 	memset(*out, 0, inLen + 128);
 	byte *&outBuf = *out;
 	outLen = 0;
@@ -707,7 +708,7 @@ int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
 
 		}
 		mAACFLag = false;
-		delete[]outBuf;
+		xfree(outBuf);
 		return 0;
 	}
 	else {
@@ -749,7 +750,7 @@ int CMux::parseAAC(byte *inBuf, int inLen, byte **out, int &outLen) {
 
 //解FLV中H264的NAL
 int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
-	*out = new byte[inLen + 256];
+	*out = (byte*)xmalloc(sizeof(byte)*(inLen + 256));
 	memset(*out, 0, inLen + 256);
 	byte *&outBuf = *out;
 	outLen = 0;
@@ -790,7 +791,7 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 			memcpy(mPpsNal + mPpsNalLen + 4, inBuf + pos + 3 + i * pictureParameterSetLength, pictureParameterSetLength);
 			mPpsNalLen += (4 + pictureParameterSetLength);
 		}
-		delete[]outBuf;
+		xfree(outBuf);
 		return 0;
 	}
 	else if (inBuf[1] == 0x01) { //AVCPacketType为slice
@@ -850,7 +851,7 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 		}
 		return 0;
 	}
-	delete[]outBuf;
+	xfree(outBuf);
 	return 0;
 	/*
 	 FLV中的NAL和TS中的NAl不一样，TS中是由 0x00 0x00 0x00 0x01分割
@@ -870,7 +871,7 @@ int CMux::parseNAL(byte *inBuf, int inLen, byte **out, int &outLen) {
 //将一个PES包打成TS包(不包含PSI)
 int CMux::packTS(byte *inBuf, int inLen, byte framType, byte pusi, byte afc, byte *mcc, int16 pid, uint32 timeStamp, byte **outBuf, int &outLen) {
 	int max = int(inLen / 184 + 1) * TS_CHUNK_SIZE + TS_CHUNK_SIZE * 2;
-	*outBuf = new byte[max];
+	*outBuf = (byte*)xmalloc(sizeof(byte)*(max));
 	outLen = 0;
 	byte *&TSstream = *outBuf;
 	int &streamLen = outLen;
@@ -1061,7 +1062,7 @@ void CMux::packPSI() {
 	setPAT(PMTpid, &tPAT, PATlen);
 	memcpy(mPAT, head, sizeof(head));
 	memcpy(mPAT + 5, tPAT, PATlen);
-	delete[]tPAT;
+	xfree(tPAT);
 	for (int pos = PATlen + 5; pos < TS_CHUNK_SIZE; pos++) {
 		mPAT[pos] = 0xFF;
 	}
@@ -1088,7 +1089,7 @@ void CMux::packPSI() {
 	setPMT(Apid, Vpid, PCRpid, mAstreamType, &tPMT, PMTlen);
 	memcpy(mPMT, head, sizeof(head));
 	memcpy(mPMT + 5, tPMT, PMTlen);
-	delete[]tPMT;
+	xfree(tPMT);
 	for (int pos = PMTlen + 5; pos < TS_CHUNK_SIZE; pos++) {
 		mPMT[pos] = 0xFF;
 	}
@@ -1096,7 +1097,7 @@ void CMux::packPSI() {
 
 //设置PAT的包负载信息
 void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
-	*outBuf = new byte[TS_CHUNK_SIZE];
+	*outBuf = (byte*)xmalloc(sizeof(byte)*(TS_CHUNK_SIZE));
 	memset(*outBuf, 0, TS_CHUNK_SIZE);
 	outLen = 0;
 	byte *&PATpack = *outBuf;
@@ -1181,7 +1182,7 @@ void setPAT(int16 pmtPid, byte **outBuf, int &outLen) {
 
 //设置PMT的包负载信息
 void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBuf, int &outLen) {
-	*outBuf = new byte[TS_CHUNK_SIZE];
+	*outBuf = (byte*)xmalloc(sizeof(byte)*(TS_CHUNK_SIZE));
 	memset(*outBuf, 0, TS_CHUNK_SIZE);
 	outLen = 0;
 	bool VFlag = true;
@@ -1328,7 +1329,7 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 
 void setSDT(byte **outBuf, int &outLen) {
 	outLen = TS_CHUNK_SIZE;
-	*outBuf = new byte[outLen];
+	*outBuf = (byte*)xmalloc(sizeof(byte)*(outLen));
 	byte* &SDT = *outBuf;
 	memcpy(SDT, gSDT, outLen);
 }
@@ -1396,7 +1397,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 		}
 		else {
 			dataLen = inLen - 1;
-			data = new byte[dataLen];
+			data = (byte*)xmalloc(sizeof(byte)*(dataLen));
 			memcpy(data, inBuf + 1, dataLen);
 		}
 
@@ -1532,7 +1533,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 	}
 	if (data)
 	{
-		delete[]data;
+		xfree(data);
 	}
 }
 

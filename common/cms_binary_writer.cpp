@@ -23,11 +23,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <common/cms_binary_writer.h>
+#include <mem/cms_mf_mem.h>
 #include <cstring>
 
 BinaryWriter::BinaryWriter()
 {
-	m_pHead = (char*)malloc(1024);
+	m_pHead = (char*)xmalloc(1024);
 	m_pPos = m_pHead;
 	m_iBufSize = 1024;
 	m_iLen = 0;
@@ -38,7 +39,7 @@ BinaryWriter::~BinaryWriter()
 {
 	if (m_pHead != NULL)
 	{
-		free(m_pHead);
+		xfree(m_pHead);
 	}
 }
 
@@ -47,7 +48,7 @@ void BinaryWriter::rrealloc(const char* pBuf, int iSize)
 	while (m_iLen + iSize > m_iBufSize)
 	{
 		m_iBufSize += 1024;
-		m_pHead = (char*)::realloc(m_pHead, m_iBufSize);
+		m_pHead = (char*)xrealloc(m_pHead, m_iBufSize);
 	}
 	m_pPos = m_pHead + m_iLen;
 	memcpy(m_pPos, pBuf, iSize);

@@ -36,6 +36,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <app/cms_parse_args.h>
 #include <worker/cms_master_callback.h>
 #include <config/cms_config.h>
+#include <mem/cms_mf_mem.h>
 #include <assert.h>
 #include <stdlib.h>
 using namespace std;
@@ -390,7 +391,7 @@ int CConnRtmp::decodeMessage(RtmpMessage *msg)
 	}
 	if (!isSave)
 	{
-		delete[] msg->buffer;
+		xfree(msg->buffer);
 		msg->buffer = NULL;
 		msg->bufLen = 0;
 	}
@@ -484,7 +485,7 @@ int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg)
 			continue;
 		}
 		RtmpMessage *rm = new RtmpMessage;
-		rm->buffer = new char[tagLen];
+		rm->buffer = (char*)xmalloc(tagLen);
 		memcpy(rm->buffer, msg->buffer + uiHandleLen + 11, tagLen);
 		rm->dataLen = tagLen;
 		rm->msgType = dataType;
@@ -495,7 +496,7 @@ int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg)
 		{
 			if (decodeVideo(rm, isSave) == CMS_ERROR)
 			{
-				delete[] rm->buffer;
+				xfree(rm->buffer);
 				delete rm;
 				return CMS_ERROR;
 			}
@@ -504,14 +505,14 @@ int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg)
 		{
 			if (decodeAudio(rm, isSave) == CMS_ERROR)
 			{
-				delete[] rm->buffer;
+				xfree(rm->buffer);
 				delete rm;
 				return CMS_ERROR;
 			}
 		}
 		if (!isSave)
 		{
-			delete[] rm->buffer;
+			xfree(rm->buffer);
 		}
 		delete rm;
 		uiHandleLen += (11 + tagLen + 1);
@@ -526,7 +527,7 @@ int CConnRtmp::decodeMetaData(amf0::Amf0Block *block)
 
 	string strMetaData = amf0::amf0Block2String(block);
 	int len = strMetaData.length();
-	char *data = new char[len];
+	char *data = (char*)xmalloc(len);
 	memcpy(data, strMetaData.c_str(), len);
 
 	int ret = mflvPump->decodeMetaData(data, len, misChangeMediaInfo);
@@ -534,7 +535,7 @@ int CConnRtmp::decodeMetaData(amf0::Amf0Block *block)
 	{
 		misPushFlv = true;
 	}
-	delete[] data;
+	xfree(data);
 	return CMS_OK;
 }
 
@@ -562,14 +563,14 @@ int CConnRtmp::decodeSetDataFrame(amf0::Amf0Block *block)
 	amf0::amf0BlockRelease(blockMetaData);
 
 	int len = strMetaData.length();
-	char *dm = new char[len];
+	char *dm = (char *)xmalloc(len);
 	memcpy(dm, strMetaData.c_str(), len);
 	int ret = mflvPump->decodeMetaData(dm, len, misChangeMediaInfo);
 	if (ret == 1)
 	{
 		misPushFlv = true;
 	}
-	delete[] dm;
+	xfree(dm);
 	return CMS_OK;
 }
 

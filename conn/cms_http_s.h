@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_binary_writer.h>
 #include <protocol/cms_http.h>
 #include <net/cms_net_var.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CHttpServer :public Conn
@@ -60,14 +61,17 @@ public:
 	bool isWebsocket();
 	int  doRead();
 	int  doWrite();
+
+	OperatorNewDelete
 private:
 	int  handle();
 	int  handleCrossDomain(int &ret);
-	int	 handleFlv(int &ret, bool isDefault = false);
-	int  handleQuery(int &ret);
+	int	 handleFlv(int &ret, bool isDefault = false);	
 	int  handleHlsM3U8(int &ret);
 	int  handleHlsTS(int &ret);
 	int  handleTsStream(int &ret);
+	int  handleQuery(int &ret);
+	int  handleMemCheck(int &ret);
 	void makeHash();
 	void makeHash(std::string url);
 	void tryCreateTask();

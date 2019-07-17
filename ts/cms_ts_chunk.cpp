@@ -24,13 +24,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <ts/cms_ts_chunk.h>
 #include <common/cms_utility.h>
+#include <mem/cms_mf_mem.h>
 #include <assert.h>
 
 TsChunk *allocTsChunk(int chunkSize)
 {
 	TsChunk *tc = new TsChunk;
 	tc->mchunkSize = chunkSize;
-	tc->mdata = new char[chunkSize];
+	tc->mdata = (char*)xmalloc(chunkSize);
 	tc->muse = 0;
 	return tc;
 }
@@ -40,7 +41,7 @@ void freeTsChunk(TsChunk *tc)
 	assert(tc != NULL);
 	if (tc->mdata)
 	{
-		delete[]tc->mdata;
+		xfree(tc->mdata);
 	}
 	delete tc;
 }

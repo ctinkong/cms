@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <interface/cms_read_write.h>
 #include <common/cms_type.h>
 #include <s2n/s2n.h>
+#include <mem/cms_mf_mem.h>
 
 #define DEFAULT_BUFFER_SIZE (32*1024)
 
@@ -46,6 +47,8 @@ public:
 	int   errnos();
 	void  close();
 	int32 readBytesNum();
+
+	OperatorNewDelete
 private:
 	void  resize();
 	int   seterrno(int err);
@@ -78,6 +81,8 @@ public:
 	int   size();
 	void  close();
 	int32 writeBytesNum();
+
+	OperatorNewDelete
 private:
 	int   seterrno(int err);
 	char *mbuffer;
@@ -103,6 +108,8 @@ public:
 	void  skip(int n);
 	void  resize();
 	int   size();
+
+	OperatorNewDelete
 private:
 	char *mbuffer;
 	int  mb;

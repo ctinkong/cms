@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_char_int.h>
 #include <conn/cms_conn_rtmp.h>
 #include <app/cms_app_info.h>
+#include <mem/cms_mf_mem.h>
 #include <log/cms_log.h>
 #include <errno.h>
 #include <sstream>
@@ -105,7 +106,7 @@ CRtmpProtocol::~CRtmpProtocol()
 			{
 				if (itIn->second->currentMessage->buffer != NULL)
 				{
-					delete[] itIn->second->currentMessage->buffer;
+					xfree(itIn->second->currentMessage->buffer);
 				}
 				delete itIn->second->currentMessage;
 			}
@@ -128,7 +129,7 @@ CRtmpProtocol::~CRtmpProtocol()
 	}
 	if (mps1)
 	{
-		delete[] mps1;
+		xfree(mps1);
 		mps1 = NULL;
 	}
 }
@@ -207,7 +208,7 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		return CMS_ERROR;
 	}
-	char *pc1 = new char[SHAKE_RAND_DATA_LEN];
+	char *pc1 = (char *)xmalloc(SHAKE_RAND_DATA_LEN);
 	mc1.dump(pc1);
 	bool isValid;
 	ret = mc1.c1_validate_digest(isValid);
@@ -215,7 +216,7 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s c1ValidateDigest fail in doComplexShakeC01 ***",
 			mremoteAddr.c_str(), getRtmpType().c_str());
-		delete[] pc1;
+		xfree(pc1);
 		return CMS_ERROR;
 	}
 	ret = mwrBuff->writeBytes(pc1, SHAKE_RAND_DATA_LEN);
@@ -223,10 +224,10 @@ int CRtmpProtocol::c2sComplexShakeC0C1()
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s write c1 fail,errno=%d,strerrno=%s ***",
 			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-		delete[] pc1;
+		xfree(pc1);
 		return CMS_ERROR;
 	}
-	delete[] pc1;
+	xfree(pc1);
 	mrtmpStatus = RtmpStatusShakeC0C1;
 
 	logs->info("%s [CRtmpProtocol::c2sComplexShakeC0C1] enter rtmp %s status change to RtmpStatusShakeC0C1",
@@ -301,17 +302,17 @@ int CRtmpProtocol::c2sComplexShakeS1C2()
 			mremoteAddr.c_str(), getRtmpType().c_str());
 		return CMS_ERROR;
 	}
-	char *pc2 = new char[SHAKE_RAND_DATA_LEN];
+	char *pc2 = (char*)xmalloc(SHAKE_RAND_DATA_LEN);
 	c2.dump(pc2);
 	ret = mwrBuff->writeBytes(pc2, SHAKE_RAND_DATA_LEN);
 	if (ret == CMS_ERROR)
 	{
 		logs->error("%s [CRtmpProtocol::c2sComplexShakeC0C1] rtmp %s write c2 fail,errno=%d,strerrno=%s ***",
 			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-		delete[] pc2;
+		xfree(pc2);
 		return CMS_ERROR;
 	}
-	delete[] pc2;
+	xfree(pc2);
 	mrtmpStatus = RtmpStatusShakeS1;
 
 	logs->info("%s [CRtmpProtocol::c2sComplexShakeS1C2] enter rtmp %s status change to RtmpStatusShakeS1",
@@ -420,7 +421,7 @@ int CRtmpProtocol::s2cComplexShakeC012()
 			return CMS_ERROR;
 		}
 		// 发送 s0s1s2  
-		char* s0s1s2 = new char[3073];
+		char* s0s1s2 = (char*)xmalloc(3073);
 		s0s1s2[0] = c0;
 		s1.dump(s0s1s2 + 1);
 		s2.dump(s0s1s2 + 1537);
@@ -430,10 +431,10 @@ int CRtmpProtocol::s2cComplexShakeC012()
 		{
 			logs->error("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s write s0s1s2 fail,errno=%d,strerrno=%s ***",
 				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-			delete[] s0s1s2;
+			xfree(s0s1s2);
 			return CMS_ERROR;
 		}
-		delete[] s0s1s2;
+		xfree(s0s1s2);
 		mrtmpStatus = RtmpStatusShakeC0C1;
 
 		logs->info("%s [CRtmpProtocol::s2cComplexShakeC012] rtmp %s complex shake change to RtmpStatusShakeC0C1.",
@@ -489,7 +490,7 @@ int CRtmpProtocol::s2cSampleShakeC012()
 			return CMS_ERROR;
 		}
 		char *c1 = mrdBuff->readBytes(SHAKE_RAND_DATA_LEN);
-		mps1 = new char[SHAKE_RAND_DATA_LEN];
+		mps1 = (char*)xmalloc(SHAKE_RAND_DATA_LEN);
 		memcpy(mps1, c1, SHAKE_RAND_DATA_LEN);
 
 		char s0 = c0;
@@ -1095,7 +1096,7 @@ int CRtmpProtocol::readRtmpPlayload(RtmpHeader &header, int fmt, int cid, int &h
 		if (pIncs->lastHeader->msgLength > 0)
 		{
 			pMsg->bufLen = pIncs->lastHeader->msgLength;
-			pMsg->buffer = new char[pMsg->bufLen];
+			pMsg->buffer = (char*)xmalloc(pMsg->bufLen);
 		}
 		if (pIncs->currentMessage)
 		{
@@ -1103,7 +1104,7 @@ int CRtmpProtocol::readRtmpPlayload(RtmpHeader &header, int fmt, int cid, int &h
 				mremoteAddr.c_str(), getRtmpType().c_str(), murl.c_str());
 			if (pIncs->currentMessage->buffer)
 			{
-				delete[] pIncs->currentMessage->buffer;
+				xfree(pIncs->currentMessage->buffer);
 			}
 			delete pIncs->currentMessage;
 		}
@@ -1114,9 +1115,9 @@ int CRtmpProtocol::readRtmpPlayload(RtmpHeader &header, int fmt, int cid, int &h
 		//重新开辟空间
 		if (pIncs->lastHeader->msgLength > 0 && pMsg->bufLen < pIncs->lastHeader->msgLength)
 		{
-			delete[] pMsg->buffer;
+			xfree(pMsg->buffer);
 			pMsg->bufLen = pIncs->lastHeader->msgLength;
-			pMsg->buffer = new char[pMsg->bufLen];
+			pMsg->buffer = (char*)xmalloc(pMsg->bufLen);
 		}
 	}
 	memcpy(pMsg->buffer + pMsg->dataLen, mrdBuff->peek(handleLen + needSkip4Bytes + dataLen) + handleLen + needSkip4Bytes, dataLen);

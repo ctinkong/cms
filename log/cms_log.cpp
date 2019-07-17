@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <log/cms_log.h>
 #include <common/cms_utility.h>
+#include <mem/cms_mf_mem.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -64,7 +65,7 @@ int _vscprintf(const char * format, va_list pargs)
 	va_list argptr;\
 	va_start(argptr, fmt);\
 	len = _vscprintf( fmt, argptr)+256;\
-	str = new char[len];\
+	str = (char*)xmalloc(len);\
 	memset(str,0,len);\
 	getLogInfo(level,str);\
 	day = getTimeStr(str+strlen(str));\
@@ -170,7 +171,7 @@ void CLog::thread()
 			}
 			if (logInfo->log)
 			{
-				delete[] logInfo->log;
+				xfree(logInfo->log);
 			}
 			delete logInfo;
 		}

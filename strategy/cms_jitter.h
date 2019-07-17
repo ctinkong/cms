@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_JITTER_H__
 #define __CMS_JITTER_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CJitter
@@ -51,6 +52,8 @@ public:
 	void	setOpenForceJitter(bool is);
 	bool	isOpenJitter();
 	bool	isForceJitter();
+
+	OperatorNewDelete
 private:
 	bool			misInit;
 	std::string		murl;

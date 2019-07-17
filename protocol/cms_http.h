@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <interface/cms_interf_conn.h>
 #include <interface/cms_protocol.h>
 #include <protocol/cms_ssl.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <map>
 
@@ -52,6 +53,8 @@ public:
 	void		setRefer(std::string refer);
 	bool		parseHeader(const char *header, int len);
 	void		reset();
+
+	OperatorNewDelete
 private:
 	std::string		mremoteAddr;
 	std::string		mmethod;
@@ -79,6 +82,8 @@ public:
 	bool		parseHeader(const char *header, int len);
 	std::string getResponse();
 	void		reset();
+
+	OperatorNewDelete
 private:
 	std::string		moriUrl;
 	std::string		mremoteAddr;
@@ -121,6 +126,8 @@ public:
 	void setChunked();
 	void reset();
 	void shouldCloseNodelay(bool force = false);
+
+	OperatorNewDelete
 private:
 	int  readChunkedRN();
 	

@@ -115,8 +115,10 @@ int daemon()
 void initInstance()
 {
 	//必须先初始化日志，否则会崩溃
-	cmsLogInit(CConfig::instance()->clog()->path(), CConfig::instance()->clog()->level(),
-		CConfig::instance()->clog()->console(), CConfig::instance()->clog()->size());
+	cmsLogInit(CConfig::instance()->clog()->path(),
+		CConfig::instance()->clog()->level(),
+		CConfig::instance()->clog()->console(),
+		CConfig::instance()->clog()->size());
 	CConfig::instance();
 	CFlvPool::instance();
 	CMaster::instance();
@@ -388,5 +390,5 @@ int main(int argc, char *argv[])
 	runAsTestServer();
 	cycleServer();
 	logs->debug("cms app exit.");
-}
+	}
 

@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define __CMS_MUX_H__
 #include <ts/cms_ts_common.h>
 #include <ts/cms_ts_chunk.h>
+#include <mem/cms_mf_mem.h>
 
 class CMux
 {
@@ -45,6 +46,8 @@ public:
 	byte *getPAT() { return mPAT; };
 	byte *getPMT() { return mPMT; };
 	void setAudioType(byte a) { mAstreamType = a; };
+
+	OperatorNewDelete
 private:
 	int  packPES(byte *inBuf, int inLen, byte framType, uint32 timeStamp, byte **outBuf, int &outLen);
 	void setPcr(uint64 DTS, byte **outBuf, int &outLen);

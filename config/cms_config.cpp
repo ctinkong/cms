@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <config/cms_config.h>
 #include <cJSON/cJSON.h>
 #include <common/cms_utility.h>
+#include <mem/cms_mf_mem.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -54,9 +55,9 @@ int s2nInit()
 CAddr::CAddr(char *addr, int defaultPort)
 {
 	assert(strlen(addr) < 128);
-	mAddr = new char[128];
+	mAddr = (char*)xmalloc(128);
 	memset(mAddr, 0, 128);
-	mHost = new char[128];
+	mHost = (char*)xmalloc(128);
 	memset(mHost, 0, 128);
 	strcpy(mAddr, addr);
 	char *p = strstr(addr, ":");
@@ -77,12 +78,12 @@ CAddr::~CAddr()
 {
 	if (mAddr)
 	{
-		delete[] mAddr;
+		xfree(mAddr);
 		mAddr = NULL;
 	}
 	if (mHost)
 	{
-		delete[] mHost;
+		xfree(mHost);
 		mAddr = NULL;
 	}
 }
@@ -141,7 +142,7 @@ Clog::Clog(char *path, char *level, bool console, int size)
 {
 	assert(path != NULL);
 	int len = strlen(path);
-	mpath = new char[len + 1];
+	mpath = (char*)xmalloc(len + 1);
 	memcpy(mpath, path, len);
 	mpath[len] = '\0';
 	if (size < 500 * 1024 * 1024)
@@ -157,7 +158,7 @@ Clog::~Clog()
 {
 	if (mpath)
 	{
-		delete[] mpath;
+		xfree(mpath);
 		mpath = NULL;
 	}
 }
@@ -203,21 +204,21 @@ void CSSLCertKey::free()
 {
 	for (int i = 0; i < mcertKeyNum; i++)
 	{
-		delete[] mcert[i];
-		delete[] mkey[i];
+		xfree(mcert[i]);
+		xfree(mkey[i]);
 	}
 	if (mcertKeyNum > 0)
 	{
-		delete[]mcert;
-		delete[]mkey;
+		xfree(mcert);
+		xfree(mkey);
 	}
 	if (mcipherVersion)
 	{
-		delete[]mcipherVersion;
+		xfree(mcipherVersion);
 	}
 	if (mdhparam)
 	{
-		delete[]mdhparam;
+		xfree(mdhparam);
 	}
 	if (ms2nConfig)
 	{
@@ -244,8 +245,8 @@ void CSSLCertKey::setCertKeyNum(int n)
 	}
 	misOpen = true;
 	mcertKeyNum = n;
-	mcert = new char*[n];
-	mkey = new char*[n];
+	mcert = (char**)xmalloc(sizeof(char*)*n);
+	mkey = (char**)xmalloc(sizeof(char*)*n);
 }
 
 bool CSSLCertKey::setCertKey(char *cert, char *key)
@@ -255,11 +256,11 @@ bool CSSLCertKey::setCertKey(char *cert, char *key)
 		return false;
 	}
 	int len = strlen(cert);
-	mcert[msetingIdx] = new char[len + 1];
+	mcert[msetingIdx] = (char*)xmalloc(len + 1);
 	memcpy(mcert[msetingIdx], cert, len);
 	mcert[msetingIdx][len] = 0;
 	len = strlen(key);
-	mkey[msetingIdx] = new char[len + 1];
+	mkey[msetingIdx] = (char*)xmalloc(len + 1);
 	memcpy(mkey[msetingIdx], key, len);
 	mkey[msetingIdx][len] = 0;
 	msetingIdx++;
@@ -270,10 +271,10 @@ void CSSLCertKey::setdhparam(char *dhparam)
 {
 	if (mdhparam)
 	{
-		delete[]mdhparam;
+		xfree(mdhparam);
 	}
 	int len = strlen(dhparam);
-	mdhparam = new char[len + 1];
+	mdhparam = (char*)xmalloc(len + 1);
 	memcpy(mdhparam, dhparam, len);
 	mdhparam[len] = 0;
 }
@@ -282,10 +283,10 @@ void CSSLCertKey::setCipherVersion(char *v)
 {
 	if (mcipherVersion)
 	{
-		delete[]mcipherVersion;
+		xfree(mcipherVersion);
 	}
 	int len = strlen(v);
-	mcipherVersion = new char[len + 1];
+	mcipherVersion = (char*)xmalloc(len + 1);
 	memcpy(mcipherVersion, v, len);
 	mcipherVersion[len] = 0;
 }
@@ -689,7 +690,7 @@ bool CConfig::init(const char *configPath)
 		fclose(fp);
 		return false;
 	}
-	char *data = new char[len + 1];
+	char *data = (char*)xmalloc(len + 1);
 	fseek(fp, 0, SEEK_SET);
 	int n = fread(data, 1, len, fp);
 	if (n != len)
@@ -707,11 +708,11 @@ bool CConfig::init(const char *configPath)
 	{
 		printf("*** [CConfig::init] config file %s parse json fail %s ***\n",
 			configPath, data);
-		delete[] data;
+		xfree(data);
 		return false;
 	}
 
-	delete[] data;
+	xfree(data);
 	data = NULL;
 	//¼àÌý¶Ë¿Ú
 	if (!parseListenJson(root, configPath))
@@ -976,8 +977,8 @@ bool CConfig::parseTlsJson(cJSON *root, const char *configPath)
 					return false;
 				}
 				mcertKey->setCertKey(pcert, pkey);
-				delete[]pcert;
-				delete[]pkey;
+				xfree(pcert);
+				xfree(pkey);
 			}
 			T = cJSON_GetObjectItem(tls, "dhparam");
 			if (T != NULL && T->type != cJSON_String)
@@ -997,7 +998,7 @@ bool CConfig::parseTlsJson(cJSON *root, const char *configPath)
 					return false;
 				}
 				mcertKey->setdhparam(pdhparam);
-				delete[] pdhparam;
+				xfree(pdhparam);
 			}
 
 			T = cJSON_GetObjectItem(tls, "version");

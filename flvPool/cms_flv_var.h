@@ -2,6 +2,7 @@
 #define __CMS_FLV_VAR_H__
 #include <common/cms_type.h>
 #include <core/cms_lock.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -35,7 +36,7 @@ enum FlvPoolDataType
 
 #define DropVideoMinSeconds 1500
 
-struct Slice
+struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
 {
 	int				mionly;				//0 表示没被使用，大于0表示正在被使用次数
 	FlvPoolDataType miDataType;			//数据类型
@@ -53,23 +54,23 @@ struct Slice
 	int64			mllStartTime;		//任务开始时间
 	char			*mData;				//数据
 	int             miDataLen;
-	HASH			mhMajorHash;		//对于转码任务，该hash表示源流hash
-	HASH			mhHash;				//当前任务hash
-	std::string     mstrUrl;
+	char			*mpMajorHash;		//对于转码任务，该hash表示源流hash
+	char			*mpHash;				//当前任务hash
+	char			*mpUrl;
 	bool			misKeyFrame;
 	int				miMediaRate;
 	int				miVideoRate;		//视频码率
 	int				miAudioRate;		//音频码率
 	int				miVideoFrameRate;	//视频帧率
 	int				miAudioFrameRate;	//音频帧率
-	std::string     mstrVideoType;		//视频类型
-	std::string     mstrAudioType;		//音频类型
+	char			*mpVideoType;		//视频类型
+	char			*mpAudioType;		//音频类型
 	int				miAudioChannelID;	//连麦流音频ID
 
 	bool			misH264;
 	bool			misH265;
 
-	std::string     mstrReferUrl;
+	char			*mpReferUrl;
 	int64			mllCacheTT;					//缓存时间 毫秒
 	int				miPlayStreamTimeout;		//多久没播放超时时间	
 	bool			misRealTimeStream;			//是否从最新的数据发送
@@ -82,8 +83,8 @@ struct Slice
 
 	int				miLiveStreamTimeout;
 	int				miNoHashTimeout;
-	std::string     mstrRemoteIP;
-	std::string     mstrHost;
+	char			*mpRemoteIP;
+	char			*mpHost;
 };
 
 struct TTandKK
@@ -180,5 +181,7 @@ struct StreamSlice
 
 	std::string					mstrRemoteIP;
 	std::string					mstrHost;
+
+	OperatorNewDelete
 };
 #endif

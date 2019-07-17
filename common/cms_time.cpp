@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_time.h>
 #include <common/cms_utility.h>
 #include <core/cms_thread.h>
+#include <mem/cms_mf_mem.h>
 #include <time.h>
 #include <stdio.h>
 #include <signal.h>
@@ -161,8 +162,8 @@ void cmsRegister()
 		gcmsUnixTime[i] = 0;
 		gcmsMilSecond[i] = 0;
 		gcmsDay[i] = 0;
-		gcmsDayTime[i] = (char *)malloc(CMS_DATE_BUFFER_LEN);
-		gcmsTimeStr[i] = (char *)malloc(CMS_DATE_BUFFER_LEN);
+		gcmsDayTime[i] = (char *)xmalloc(CMS_DATE_BUFFER_LEN);
+		gcmsTimeStr[i] = (char *)xmalloc(CMS_DATE_BUFFER_LEN);
 	}
 	gcmsTimeRun = true;
 	cmsCreateThread(&gcmsTimeTid, cmsTimeThread, NULL, false);

@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_JUMP_LAST_X_SECONDS_H__
 #define __CMS_JUMP_LAST_X_SECONDS_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 //判断源流是否卡顿 如果是，则需要发送旧x秒前的数据--主要提高流畅度统计
@@ -40,6 +41,8 @@ public:
 
 	void	record();
 	bool    judge(int32 dataType, int64 &jumpIdx, int64 tt, int sliceNum, int frameRate, uint32 sendTimestamp);
+
+	OperatorNewDelete
 private:
 	bool			misInit;
 	std::string		murl;

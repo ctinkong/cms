@@ -28,6 +28,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_lock.h>
 #include <common/cms_type.h>
 #include <core/cms_thread.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <map>
 #include <queue>
@@ -46,6 +47,8 @@ struct CreateTaskPacket
 	bool				isHotPush;
 	bool				isPush2Cdn;
 	int64				ID;              //创建过程ID
+
+	OperatorNewDelete
 };
 
 class CTaskMgr
@@ -79,6 +82,8 @@ public:
 	void	createTask(HASH &hash, std::string pullUrl, std::string pushUrl, std::string oriUrl,
 		std::string refer, int createAct, bool isHotPush, bool isPush2Cdn);
 	void	push(CreateTaskPacket *ctp);
+
+	OperatorNewDelete
 private:
 	bool	pop(CreateTaskPacket **ctp);
 	//创建任务

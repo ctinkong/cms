@@ -23,6 +23,7 @@ the following restrictions:
 */
 
 #include <enc/cms_base64.h>
+#include <mem/cms_mf_mem.h>
 #include <string.h>
 
 // Encodes binary data to Base64 code
@@ -34,7 +35,7 @@ int Base64::Encode(char *inData, int dataLength, char *outCode)
 
 	// output buffer which holds code during conversation
 	int len = GetCodeLength(dataLength);
-	char* out = new char[len];
+	char* out = (char*)xmalloc(len);
 
 	// charachers used by Base64
 	static const char alph[] =
@@ -119,7 +120,7 @@ int Base64::Encode(char *inData, int dataLength, char *outCode)
 	// 	outCode.clear();
 	// 	outCode.append( out, len );
 	memcpy(outCode, out, len);
-	delete[] out;
+	xfree(out);
 	return len;
 
 }
@@ -131,7 +132,7 @@ int Base64::Encode1(char *inData, int dataLength, char *outCode)
 
 	// output buffer which holds code during conversation
 	int len = GetCodeLength(dataLength);
-	char* out = new char[len];
+	char* out = (char*)xmalloc(len);
 
 	// charachers used by Base64
 	static const char alph[] =
@@ -216,7 +217,7 @@ int Base64::Encode1(char *inData, int dataLength, char *outCode)
 	// 	outCode.clear();
 	// 	outCode.append( out, len );
 	memcpy(outCode, out, len);
-	delete[] out;
+	xfree(out);
 	return len;
 
 }

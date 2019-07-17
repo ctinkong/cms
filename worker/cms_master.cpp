@@ -5,7 +5,7 @@ Copyright (c) 2017- cms(hsc)
 
 Author: 天空没有乌云/kisslovecsh@foxmail.com
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
+Permission is hereby granted, xfree of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
 the Software without restriction, including without limitation the rights to
 use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <common/cms_utility.h>
 #include <config/cms_config.h>
 #include <protocol/cms_rtmp.h>
+#include <mem/cms_mf_mem.h>
 #include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -107,7 +108,7 @@ bool CMaster::run()
 	{
 		return false;
 	}
-	ev_timer *watcher = (ev_timer *)malloc(sizeof(ev_timer));
+	ev_timer *watcher = (ev_timer *)xmalloc(sizeof(ev_timer));
 	mtimerEcp.base = this;
 	watcher->data = (void *)&mtimerEcp;
 	ev_timer_init(watcher, ::workerAliveCallBack, 0., 0.1); //检测线程是否被外部停止
@@ -138,13 +139,13 @@ void CMaster::stop()
 	std::set<ev_timer *>::iterator itVT = msetEvTimer.begin();
 	for (; itVT != msetEvTimer.end(); itVT++)
 	{
-		free(*itVT);
+		xfree(*itVT);
 	}
 	msetEvTimer.clear();
 	std::set<ev_io *>::iterator itIO = msetEvIO.begin();
 	for (; itIO != msetEvIO.end(); itIO++)
 	{
-		free(*itIO);
+		xfree(*itIO);
 	}
 	msetEvIO.clear();
 	stopWorker();
@@ -242,7 +243,7 @@ void CMaster::fdAssociate2Ev(CConnListener *cls, listenTcpCallBack cb)
 	EvCallBackParam *ecb = new EvCallBackParam();
 	memset(ecb, 0, sizeof(EvCallBackParam));
 	//添加到libev网络库中
-	ev_io *watcher = (ev_io*)malloc(sizeof(ev_io));
+	ev_io *watcher = (ev_io*)xmalloc(sizeof(ev_io));
 	ecb->base = this;
 	ecb->cls = cls;
 	ecb->isPassive = true;

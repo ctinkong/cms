@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <static/cms_static_common.h>
 #include <app/cms_app_info.h>
 #include <app/cms_parse_args.h>
+#include <mem/cms_mf_mem.h>
 using namespace std;
 
 #define MapHashStreamIter map<HASH,StreamSlice *>::iterator
@@ -55,9 +56,41 @@ void atomicDec(Slice *s)
 		{
 			if (s->mData)
 			{
-				delete[] s->mData;
+				xfree(s->mData);
 			}
-			delete s;
+			if (s->mpMajorHash)
+			{
+				xfree(s->mpMajorHash);
+			}
+			if (s->mpHash)
+			{
+				xfree(s->mpHash);
+			}
+			if (s->mpUrl)
+			{
+				xfree(s->mpUrl);
+			}
+			if (s->mpVideoType)
+			{
+				xfree(s->mpVideoType);
+			}
+			if (s->mpAudioType)
+			{
+				xfree(s->mpAudioType);
+			}
+			if (s->mpReferUrl)
+			{
+				xfree(s->mpReferUrl);
+			}
+			if (s->mpRemoteIP)
+			{
+				xfree(s->mpRemoteIP);
+			}
+			if (s->mpHost)
+			{
+				xfree(s->mpHost);
+			}
+			xfree(s);
 		}
 	}
 }
@@ -78,7 +111,7 @@ CAutoSlice::~CAutoSlice()
 
 Slice *newSlice()
 {
-	Slice *s = new Slice;
+	Slice *s = (Slice*)xmalloc(sizeof(Slice));
 	s->mionly = 0;
 	s->miDataType = DATA_TYPE_NONE;
 	s->misHaveMediaInfo = false;
@@ -119,7 +152,15 @@ Slice *newSlice()
 
 	s->miLiveStreamTimeout = 0;
 	s->miNoHashTimeout = 0;
-	assert(s);
+
+	s->mpMajorHash = NULL;
+	s->mpHash = NULL;
+	s->mpUrl = NULL;
+	s->mpVideoType = NULL;
+	s->mpAudioType = NULL;
+	s->mpReferUrl = NULL;
+	s->mpRemoteIP = NULL;
+	s->mpHost = NULL;
 	return s;
 }
 
@@ -224,9 +265,9 @@ CFlvPool::~CFlvPool()
 			{
 				if (s->mData)
 				{
-					delete[] s->mData;
+					xfree(s->mData);
 				}
-				delete s;
+				xfree(s);
 			}
 		}
 		mqueueLock[i].Unlock();
@@ -240,7 +281,7 @@ CFlvPool::~CFlvPool()
 				TTandKK *tk = *iterV;
 				if (tk)
 				{
-					delete tk;
+					xfree(tk);
 				}
 				iterV = ss->msliceTTKK.erase(iterV);
 			}
@@ -257,27 +298,27 @@ CFlvPool::~CFlvPool()
 			{
 				if (ss->mfirstVideoSlice->mData)
 				{
-					delete[] ss->mfirstVideoSlice->mData;
+					xfree(ss->mfirstVideoSlice->mData);
 				}
-				delete ss->mfirstVideoSlice;
+				xfree(ss->mfirstVideoSlice);
 				ss->mfirstVideoSlice = NULL;
 			}
 			if (ss->mfirstAudioSlice)
 			{
 				if (ss->mfirstAudioSlice->mData)
 				{
-					delete[] ss->mfirstAudioSlice->mData;
+					xfree(ss->mfirstAudioSlice->mData);
 				}
-				delete ss->mfirstAudioSlice;
+				xfree(ss->mfirstAudioSlice);
 				ss->mfirstAudioSlice = NULL;
 			}
 			if (ss->mmetaDataSlice)
 			{
 				if (ss->mmetaDataSlice->mData)
 				{
-					delete[] ss->mmetaDataSlice->mData;
+					xfree(ss->mmetaDataSlice->mData);
 				}
-				delete ss->mmetaDataSlice;
+				xfree(ss->mmetaDataSlice);
 				ss->mmetaDataSlice = NULL;
 			}
 			mmapHashSlice[i].erase(iterM++);
@@ -434,7 +475,7 @@ bool CFlvPool::justJump2VideoLastXSecond(uint32 i, HASH &hash, uint32 &st, uint3
 					transIdx = keyIdx - 1;
 					ts = s->muiTimestamp;
 					logs->debug(">>>>>>hsc justJump2VideoLastXSecond read last task %s seek keyframe,idx=%lld, st=%u, s->muiTimestamp=%u.",
-						s->mstrUrl.c_str(), transIdx, st, s->muiTimestamp);
+						s->mpUrl, transIdx, st, s->muiTimestamp);
 					break;
 				}
 			}
@@ -1173,55 +1214,26 @@ bool CFlvPool::seekKeyFrame(uint32 i, HASH &hash, uint32 &st, int64 &transIdx)
 void CFlvPool::handleSlice(uint32 i, Slice *s)
 {
 	StreamSlice *ss = NULL;
-	MapHashStreamIter iterM = mmapHashSlice[i].find(s->mhHash);
+	MapHashStreamIter iterM = mmapHashSlice[i].find(s->mpHash);
 	if (iterM == mmapHashSlice[i].end())
 	{
 		if (s->misRemove)
 		{
-			logs->debug(">>>>>[handleSlice] task %s is remove but not find hash", s->mstrUrl.c_str());
+			logs->debug(">>>>>[handleSlice] task %s is remove but not find hash", s->mpUrl);
 			if (s->mData)
 			{
-				delete[] s->mData;
+				xfree(s->mData);
 			}
-			delete s;
+			xfree(s);
 			return;
 		}
 		atomicInc(s);
 		ss = newStreamSlice();
+		updateMediaInfo(ss, s);
 		ss->muid = getVid();
-		ss->miNotPlayTimeout = s->miNotPlayTimeout;
-		if (ss->miNotPlayTimeout <= 0)
-		{
-			ss->miNotPlayTimeout = 1000 * 60 * 10;
-		}
-		ss->miFirstPlaySkipMilSecond = s->miFirstPlaySkipMilSecond;
-		ss->misResetStreamTimestamp = s->misResetStreamTimestamp;
-		ss->mhMajorHash = s->mhMajorHash;
 		ss->mllCreateTime = getTimeUnix();
 		ss->mllAccessTime = ss->mllCreateTime;
-		ss->mstrUrl = s->mstrUrl;
-		ss->miMediaRate = s->miMediaRate;
-		ss->miVideoRate = s->miVideoRate;
-		ss->miAudioRate = s->miAudioRate;
-		ss->miVideoFrameRate = s->miVideoFrameRate;
-		ss->miAudioFrameRate = s->miAudioFrameRate;
-		ss->misNoTimeout = s->misNoTimeout;
-		ss->mstrVideoType = s->mstrVideoType;
-		ss->mstrAudioType = s->mstrAudioType;
-		ss->miLiveStreamTimeout = s->miLiveStreamTimeout;
-		ss->miNoHashTimeout = s->miNoHashTimeout;
 		ss->misPushTask = s->misPushTask;
-		ss->mstrRemoteIP = s->mstrRemoteIP;
-		ss->mstrHost = s->mstrHost;
-		ss->misRealTimeStream = s->misRealTimeStream;
-		ss->mllCacheTT = s->mllCacheTT;
-		ss->misH264 = s->misH264;
-		ss->misH265 = s->misH265;
-		if (ss->mllCacheTT == 0)
-		{
-			ss->mllCacheTT = 1000 * 5;
-		}
-
 
 		if (s->misMetaData)
 		{
@@ -1266,7 +1278,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			ss->mllMemSize = s->miDataLen;
 		}
 		mhashSliceLock[i].WLock();
-		mmapHashSlice[i].insert(make_pair(s->mhHash, ss));
+		mmapHashSlice[i].insert(make_pair(s->mpHash, ss));
 		mhashSliceLock[i].UnWLock();
 	}
 	else
@@ -1283,7 +1295,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 
 		for (VectorTTKKIter iterTTKK = ss->msliceTTKK.begin(); iterTTKK != ss->msliceTTKK.end();)
 		{
-			delete *iterTTKK;
+			xfree(*iterTTKK);
 			iterTTKK = ss->msliceTTKK.erase(iterTTKK);
 		}
 		for (VectorSliceIter iterSI = ss->mavSlice.begin(); iterSI != ss->mavSlice.end();)
@@ -1305,9 +1317,9 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		}
 		if (s->mData)
 		{
-			delete[] s->mData;
+			xfree(s->mData);
 		}
-		delete s;
+		xfree(s);
 		delete ss;
 	}
 	else
@@ -1316,33 +1328,11 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		atomicInc(s);
 		if (s->misHaveMediaInfo)
 		{
-			if (s->miNotPlayTimeout > 0)
-			{
-				ss->miNotPlayTimeout = s->miNotPlayTimeout;
-			}
-			ss->miFirstPlaySkipMilSecond = s->miFirstPlaySkipMilSecond;
-			ss->misResetStreamTimestamp = s->misResetStreamTimestamp;
-			ss->mstrUrl = s->mstrUrl;
-			ss->miMediaRate = s->miMediaRate;
-			ss->miVideoRate = s->miVideoRate;
-			ss->miAudioRate = s->miAudioRate;
-			ss->miVideoFrameRate = s->miVideoFrameRate;
-			ss->miAudioFrameRate = s->miAudioFrameRate;
-			ss->misNoTimeout = s->misNoTimeout;
-			ss->mstrVideoType = s->mstrVideoType;
-			ss->mstrAudioType = s->mstrAudioType;
-			ss->miLiveStreamTimeout = s->miLiveStreamTimeout;
-			ss->miNoHashTimeout = s->miNoHashTimeout;
-			ss->mstrRemoteIP = s->mstrRemoteIP;
-			ss->mstrHost = s->mstrHost;
-			ss->misRealTimeStream = s->misRealTimeStream;
-			ss->mllCacheTT = s->mllCacheTT;
+			updateMediaInfo(ss, s);
 			ss->miAutoBitRateMode = s->miAutoBitRateMode;
 			ss->miAutoBitRateFactor = s->miAutoBitRateFactor;
 			ss->miAutoFrameFactor = s->miAutoFrameFactor;
 			ss->miBufferAbsolutely = s->miBufferAbsolutely;
-			ss->misH264 = s->misH264;
-			ss->misH265 = s->misH265;
 		}
 
 		if (s->misMetaData)
@@ -1436,7 +1426,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 					ss->mvP2PKeyFrameIdx.push_back(s->mllP2PIndex);
 				}
 				ss->muiTheLastVideoTimestamp = s->muiTimestamp;
-				TTandKK *tk = new TTandKK;
+				TTandKK *tk = (TTandKK*)xmalloc(sizeof(TTandKK));
 				tk->mllIndex = s->mllIndex;
 				tk->mllKeyIndex = ss->mllNearKeyFrameIdx;
 				tk->muiTimestamp = s->muiTimestamp;
@@ -1487,7 +1477,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 					}
 					if (!ss->msliceTTKK.empty() && ss->msliceTTKK.at(0)->mllIndex == st->mllIndex)
 					{
-						delete ss->msliceTTKK.at(0);
+						xfree(ss->msliceTTKK.at(0));
 						ss->msliceTTKK.erase(ss->msliceTTKK.begin());
 					}
 					//Ê±¼ä´Á¼ÇÂ¼
@@ -1515,12 +1505,12 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			if (ss->mllMemSize > ss->mllLastMemSize + 100 * 1024)
 			{
 				ss->mllLastMemSize = ss->mllMemSize;
-				makeOneTaskMem(s->mhHash, ss->mllLastMemSize);
+				makeOneTaskMem(s->mpHash, ss->mllLastMemSize);
 			}
 			else if (ss->mllMemSize + 100 * 1024 < ss->mllLastMemSize)
 			{
 				ss->mllLastMemSize = ss->mllMemSize;
-				makeOneTaskMem(s->mhHash, ss->mllLastMemSize);
+				makeOneTaskMem(s->mpHash, ss->mllLastMemSize);
 			}
 			int64 tt = getTimeUnix();
 			if (tt - ss->mllMemSizeTick > 60)
@@ -1636,7 +1626,7 @@ bool CFlvPool::mergeKeyFrame(char *desc, int descLen, char *key, int keyLen, cha
 	int32 descData2Len = tagLen2;
 
 	srcLen = 4 + 4 + descData1Len + 4 + descData2Len + (keyLen - 4);
-	*src = new char[srcLen];
+	*src = (char*)xmalloc(srcLen);
 	char *p = *src;
 	memcpy(p, key, 4);
 	p += 4;
@@ -1656,3 +1646,56 @@ bool CFlvPool::mergeKeyFrame(char *desc, int descLen, char *key, int keyLen, cha
 	(*src)[1] = 0x01;
 	return true;
 }
+
+void CFlvPool::updateMediaInfo(StreamSlice *ss, Slice *s)
+{
+	ss->miNotPlayTimeout = s->miNotPlayTimeout;
+	if (ss->miNotPlayTimeout <= 0)
+	{
+		ss->miNotPlayTimeout = 1000 * 60 * 10;
+	}
+	ss->miFirstPlaySkipMilSecond = s->miFirstPlaySkipMilSecond;
+	ss->misResetStreamTimestamp = s->misResetStreamTimestamp;
+	if (s->mpMajorHash)
+	{
+		ss->mhMajorHash = s->mpMajorHash;
+	}
+	if (s->mpUrl)
+	{
+		ss->mstrUrl = s->mpUrl;
+	}
+	ss->miMediaRate = s->miMediaRate;
+	ss->miVideoRate = s->miVideoRate;
+	ss->miAudioRate = s->miAudioRate;
+	ss->miVideoFrameRate = s->miVideoFrameRate;
+	ss->miAudioFrameRate = s->miAudioFrameRate;
+	ss->misNoTimeout = s->misNoTimeout;
+	if (s->mpVideoType)
+	{
+		ss->mstrVideoType = s->mpVideoType;
+	}
+	if (s->mpAudioType)
+	{
+		ss->mstrAudioType = s->mpAudioType;
+	}
+	ss->miLiveStreamTimeout = s->miLiveStreamTimeout;
+	ss->miNoHashTimeout = s->miNoHashTimeout;
+	if (s->mpRemoteIP)
+	{
+		ss->mstrRemoteIP = s->mpRemoteIP;
+	}
+	if (s->mpHost)
+	{
+		ss->mstrHost = s->mpHost;
+	}
+	ss->misRealTimeStream = s->misRealTimeStream;
+	ss->mllCacheTT = s->mllCacheTT;
+	ss->misH264 = s->misH264;
+	ss->misH265 = s->misH265;
+	if (ss->mllCacheTT == 0)
+	{
+		ss->mllCacheTT = 1000 * 5;
+	}
+}
+
+

@@ -1,5 +1,6 @@
 #include <worker/cms_worker.h>
 #include <worker/cms_master_callback.h>
+#include <mem/cms_mf_mem.h>
 #include <log/cms_log.h>
 #include <common/cms_utility.h>
 #include <assert.h>
@@ -93,13 +94,13 @@ void CWorker::stop()
 	std::set<ev_timer *>::iterator itVT = msetEvTimer.begin();
 	for (; itVT != msetEvTimer.end(); itVT++)
 	{
-		free(*itVT);
+		xfree(*itVT);
 	}
 	msetEvTimer.clear();
 	std::set<ev_io *>::iterator itIO = msetEvIO.begin();
 	for (; itIO != msetEvIO.end(); itIO++)
 	{
-		free(*itIO);
+		xfree(*itIO);
 	}
 	msetEvIO.clear();
 

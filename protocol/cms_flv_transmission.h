@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <strategy/cms_duration_timestamp.h>
 #include <strategy/cms_first_play.h>
 #include <strategy/cms_jump_last_x_seconds.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 
 class CRtmpProtocol;
@@ -42,6 +43,8 @@ public:
 	void setHash(uint32 hashIdx, HASH &hash);
 	void setWaterMarkHash(uint32 hashIdx, HASH &hash);
 	int  doTransmission(bool &isSendData);
+
+	OperatorNewDelete
 private:
 	int  doMetaData();
 	int  doFirstVideoAudio(bool isVideo);

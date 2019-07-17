@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_thread.h>
 #include <strategy/cms_fast_bit_rate.h>
 #include <app/cms_app_info.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -104,6 +105,8 @@ public:
 	uint32 getKeyFrameDistance(uint32 i, HASH &hash);
 	int	   getAutoBitRateFactor(uint32 i, HASH &hash);
 	int	   getAutoFrameFactor(uint32 i, HASH &hash);
+
+	OperatorNewDelete
 private:
 	void handleSlice(uint32 i, Slice *s);
 	void clear();
@@ -113,6 +116,7 @@ private:
 	bool isTimeout(uint32 i, HASH &hash);
 	void getRelativeDuration(StreamSlice *ss, Slice *s, bool isNewSlice,
 		int64 &maxRelativeDuration, int64 &minRelativeDuration);
+	void updateMediaInfo(StreamSlice *ss, Slice *s);
 
 
 	bool					misRun;

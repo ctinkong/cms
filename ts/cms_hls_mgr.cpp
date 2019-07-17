@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <app/cms_app_info.h>
 #include <app/cms_parse_args.h>
 #include <ts/cms_ts_callback.h>
+#include <mem/cms_mf_mem.h>
 #include <time.h>
 #include <assert.h>
 
@@ -163,7 +164,7 @@ void CMission::initMux()
 	writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
 	writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 	ss->marray.push_back(mlastTca);
-	msliceList.push_back(ss);	
+	msliceList.push_back(ss);
 }
 
 int CMission::doFirstVideoAudio(bool isVideo)
@@ -195,7 +196,7 @@ int CMission::doFirstVideoAudio(bool isVideo)
 	}
 	if (outLen)
 	{
-		delete[] outBuf;
+		xfree(outBuf);
 	}
 	atomicDec(s);
 	return ret;
@@ -444,6 +445,8 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 				msliceList[msliceCount]->msliceStart,
 				timestamp - msliceList[msliceCount]->msliceStart);
 
+			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
+
 			msliceIndx++;
 			ss = newSSlice();
 			ss->msliceIndex = msliceIndx;
@@ -457,8 +460,6 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 
 			ss->marray.push_back(mlastTca);
 			msliceList.push_back(ss);
-
-			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
 
 			std::vector<SSlice *>::iterator it = msliceList.begin();
 			ss = *it;
@@ -490,6 +491,7 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 				timestamp,
 				msliceList[msliceCount]->msliceStart,
 				timestamp - msliceList[msliceCount]->msliceStart);
+			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
 
 			msliceCount++;
 			msliceIndx++;
@@ -504,9 +506,7 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
 			ss->marray.push_back(mlastTca);
-			msliceList.push_back(ss);
-
-			ss->msliceRange = (float)((timestamp - ss->msliceStart));
+			msliceList.push_back(ss);			
 		}
 	}
 	else
@@ -820,7 +820,7 @@ int CMissionMgr::readHlsTS(uint32 i, HASH &hash, std::string url, std::string ad
 	return ret;
 }
 
-int CMissionMgr::readTsStream(uint32 i, HASH &hash, std::string url, std::string addr, int64 lastIdx, SSlice **ss, int64 &tt)
+int CMissionMgr::readTsStream(uint32 i, HASH &hash, int64 lastIdx, SSlice **ss)
 {
 	i = i % APP_ALL_MODULE_THREAD_NUM;
 	int ret = -1;

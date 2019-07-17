@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_thread.h>
 #include <cJSON/cJSON.h>
 #include <static/cms_static_common.h>
+#include <mem/cms_mf_mem.h>
 #include <string>
 #include <map>
 #include <queue>
@@ -50,6 +51,8 @@ public:
 
 	void push(OneTaskPacket *otp);
 	std::string dump();
+
+	OperatorNewDelete
 private:
 	bool pop(OneTaskPacket **otp);
 

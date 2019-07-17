@@ -30,6 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <core/cms_lock.h>
 #include <strategy/cms_duration_timestamp.h>
 #include <app/cms_app_info.h>
+#include <mem/cms_mf_mem.h>
 #include <flvPool/cms_flv_var.h>
 #include <libev/libev-4.25/ev.h>
 #include <string>
@@ -45,6 +46,8 @@ typedef struct _SSlice {
 	int64	msliceIndex;  //切片序号
 	uint64	msliceStart;  //切片开始时间戳
 	std::vector<TsChunkArray *> marray;	  //切片数据
+
+	OperatorNewDelete
 }SSlice;
 
 SSlice *newSSlice();
@@ -68,6 +71,8 @@ public:
 	int  getM3U8(std::string addr, std::string &outData);
 	int64 getLastTsTime();
 	int64 getUid();
+
+	OperatorNewDelete
 private:
 	void initMux();
 	EvTimerParam		mtimerEtp;
@@ -145,7 +150,7 @@ public:
 	-- hash 任务哈希
 	-- url ts的地址
 	*/
-	int  readTsStream(uint32 i, HASH &hash, std::string url, std::string addr, int64 lastIdx, SSlice **ss, int64 &tt);
+	int  readTsStream(uint32 i, HASH &hash, int64 lastIdx, SSlice **ss);
 	/*管理器的释放，管理器会有一些超时数据的缓存*/
 	void release();
 	void tick(uint32 i, uint64 uid);
@@ -153,6 +158,7 @@ public:
 	void tsAliveCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
 	void tsTimerCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
 
+	OperatorNewDelete
 private:
 	struct ev_loop *mevLoop[APP_ALL_MODULE_THREAD_NUM];
 	EvTimerParam	mtimerEtp[APP_ALL_MODULE_THREAD_NUM];
@@ -173,6 +179,8 @@ struct HlsMgrThreadParam
 {
 	CMissionMgr *pinstance;
 	uint32 i;
+
+	OperatorNewDelete
 };
 
 #endif

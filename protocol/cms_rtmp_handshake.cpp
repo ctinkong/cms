@@ -50,8 +50,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <string.h>
 #include <sys/time.h>
 #include <protocol/cms_rtmp_handshake.h>
+#include <mem/cms_mf_mem.h>
 #include <core/cms_lock.h>
-#include "log/cms_log.h"
+#include <log/cms_log.h>
 
 // 68bytes FMS key which is used to sign the sever packet.
 unsigned char SrsGenuineFMSKey[] = {
@@ -207,7 +208,7 @@ int __openssl_generate_key(
 		ret = -1;
 		return ret;
 	}
-	shared_key = new unsigned char[shared_key_length];
+	shared_key = (unsigned char *)xmalloc(shared_key_length);
 	memset(shared_key, 0, shared_key_length);
 
 	peer_public_key = BN_bin2bn(_private_key, size, 0);
@@ -289,7 +290,7 @@ int openssl_generate_key(char* _private_key, char* _public_key, int size)
 	}
 
 	if (shared_key != NULL) {
-		delete[] shared_key;
+		xfree(shared_key);
 		shared_key = NULL;
 	}
 
@@ -326,7 +327,7 @@ void srs_key_block_init(key_block* key)
 	assert(offset >= 0);
 	key->random0_size = offset;
 	if (key->random0_size > 0) {
-		key->random0 = new char[key->random0_size];
+		key->random0 = (char*)xmalloc(key->random0_size);
 		for (int i = 0; i < key->random0_size; i++) {
 			*(key->random0 + i) = rand() % 256;
 		}
@@ -336,7 +337,7 @@ void srs_key_block_init(key_block* key)
 	}
 	key->random1_size = 764 - offset - 128 - 4;
 	if (key->random1_size > 0) {
-		key->random1 = new char[key->random1_size];
+		key->random1 = (char*)xmalloc(key->random1_size);
 		for (int i = 0; i < key->random1_size; i++) {
 			*(key->random1 + i) = rand() % 256;
 		}
@@ -359,7 +360,7 @@ int srs_key_block_parse(key_block* key, char* c1s1_key_bytes)
 	pp = c1s1_key_bytes;
 	key->random0_size = offset;
 	if (key->random0_size > 0) {
-		key->random0 = new char[key->random0_size];
+		key->random0 = (char*)xmalloc(key->random0_size);
 		memcpy(key->random0, pp, key->random0_size);
 	}
 	pp += key->random0_size;
@@ -367,7 +368,7 @@ int srs_key_block_parse(key_block* key, char* c1s1_key_bytes)
 	pp += sizeof(key->key);
 	key->random1_size = 764 - offset - 128 - 4;
 	if (key->random1_size > 0) {
-		key->random1 = new char[key->random1_size];
+		key->random1 = (char*)xmalloc(key->random1_size);
 		memcpy(key->random1, pp, key->random1_size);
 	}
 	return ret;
@@ -377,10 +378,10 @@ int srs_key_block_parse(key_block* key, char* c1s1_key_bytes)
 void srs_key_block_free(key_block* key)
 {
 	if (key->random0) {
-		delete[] key->random0;
+		xfree(key->random0);
 	}
 	if (key->random1) {
-		delete[] key->random1;
+		xfree(key->random1);
 	}
 }
 
@@ -409,7 +410,7 @@ void srs_digest_block_init(digest_block* digest)
 	assert(offset >= 0);
 	digest->random0_size = offset;
 	if (digest->random0_size > 0) {
-		digest->random0 = new char[digest->random0_size];
+		digest->random0 = (char*)xmalloc(digest->random0_size);
 		for (int i = 0; i < digest->random0_size; i++) {
 			*(digest->random0 + i) = rand() % 256;
 		}
@@ -419,7 +420,7 @@ void srs_digest_block_init(digest_block* digest)
 	}
 	digest->random1_size = 764 - 4 - offset - 32;
 	if (digest->random1_size > 0) {
-		digest->random1 = new char[digest->random1_size];
+		digest->random1 = (char*)xmalloc(digest->random1_size);
 		for (int i = 0; i < digest->random1_size; i++) {
 			*(digest->random1 + i) = rand() % 256;
 		}
@@ -441,7 +442,7 @@ int srs_digest_block_parse(digest_block* digest, char* c1s1_digest_bytes)
 	assert(offset >= 0);
 	digest->random0_size = offset;
 	if (digest->random0_size > 0) {
-		digest->random0 = new char[digest->random0_size];
+		digest->random0 = (char*)xmalloc(digest->random0_size);
 		memcpy(digest->random0, pp, digest->random0_size);
 	}
 	pp += digest->random0_size;
@@ -449,7 +450,7 @@ int srs_digest_block_parse(digest_block* digest, char* c1s1_digest_bytes)
 	pp += sizeof(digest->digest);
 	digest->random1_size = 764 - 4 - offset - 32;
 	if (digest->random1_size > 0) {
-		digest->random1 = new char[digest->random1_size];
+		digest->random1 = (char*)xmalloc(digest->random1_size);
 		memcpy(digest->random1, pp, digest->random1_size);
 	}
 	return ret;
@@ -459,10 +460,10 @@ int srs_digest_block_parse(digest_block* digest, char* c1s1_digest_bytes)
 void srs_digest_block_free(digest_block* digest)
 {
 	if (digest->random0) {
-		delete[] digest->random0;
+		xfree(digest->random0);
 	}
 	if (digest->random1) {
-		delete[] digest->random1;
+		xfree(digest->random1);
 	}
 }
 
@@ -559,7 +560,7 @@ void srs_schema1_copy_to(char* bytes, bool with_digest,
 */
 char* srs_bytes_join_schema0(int time, int version, key_block* key, digest_block* digest)
 {
-	char* bytes = new char[1536 - 32];
+	char* bytes = (char*)xmalloc(1536 - 32);
 	srs_schema0_copy_to(bytes, false, time, version, key, digest);
 	return bytes;
 }
@@ -571,7 +572,7 @@ char* srs_bytes_join_schema0(int time, int version, key_block* key, digest_block
 */
 char* srs_bytes_join_schema1(int time, int version, digest_block* digest, key_block* key)
 {
-	char* bytes = new char[1536 - 32];
+	char* bytes = (char*)xmalloc(1536 - 32);
 	srs_schema1_copy_to(bytes, false, time, version, digest, key);
 	return bytes;
 }
@@ -723,7 +724,7 @@ int c1s1::c1_create(srs_schema_type _schema)
 	else {
 		memcpy(block0.digest.digest, digest, 32);
 	}
-	delete[] digest;
+	xfree(digest);
 	return ret;
 }
 
@@ -785,7 +786,7 @@ int c1s1::c1_validate_digest(bool& is_valid)
 	else {
 		is_valid = srs_bytes_equals(block0.digest.digest, c1_digest, 32);
 	}
-	delete[] c1_digest;
+	xfree(c1_digest);
 	return ret;
 }
 
@@ -837,7 +838,7 @@ int c1s1::s1_create(c1s1* c1)
 		memcpy(block0.digest.digest, s1_digest, 32);
 	}
 	logs->debug("copy s1 key success.");
-	delete[] s1_digest;
+	xfree(s1_digest);
 	return ret;
 }
 
@@ -855,12 +856,12 @@ int c1s1::calc_s1_digest(char*& digest)
 	}
 	assert(c1s1_joined_bytes != NULL);
 
-	digest = new char[OpensslHashSize];
+	digest = (char*)xmalloc(OpensslHashSize);
 	if ((ret = openssl_HMACsha256(c1s1_joined_bytes, 1536 - 32, SrsGenuineFMSKey, 36, digest)) != 0) {
 		logs->error("calc digest for s1 failed. ret=%d", ret);
 		return ret;
 	}
-	delete[] c1s1_joined_bytes;
+	xfree(c1s1_joined_bytes);
 	logs->debug("digest calculated for s1");
 	return ret;
 }
@@ -879,12 +880,12 @@ int c1s1::calc_c1_digest(char*& digest)
 	}
 	assert(c1s1_joined_bytes != NULL);
 
-	digest = new char[OpensslHashSize];
+	digest = (char*)xmalloc(OpensslHashSize);
 	if ((ret = openssl_HMACsha256(c1s1_joined_bytes, 1536 - 32, SrsGenuineFPKey, 30, digest)) != 0) {
 		logs->error("calc digest for c1 failed. ret=%d", ret);
 		return ret;
 	}
-	delete[] c1s1_joined_bytes;
+	xfree(c1s1_joined_bytes);
 	logs->debug("digest calculated for c1");
 	return ret;
 }

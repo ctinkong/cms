@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_TS_CHUNKED_H__
 #define __CMS_TS_CHUNKED_H__
 #include <vector>
+#include <mem/cms_mf_mem.h>
 
 #define TS_CHUNK_SIZE 188
 #define TS_SLICE_LEN  (TS_CHUNK_SIZE*100)
@@ -44,6 +45,8 @@ typedef struct _TsChunkArray
 {
 	int mchunkTotalSize;		//ts 有效数据长度
 	std::vector<TsChunk *> mtsChunkArray;
+
+	OperatorNewDelete
 }TsChunkArray;
 
 TsChunkArray *allocTsChunkArray();

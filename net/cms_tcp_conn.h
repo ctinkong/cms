@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <interface/cms_read_write.h>
 #include <interface/cms_conn_listener.h>
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 #include <core/cms_lock.h>
 #include <netinet/in.h>
 #include <string>
@@ -63,6 +64,8 @@ public:
 	int   flushR();
 	int   flushW();
 	int   netType() { return NetTcp; };
+
+	OperatorNewDelete
 private:
 	int mfd;
 	struct sockaddr_in mto;

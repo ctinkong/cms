@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <protocol/cms_amf0.h>
 #include <common/cms_utility.h>
+#include <mem/cms_mf_mem.h>
 #include <log/cms_log.h>
 #include <string.h>
 #include <stdio.h>
@@ -204,7 +205,7 @@ namespace amf0
 			case AMF0_TYPE_STRING:
 				if (data->string_data.mbstr != NULL)
 				{
-					delete[] data->string_data.mbstr;
+					xfree(data->string_data.mbstr);
 				}
 				break;
 			case AMF0_TYPE_OBJECT:
@@ -568,7 +569,7 @@ namespace amf0
 		if (data != NULL)
 		{
 			data->string_data.size = size;
-			data->string_data.mbstr = new uint8[size + 1];
+			data->string_data.mbstr = (uint8*)xmalloc(sizeof(uint8)*(size + 1));
 			memcpy(data->string_data.mbstr, str, size);
 			data->string_data.mbstr[size] = '\0';
 		}

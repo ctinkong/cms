@@ -1,5 +1,6 @@
 #include <app/cms_parse_args.h>
 #include <app/cms_app_info.h>
+#include <mem/cms_mf_mem.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -184,22 +185,22 @@ int parseOptions(int argc, char ** argv)
 			g_isDebug = true;
 			break;
 		case OPTION_PID_FILE:
-			p = strdup(optarg);
+			p = xstrdup(optarg);
 			g_pidPath = p;
-			free(p);
+			xfree(p);
 			break;
 		case OPTION_CONFIG_FILE:
-			p = strdup(optarg);
+			p = xstrdup(optarg);
 			g_configPath = p;
-			free(p);
+			xfree(p);
 			break;
 		case OPTION_TEST_SERVER:
 			g_isTestServer = true;
 			break;
 		case OPTION_TEST_URL:
-			p = strdup(optarg);
+			p = xstrdup(optarg);
 			g_testUrl = p;
-			free(p);
+			xfree(p);
 			break;
 		case OPTION_TASK_NUM:
 			g_testTaskNum = atoi(optarg);

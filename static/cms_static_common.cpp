@@ -114,7 +114,7 @@ void makeOneTaskMedia(HASH	&hash,
 	CStatic::instance()->push((OneTaskPacket *)otm);
 }
 
-void makeOneTaskMem(HASH &hash, 
+void makeOneTaskMem(HASH hash, 
 	int64 totalMem)
 {
 	OneTaskMem *otm = new OneTaskMem;

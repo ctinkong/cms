@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_COMMON_VAR_H__
 #define __CMS_COMMON_VAR_H__
 #include <string.h>
+#include <mem/cms_mf_mem.h>
 
 enum ConnType
 {
@@ -48,24 +49,27 @@ typedef unsigned char		uint8;
 typedef unsigned char		byte;
 #endif
 
+#define CMS_HASH_LEN 20
+
 typedef struct _HASH {
 public:
-	unsigned char data[20];
+	unsigned char data[CMS_HASH_LEN];
 	_HASH()
 	{
-		memset(data, 0, 20);
+		memset(data, 0, CMS_HASH_LEN);
 	}
 	_HASH(char* hash)
 	{
-		memcpy(data, hash, 20);
+		memcpy(data, hash, CMS_HASH_LEN);
 	}
 	_HASH(unsigned char* hash)
 	{
-		memcpy(data, hash, 20);
+		memcpy(data, hash, CMS_HASH_LEN);
 	}
+	//<
 	bool operator < (_HASH const& _A) const
 	{
-		if (memcmp(data, _A.data, 20) < 0)
+		if (memcmp(data, _A.data, CMS_HASH_LEN) < 0)
 		{
 			return true;
 		}
@@ -74,25 +78,90 @@ public:
 			return false;
 		}
 	}
+	bool operator < (unsigned char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) < 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	bool operator < (char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) < 0)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	//==
 	bool operator == (_HASH const& _A) const
 	{
-		if (memcmp(data, _A.data, 20) == 0)
+		if (memcmp(data, _A.data, CMS_HASH_LEN) == 0)
 			return true;
 		else
 			return false;
 	}
+	bool operator == (unsigned char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) == 0)
+			return true;
+		else
+			return false;
+	}
+	bool operator == (char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) == 0)
+			return true;
+		else
+			return false;
+	}
+	//!=
 	bool operator != (_HASH const& _A) const
 	{
-		if (memcmp(data, _A.data, 20) == 0)
+		if (memcmp(data, _A.data, CMS_HASH_LEN) == 0)
 			return false;
 		else
 			return true;
 	}
+	bool operator != (unsigned char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) == 0)
+			return false;
+		else
+			return true;
+	}
+	bool operator != (char *hash) const
+	{
+		if (memcmp(data, hash, CMS_HASH_LEN) == 0)
+			return false;
+		else
+			return true;
+	}
+	//=
 	_HASH& operator = (_HASH const& _A)
 	{
-		memcpy(data, _A.data, 20);
+		memcpy(data, _A.data, CMS_HASH_LEN);
 		return *this;
 	}
+	_HASH& operator = (unsigned char *hash)
+	{
+		memcpy(data, hash, CMS_HASH_LEN);
+		return *this;
+	}
+	_HASH& operator = (char *hash)
+	{
+		memcpy(data, hash, CMS_HASH_LEN);
+		return *this;
+	}
+
+	OperatorNewDelete
 } HASH;
 
 #endif

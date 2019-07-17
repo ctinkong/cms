@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_COMMON_URL_H__
 #define __CMS_COMMON_URL_H__
 #include <string>
+#include <mem/cms_mf_mem.h>
 
 #define PROTOCOL_HTTP	"http"
 #define PROTOCOL_HTTPS	"https"
@@ -42,6 +43,8 @@ typedef struct _LinkUrl
 	std::string app;
 	std::string instanceName;
 	std::string uri;
+
+	OperatorNewDelete
 }LinkUrl;
 
 bool parseUrl(std::string url, LinkUrl &linkUrl);
