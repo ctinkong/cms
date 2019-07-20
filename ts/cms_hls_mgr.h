@@ -104,7 +104,7 @@ private:
 	bool	mFAFlag;	//是否读到首帧音频
 	bool	mFVFlag;	//是否读到首帧视频(SPS/PPS)
 	int64	mbTime;		//最后一个切片的生成时间
-	uint32  mtimeStamp;        //读到的上一帧的时间戳，有时时间戳重置了会用到
+	uint32  mtimeStamp; //读到的上一帧的时间戳，有时时间戳重置了会用到
 	bool	mbFIFrame;  //首个I帧，用来做切片的参考
 	CMux	*mMux;      //转码器
 	TsChunkArray *mlastTca;//节省空间

@@ -95,7 +95,7 @@ private:
 	cms_thread_t	mtid;
 
 	std::queue<CreateTaskPacket *>	mqueueCTP;
-	CLock							mlockQueue;
+	CEevnt							mlockQueue;
 	//拉流任务
 	CLock					mlockPullTaskConn;
 	std::map<HASH, Conn *>	mmapPullTaskConn;

@@ -120,6 +120,9 @@ void CTaskMgr::stop()
 {
 	logs->debug("##### CTaskMgr::stop begin #####");
 	misRun = false;
+	mlockQueue.Lock();
+	mlockQueue.Signal();
+	mlockQueue.Unlock();
 	cmsWaitForThread(mtid, NULL);
 	mtid = 0;
 	logs->debug("##### CTaskMgr::stop finish #####");
@@ -144,7 +147,11 @@ void CTaskMgr::createTask(HASH &hash, std::string pullUrl, std::string pushUrl, 
 void CTaskMgr::push(CreateTaskPacket *ctp)
 {
 	mlockQueue.Lock();
-	mqueueCTP.push(ctp);
+	if (mqueueCTP.empty())
+	{
+		mlockQueue.Signal();
+	}
+	mqueueCTP.push(ctp);	
 	mlockQueue.Unlock();
 }
 
@@ -152,12 +159,18 @@ bool CTaskMgr::pop(CreateTaskPacket **ctp)
 {
 	bool isPop = false;
 	mlockQueue.Lock();
-	if (!mqueueCTP.empty())
+	while (mqueueCTP.empty())
 	{
-		isPop = true;
-		*ctp = mqueueCTP.front();
-		mqueueCTP.pop();
+		if (!misRun)
+		{
+			goto End;
+		}
+		mlockQueue.Wait();
 	}
+	isPop = true;
+	*ctp = mqueueCTP.front();
+	mqueueCTP.pop();
+End:
 	mlockQueue.Unlock();
 	return isPop;
 }

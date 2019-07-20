@@ -53,7 +53,7 @@ void xassert(const char *msg, const char *file, int line)
 #undef calloc
 #undef strdup
 
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 #define CMS_LEADK_LIST_COUNT 4
 #define CMS_FILENAME_LEN 56
 typedef struct _CmsAllocNode
@@ -375,7 +375,7 @@ void * xcalloc(size_t n, size_t sz)
 
 #endif
 
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 char * cms_xstrdup(const char *s, const char *file, int line)
 #else
 char * xstrdup(const char *s)
@@ -385,7 +385,7 @@ char * xstrdup(const char *s)
 	assert(s);
 	/* copy string, including terminating character */
 	sz = strlen(s) + 1;
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 	return (char *)memcpy(cms_xmalloc(sz, file, line), s, sz);
 #else
 	return (char *)memcpy(xmalloc(sz), s, sz);

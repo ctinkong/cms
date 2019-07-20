@@ -41,8 +41,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define CMS_INVALID_SOCK -1
 #endif /* posix end */
 
-#ifndef cmsMin
+#ifndef cmsMinMax
 #define cmsMin(a,b)            (((a) < (b)) ? (a) : (b))
+#define cmsMax(a, b)       ((a) > (b) ? (a) : (b))
 #endif
 
 #ifdef WIN32 /* WIN32 */

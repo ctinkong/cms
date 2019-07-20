@@ -8,41 +8,54 @@ ifeq ($(Debug), )
 	Debug = None
 endif
 
-ifeq ($(CONFIG), debug)
+CMS_MACRO_DEFINE =
+#-fno-omit-frame-pointer 火焰图需要
+#-fstack-protector 栈溢出会打印异常
+
+ifeq ($(Debug), debug)
 $(warning "making debug version")
 CFLAGS = -ggdb \
-	-o0 \
-	-rdynamic \
-	-D__CMS_DEBUG__
+	-o0
+CMS_MACRO_DEFINE += -D__CMS_DEBUG__
 else
 CFLAGS = -ggdb \
-	-o2 \
-	-rdynamic
+	-o2
 endif
 
 ifeq ($(MemCheck),memcheck)
 $(warning "making memory check version")
-CFLAGS += -DCMS_LEAK_CHECK
+CMS_MACRO_DEFINE += -D_CMS_LEAK_CHECK_
 endif
 
+#public CFLAGS
 CFLAGS += -Wall \
-	-D_REENTRANT \
+	-fstack-protector \
+	-fno-omit-frame-pointer
+	
+#public Macro CFLAGS
+CFLAGS += -D_REENTRANT \
 	-D_POSIX_C_SOURCE=200112L \
-	-D_FILE_OFFSET_BITS=64 \
-	-D_CMS_APP_USE_TIME_ \
-	-I./
+	-D_FILE_OFFSET_BITS=64
+
+#private Macro CFLAGS
+#CFLAGS += -D_CMS_APP_USE_TIME_
+CFLAGS += $(CMS_MACRO_DEFINE)
+	
+
+#include path CFLAGS
+CFLAGS += -I./ \
+	-I./third-party/linux/include
 
 LINK = $(CC)
 
-LDFLAGS = -lpthread \
+LDFLAGS = ./third-party/linux/libs/libssl.a \
+	./third-party/linux/libs/libcrypto.a \
+	./third-party/linux/libs/libev.a \
+	./decode/libH264_5.a \
+	-lpthread \
 	-ldl \
 	-lrt \
 	-ls2n \
-	-L./lib/ \
-	./lib/libssl.a \
-	./lib/libcrypto.a \
-	./lib/libev.a \
-	./decode/libH264_5.a \
 	-fPIC \
 	-rdynamic
 
@@ -60,6 +73,7 @@ CPPSRCS = $(wildcard app/*.cpp) \
 		$(wildcard mem/*.cpp) \
 		$(wildcard net/*.cpp) \
 		$(wildcard protocol/*.cpp) \
+		$(wildcard rfc/*.cpp) \
 		$(wildcard static/*.cpp) \
 		$(wildcard strategy/*.cpp) \
 		$(wildcard taskmgr/*.cpp) \
@@ -75,9 +89,11 @@ TARGET = ./bin/cms
 all : $(TARGET)
 
 $(COBJS) : %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@ 
+	$(CC) $(CFLAGS) \
+		-c $< -o $@ 
 $(CPPOBJS) : %.o: %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@ 
+	$(CC) $(CFLAGS) \
+		-c $< -o $@ 
 	
 $(TARGET) : $(COBJS) $(CPPOBJS)
 	@test -d './bin' || mkdir -p ./bin

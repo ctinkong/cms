@@ -231,6 +231,9 @@ void CLog::stop()
 {
 	logs->debug("##### CLog::stop begin #####");
 	misRun = false;
+	mqueueLock.Lock();
+	mqueueLock.Signal();
+	mqueueLock.Unlock();
 	cmsWaitForThread(mtid, NULL);
 	mtid = 0;
 	logs->debug("##### CLog::stop finish #####");
@@ -239,7 +242,11 @@ void CLog::stop()
 void CLog::push(LogInfo* logInfo)
 {
 	mqueueLock.Lock();
-	mqueueLog.push(logInfo);
+	if (mqueueLog.empty())
+	{
+		mqueueLock.Signal();
+	}
+	mqueueLog.push(logInfo);	
 	mqueueLock.Unlock();
 }
 
@@ -247,12 +254,18 @@ bool CLog::pop(LogInfo** logInfo)
 {
 	bool res = false;
 	mqueueLock.Lock();
-	if (!mqueueLog.empty())
+	while (mqueueLog.empty())
 	{
-		*logInfo = mqueueLog.front();
-		mqueueLog.pop();
-		res = true;
+		if (!misRun)
+		{
+			goto End;
+		}
+		mqueueLock.Wait();
 	}
+	*logInfo = mqueueLog.front();
+	mqueueLog.pop();
+	res = true;
+End:
 	mqueueLock.Unlock();
 	return res;
 }

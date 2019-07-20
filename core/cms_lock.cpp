@@ -394,6 +394,11 @@ void CLock::Unlock()
 	CmsCSUnlock(&m_cs);
 }
 
+cms_thread_lock_t &CLock::GetLock()
+{
+	return m_cs;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 CAutoLock::CAutoLock(CLock &lock) : m_lock(lock)
 {
@@ -407,6 +412,36 @@ CAutoLock::~CAutoLock()
 
 
 #ifndef WIN32
+CEevnt::CEevnt()
+{
+	pthread_cond_init(&m_cs, NULL);
+}
+
+CEevnt::~CEevnt()
+{
+	pthread_cond_destroy(&m_cs);
+}
+
+void CEevnt::Lock()
+{
+	m_lock.Lock();
+}
+
+void CEevnt::Unlock()
+{
+	m_lock.Unlock();
+}
+
+int CEevnt::Wait()
+{
+	return pthread_cond_wait(&m_cs, &m_lock.GetLock());
+}
+
+int CEevnt::Signal()
+{
+	return pthread_cond_signal(&m_cs);
+}
+
 CRWlock::CRWlock()
 {
 	pthread_rwlock_init(&m_rwlock, NULL);

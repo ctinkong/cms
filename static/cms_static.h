@@ -75,7 +75,7 @@ private:
 	CLock						mlockHashTask;
 
 	std::queue<OneTaskPacket*>	mqueueOneTaskPacket;
-	CLock						mlockOneTaskPacket;
+	CEevnt						mlockOneTaskPacket;
 
 	CLock						mlockDownload;
 	int64						mdownloadTick;

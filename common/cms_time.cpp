@@ -42,7 +42,6 @@ typedef struct _CmsTimeVal
 	int64	msec;
 	int64	mmsec;
 }CmsTimeVal;
-
 int			gcmsSlot = 0;
 CmsTimeVal	gcmsTimeVal[CMS_TIME_VAL_COUNT];
 int64		gcmsUnixTime[CMS_TIME_VAL_COUNT] = { 0 };
@@ -57,9 +56,14 @@ int			*gcmsDayT;
 char		*gcmsDayTimeT = NULL;
 char		*gcmsTimeStrT = NULL;
 
+uint32      gcmsCount = 0;
+uint32      gcmsB = 0;
+uint32      gcmsE = 0;
+
 bool		gisCmsTimeSet = false;
 
 bool  gcmsTimeRun = false;
+bool  gcmsIsTimerAlarm = false;
 cms_thread_t gcmsTimeTid = 0;
 
 int64 getCmsUnixTime()
@@ -87,8 +91,33 @@ char *getCmsTimeStr()
 	return gcmsTimeStrT;
 }
 
+unsigned long getTC() {
+	int res;
+	struct timespec sNow;
+	res = clock_gettime(CLOCK_MONOTONIC, &sNow);
+	if (res != 0)
+	{
+		return -1;
+	}
+	return sNow.tv_sec * 1000 + sNow.tv_nsec / 1000000; /* milliseconds */
+}
+
 void cmsUpdateTime()
 {
+	//经过测试 100 ms 会有几毫米的误差，建议不要使用
+	if (gcmsB == 0)
+	{
+		gcmsB = getTC();
+	}
+	gcmsCount++;
+	if (gcmsCount % 100 == 0)
+	{
+		gcmsE = getTC();
+// 		printf("##### cmsUpdateTime 100 count take time %lu ms\n", gcmsE - gcmsB);
+		gcmsB = gcmsE;
+	}
+
+
 	int64 sec = 0;
 	int64 msec = 0;
 	int64 curMsec = 0;
@@ -165,14 +194,45 @@ void cmsRegister()
 		gcmsDayTime[i] = (char *)xmalloc(CMS_DATE_BUFFER_LEN);
 		gcmsTimeStr[i] = (char *)xmalloc(CMS_DATE_BUFFER_LEN);
 	}
-	gcmsTimeRun = true;
-	cmsCreateThread(&gcmsTimeTid, cmsTimeThread, NULL, false);
+}
+
+void timefunc(int signo)
+{
+	switch (signo) {
+	case SIGALRM:
+		if (gcmsIsTimerAlarm)
+		{
+			cmsUpdateTime();
+		}
+		break;
+	}
+}
+
+bool startTimer(long usecond)
+{
+	signal(SIGALRM, timefunc);
+	struct itimerval value, ovalue;
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_usec = usecond; // ms
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = usecond; // ms
+	//ITIMER_PROF: 以该进程在用户态下和内核态下所费的时间来计算，它送出SIGPROF信号
+	return setitimer(ITIMER_REAL, &value, &ovalue) == 0 ? true : false;
 }
 
 void cmsTimeRun()
 {
 	printf("cmsTimeRun enter.\n");
-	cmsRegister();
+	cmsRegister();	
+	if (startTimer(999))
+	{
+		gcmsIsTimerAlarm = true;
+	}
+	else
+	{
+		gcmsTimeRun = true;
+		cmsCreateThread(&gcmsTimeTid, cmsTimeThread, NULL, false);
+	}
 	do
 	{
 		cmsSleep(10);
@@ -182,7 +242,15 @@ void cmsTimeRun()
 
 void cmsTimeStop()
 {
-	gcmsTimeRun = false;
-	cmsWaitForThread(gcmsTimeTid, NULL);
-	gcmsTimeTid = 0;
+	if (gcmsIsTimerAlarm)
+	{
+		startTimer(0);
+		gcmsIsTimerAlarm = false;
+	}
+	else
+	{
+		gcmsTimeRun = false;
+		cmsWaitForThread(gcmsTimeTid, NULL);
+		gcmsTimeTid = 0;
+	}
 }

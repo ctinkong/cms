@@ -87,6 +87,9 @@ void CStatic::stop()
 {
 	logs->debug("##### CStatic::stop begin #####");
 	misRun = false;
+	mlockOneTaskPacket.Lock();
+	mlockOneTaskPacket.Signal();
+	mlockOneTaskPacket.Unlock();
 	cmsWaitForThread(mtid, NULL);
 	mtid = 0;
 	logs->debug("##### CStatic::stop finish #####");
@@ -162,7 +165,11 @@ void CStatic::setAppName(std::string appName)
 void CStatic::push(OneTaskPacket *otp)
 {
 	mlockOneTaskPacket.Lock();
-	mqueueOneTaskPacket.push(otp);
+	if (mqueueOneTaskPacket.empty())
+	{
+		mlockOneTaskPacket.Signal();
+	}
+	mqueueOneTaskPacket.push(otp);	
 	mlockOneTaskPacket.Unlock();
 }
 
@@ -170,12 +177,18 @@ bool CStatic::pop(OneTaskPacket **otp)
 {
 	bool isTrue = false;
 	mlockOneTaskPacket.Lock();
-	if (!mqueueOneTaskPacket.empty())
+	while (mqueueOneTaskPacket.empty())
 	{
-		*otp = mqueueOneTaskPacket.front();
-		mqueueOneTaskPacket.pop();
-		isTrue = true;
+		if (!misRun)
+		{
+			goto End;
+		}
+		mlockOneTaskPacket.Wait();
 	}
+	*otp = mqueueOneTaskPacket.front();
+	mqueueOneTaskPacket.pop();
+	isTrue = true;
+End:
 	mlockOneTaskPacket.Unlock();
 	return isTrue;
 }

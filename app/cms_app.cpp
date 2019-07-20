@@ -170,10 +170,12 @@ void cycleServer()
 #ifdef just_test__CMS_APP_DEBUG_SP__
 	cmsSleep(100000);
 #else
-	do
-	{
-		cmsSleep(1000);
-	} while (1);
+// 	do
+// 	{
+		g_appEvent.Lock();
+		g_appEvent.Wait();
+		g_appEvent.Unlock();
+// 	} while (1);
 #endif
 	CStatic::instance()->stop();
 	CFlvPool::instance()->stop();

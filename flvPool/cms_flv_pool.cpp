@@ -400,6 +400,9 @@ void CFlvPool::stop()
 	misRun = false;
 	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
+		mqueueLock[i].Lock(); //发送信号停止
+		mqueueLock[i].Signal();
+		mqueueLock[i].Unlock();
 		cmsWaitForThread(mtid[i], NULL);
 		mtid[i] = 0;
 	}
@@ -423,23 +426,33 @@ void CFlvPool::push(uint32 i, Slice *s)
 	else
 	{
 		mqueueLock[i].Lock();
-		mqueueSlice[i].push(s);
+		if (mqueueSlice[i].empty())
+		{
+			mqueueLock[i].Signal();
+		}
+		mqueueSlice[i].push(s);		
 		mqueueLock[i].Unlock();
 	}
 }
 
 bool CFlvPool::pop(uint32 i, Slice **s)
 {
+	bool res = false;
 	mqueueLock[i].Lock();
-	if (mqueueSlice[i].empty())
+	while (mqueueSlice[i].empty())
 	{
-		mqueueLock[i].Unlock();
-		return false;
+		if (!misRun)
+		{
+			goto End;
+		}
+		mqueueLock[i].Wait();
 	}
 	*s = mqueueSlice[i].front();
 	mqueueSlice[i].pop();
+	res = true;
+End:
 	mqueueLock[i].Unlock();
-	return true;
+	return res;
 }
 
 bool CFlvPool::justJump2VideoLastXSecond(uint32 i, HASH &hash, uint32 &st, uint32 &ts, int64 &transIdx)
@@ -717,7 +730,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 			atomicInc(*s); //当数据超时，且没人使用时，删除
 		}
 		ss->mLock.UnRLock();
-	}
+		}
 	else
 	{
 #ifdef __CMS_DEBUG__
@@ -727,7 +740,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 	}
 	mhashSliceLock[i].UnRLock();
 	return ret;
-}
+	}
 
 bool  CFlvPool::isHaveMetaData(uint32 i, HASH &hash)
 {

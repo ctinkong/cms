@@ -65,7 +65,7 @@ private:
 	string		mdir;
 	string		mname;
 	queue<LogInfo *> mqueueLog;
-	CLock		mqueueLock;
+	CEevnt		mqueueLock;
 	void push(LogInfo* logInfo);
 	bool pop(LogInfo** logInfo);
 public:

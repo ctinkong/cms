@@ -122,7 +122,7 @@ private:
 	bool					misRun;
 	static CFlvPool			*minstance;
 
-	CLock					mqueueLock[APP_ALL_MODULE_THREAD_NUM];
+	CEevnt					mqueueLock[APP_ALL_MODULE_THREAD_NUM];
 	std::queue<Slice *>		mqueueSlice[APP_ALL_MODULE_THREAD_NUM];
 
 	CRWlock					mhashSliceLock[APP_ALL_MODULE_THREAD_NUM];

@@ -34,6 +34,7 @@ typedef	volatile long cms_atom_t;
 
 #include <pthread.h>
 
+typedef	pthread_cond_t cms_thread_cont_t;
 typedef pthread_mutex_t cms_thread_lock_t;
 typedef pthread_rwlock_t cms_thread_rd_lock_t;
 typedef volatile long cms_atom_t;
@@ -41,7 +42,7 @@ typedef volatile long cms_atom_t;
 #endif /* posix end */
 
 
-/* qvod CCriticalSection */
+/* cms CCriticalSection */
 class CCriticalSection
 {
 public:
@@ -60,7 +61,7 @@ private:
 };
 
 
-/* qvod CLock */
+/* cms CLock */
 class CLock
 {
 public:
@@ -70,6 +71,7 @@ public:
 	void Lock();
 	void Unlock();
 
+	cms_thread_lock_t &GetLock();
 private:
 	cms_thread_lock_t  m_cs;
 };
@@ -84,7 +86,24 @@ private:
 	CLock & m_lock;
 };
 
+
 #ifndef WIN32
+/* cms CEevnt */
+class CEevnt
+{
+public:
+	CEevnt();
+	~CEevnt();
+
+	void Lock();
+	void Unlock();
+	int  Wait();
+	int  Signal();
+private:
+	CLock	m_lock;
+	cms_thread_cont_t  m_cs;
+};
+
 //read write lock
 class CRWlock
 {
@@ -139,7 +158,7 @@ int CmsCSTrylock(cms_thread_lock_t *lock);
 int CmsCSUnlock(cms_thread_lock_t *lock);
 
 
-/* qvod atom operation */
+/* cms atom operation */
 int CmsAtomAdd(cms_atom_t *value);
 int CmsAtomDec(cms_atom_t *value);
 

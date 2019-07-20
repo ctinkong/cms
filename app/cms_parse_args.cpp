@@ -14,6 +14,8 @@ std::string g_configPath = "config.json";
 std::string g_appName;
 bool g_isTestServer = false;
 
+CEevnt g_appEvent;
+
 
 #define FirstIndent "  "
 //²ÎÊý

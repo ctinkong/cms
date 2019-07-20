@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_hls_mgr.h>
 #include <app/cms_app_info.h>
 #include <worker/cms_master_callback.h>
+#include <rfc/cms_rfc1123.h>
 #include <mem/cms_mf_mem.h>
 #include <regex.h>
 
@@ -601,7 +602,7 @@ int CHttpServer::handleMemCheck(int &ret)
 {
 	if (murl.find("/mem/check") != string::npos)
 	{
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 		std::string strDump = printfMemUsage();
 #else
 		std::string strDump = "mem info:\n";
@@ -714,14 +715,17 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 		int ret = CMissionMgr::instance()->readHlsM3U8(mHashIdx, mHash, murl, mlocalAddr, outData, outTT);
 		if (ret > 0)
 		{
-			logs->debug(">>> %s [CHttpServer::handleHlsM3U8] %s ,local addr %s,m3u8\n %s ",
+			logs->debug(">>> %s [CHttpServer::handleHlsM3U8] %s ,local addr %s,m3u8\n%s",
 				mremoteAddr.c_str(), murl.c_str(), mlocalAddr.c_str(), outData.c_str());
 
 			char szLength[20] = { 0 };
 			snprintf(szLength, sizeof(szLength), "%lu", outData.length());
 			mhttp->httpResponse()->setStatus(HTTP_CODE_200, "OK");
-			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "application/vnd.apple.mpegurl");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SERVER, APP_NAME);
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "application/vnd.apple.mpegurl");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TRANSFER_ENCODING, "binary");
+			setHttpRspLastModify(outTT);
+			setHttpRspDate();
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONNECTION, "keep-alive");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_LENGTH, szLength);
 
@@ -828,8 +832,11 @@ int  CHttpServer::handleHlsTS(int &ret)
 			logs->debug(" %s [CHttpServer::handleHlsTS] http %s ts size %d",
 				mremoteAddr.c_str(), murl.c_str(), ss->msliceLen);
 			mhttp->httpResponse()->setStatus(HTTP_CODE_200, "OK");
-			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "video/mp2t");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SERVER, APP_NAME);
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TYPE, "video/mp2t");
+			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_TRANSFER_ENCODING, "binary");
+			setHttpRspLastModify(outTT);
+			setHttpRspDate();
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONNECTION, "keep-alive");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_CONTENT_LENGTH, szLength);
 			std::string strRspHeader = mhttp->httpResponse()->readResponse();
@@ -981,6 +988,7 @@ int CHttpServer::handleTsStream(int &ret)
 			//chunked±àÂë·¢ËÍ
 			misSendChunkedData = true;
 		}
+		setHttpRspDate();
 
 		std::string strRspHeader = mhttp->httpResponse()->readResponse();
 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
@@ -995,6 +1003,18 @@ int CHttpServer::handleTsStream(int &ret)
 		return 1;
 	}
 	return 0;
+}
+
+void CHttpServer::setHttpRspLastModify(time_t tt)
+{
+	cmsRFC1123(mpublicShortBuf, tt);
+	mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_LAST_MODIFIED, mpublicShortBuf);
+}
+
+void CHttpServer::setHttpRspDate()
+{
+	cmsRFC1123(mpublicShortBuf, time(NULL));
+	mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_DATE, mpublicShortBuf);
 }
 
 int CHttpServer::doTransmission()

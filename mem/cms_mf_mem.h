@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string>
 
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 //÷ÿ‘ÿƒ⁄¥Ê∑÷≈‰
 #define OperatorNewDelete \
 void *operator new(size_t size)\
@@ -34,7 +34,7 @@ void operator delete[](void *ptr)\
 #endif
 
 void xassert (const char *msg, const char *file, int line);
-#ifdef CMS_LEAK_CHECK
+#ifdef _CMS_LEAK_CHECK_
 void *cms_xcalloc (size_t, size_t, const char *, int);
 void *cms_xmalloc (size_t, const char *, int);
 void *cms_xrealloc (void *, size_t, const char *, int);

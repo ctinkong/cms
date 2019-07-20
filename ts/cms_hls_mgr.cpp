@@ -608,7 +608,7 @@ int  CMission::getM3U8(std::string addr, std::string &outData)
 		count++;
 		pos++;
 	}
-	snprintf(mszM3u8Buf, sizeof(mszM3u8Buf), M3U8_CONTENT_PART1, maxDuration + 1, sliceIndex);
+	snprintf(mszM3u8Buf, sizeof(mszM3u8Buf), M3U8_CONTENT_PART1, maxDuration, sliceIndex);
 	outData = mszM3u8Buf;
 	outData += mm3u8ContentPart2;
 	return 1;
@@ -815,6 +815,7 @@ int CMissionMgr::readHlsTS(uint32 i, HASH &hash, std::string url, std::string ad
 		string strIdx = url.substr(start, end);
 		int64 llIdx = _atoi64(strIdx.c_str());
 		ret = it->second->getTS(llIdx, ss);
+		tt = it->second->getLastTsTime();
 	}
 	mMissionMapLock[i].UnRLock();
 	return ret;

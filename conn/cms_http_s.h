@@ -76,6 +76,8 @@ private:
 	void makeHash(std::string url);
 	void tryCreateTask();
 	int  writeRspHttpHeader(const char *data, int len);
+	void setHttpRspLastModify(time_t tt);
+	void setHttpRspDate();
 
 	bool			misDecodeHeader;
 	CReaderWriter	*mrw;

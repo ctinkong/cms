@@ -68,6 +68,8 @@
     <ClCompile Include="..\..\protocol\cms_rtmp.cpp" />
     <ClCompile Include="..\..\protocol\cms_rtmp_handshake.cpp" />
     <ClCompile Include="..\..\protocol\cms_ssl.cpp" />
+    <ClCompile Include="..\..\rfc\cms_rfc1123.cpp" />
+    <ClCompile Include="..\..\rfc\cms_rfc1738.cpp" />
     <ClCompile Include="..\..\static\cms_static_common.cpp" />
     <ClCompile Include="..\..\static\cms_static.cpp" />
     <ClCompile Include="..\..\strategy\cms_duration_timestamp.cpp" />
@@ -145,6 +147,8 @@
     <ClInclude Include="..\..\protocol\cms_rtmp_const.h" />
     <ClInclude Include="..\..\protocol\cms_rtmp_handshake.h" />
     <ClInclude Include="..\..\protocol\cms_ssl.h" />
+    <ClInclude Include="..\..\rfc\cms_rfc1123.h" />
+    <ClInclude Include="..\..\rfc\cms_rfc1738.h" />
     <ClInclude Include="..\..\s2n\s2n.h" />
     <ClInclude Include="..\..\static\cms_static_common.h" />
     <ClInclude Include="..\..\static\cms_static.h" />
@@ -208,7 +212,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;CMS_LEAK_CHECK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third-party/linux/include;../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

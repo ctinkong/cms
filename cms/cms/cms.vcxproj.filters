@@ -73,6 +73,9 @@
     <Filter Include="libev\libev-4.25">
       <UniqueIdentifier>{d4b32ff5-fea8-45d3-bee7-68b7a7c371a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="rfc">
+      <UniqueIdentifier>{5627aba9-67dc-4f2d-abbf-b9c7b4af1062}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\enc\cms_base64.cpp">
@@ -290,6 +293,12 @@
     </ClCompile>
     <ClCompile Include="..\..\mem\cms_mf_mem.cpp">
       <Filter>mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\rfc\cms_rfc1123.cpp">
+      <Filter>rfc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\rfc\cms_rfc1738.cpp">
+      <Filter>rfc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -526,6 +535,12 @@
     </ClInclude>
     <ClInclude Include="..\..\mem\cms_mf_mem.h">
       <Filter>mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\rfc\cms_rfc1123.h">
+      <Filter>rfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\rfc\cms_rfc1738.h">
+      <Filter>rfc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
