@@ -506,7 +506,7 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
 			ss->marray.push_back(mlastTca);
-			msliceList.push_back(ss);			
+			msliceList.push_back(ss);
 		}
 	}
 	else
@@ -712,6 +712,8 @@ void CMissionMgr::stop()
 		misRunning[i] = false;
 		cmsWaitForThread(mtid[i], NULL);
 		mtid[i] = 0;
+		ev_loop_destroy(mevLoop[i]);
+		mevLoop[i] = NULL;
 	}
 	logs->debug("##### CMissionMgr::stop finish #####");
 }
@@ -882,6 +884,13 @@ void CMissionMgr::tsAliveCallBack(struct ev_loop *loop, struct ev_timer *watcher
 	if (!misRunning[etp->idx])
 	{
 		logs->warn("@@@ [CMissionMgr::tsAliveCallBack] worker %d has been stop @@@", etp->idx);
+		std::map<HASH, CMission *>::iterator it = mMissionMap[etp->idx].begin();
+		for (; it != mMissionMap[etp->idx].end();)
+		{
+			it->second->stop();
+			delete it->second;
+			mMissionMap[etp->idx].erase(it++);
+		}
 		ev_break(EV_A_ EVBREAK_ALL);
 	}
 	else

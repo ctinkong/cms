@@ -51,6 +51,12 @@ typedef unsigned char		byte;
 
 #define CMS_HASH_LEN 20
 
+typedef struct _EvTimerParam
+{
+	uint32	  idx;
+	uint64    uid;
+}EvTimerParam;
+
 typedef struct _HASH {
 public:
 	unsigned char data[CMS_HASH_LEN];

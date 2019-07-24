@@ -453,13 +453,13 @@ CHttp::CHttp(Conn *super, CBufferReader *rd,
 	misReadHeader = false;
 	misWriteHeader = false;
 	mheaderEnd = 0;
-	mbinaryWriter = new BinaryWriter;
+	mbyteWrite = new CByteReaderWriter(DEFAULT_BUFFER_SIZE / 2);
 	msendRequestLen = 0;
 	misReadReuqest = false;
 	misChunked = false;
 	mchunkedLen = 0;
 	misReadChunkedLen = false;
-	mbyteReadWrite = NULL;
+	mbyteRead = NULL;
 	mchunkedReadrRN = 0;
 	msProtocol = "http-flv";
 	mwebsocketLen = 0;
@@ -488,13 +488,13 @@ CHttp::~CHttp()
 	{
 		delete mssl;
 	}
-	if (mbinaryWriter)
+	if (mbyteWrite)
 	{
-		delete mbinaryWriter;
+		delete mbyteWrite;
 	}
-	if (mbyteReadWrite)
+	if (mbyteRead)
 	{
-		delete mbyteReadWrite;
+		delete mbyteRead;
 	}
 }
 
@@ -874,7 +874,7 @@ int CHttp::want2Write()
 			}
 			if (mwrBuff->size() == 0 && msuper->isFinish())
 			{
-				reset();				
+				reset();
 				return CMS_OK;
 			}
 			ret = msuper->doTransmission();
@@ -966,7 +966,7 @@ int CHttp::read(char **data, int &len)
 					}
 					p = mrdBuff->readBytes(max);
 				}
-				mbyteReadWrite->writeBytes(p, max);
+				mbyteRead->writeBytes(p, max);
 				mchunkedLen -= max;
 			}
 			if (mchunkedLen == 0)
@@ -983,9 +983,9 @@ int CHttp::read(char **data, int &len)
 				mchunkBytesRN.clear();
 			}
 		}
-		if (mbyteReadWrite->size() >= len)
+		if (mbyteRead->size() >= len)
 		{
-			*data = mbyteReadWrite->readBytes(len);
+			*data = mbyteRead->readBytes(len);
 			return len;
 		}
 		else
@@ -1157,46 +1157,34 @@ std::string CHttp::protocol()
 void CHttp::setChunked()
 {
 	misChunked = true;
-	mbyteReadWrite = new CByteReaderWriter();
+	mbyteRead = new CByteReaderWriter();
 }
 
 int CHttp::sendMetaData(Slice *s)
 {
-	*mbinaryWriter << (char)FLV_TAG_SCRIPT;
-	*mbinaryWriter << (char)(s->miDataLen >> 16);
-	*mbinaryWriter << (char)(s->miDataLen >> 8);
-	*mbinaryWriter << (char)(s->miDataLen);
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	if (msuper->sendBefore(mbinaryWriter->getData(), mbinaryWriter->getLength()) == CMS_ERROR)
-	{
-		logs->error("%s [CHttp::sendMetaData] %s 1 sendBefore fail ***",
-			mremoteAddr.c_str(), moriUrl.c_str());
-		return CMS_ERROR;
-	}
-	mbinaryWriter->reset();
-	if (msuper->sendBefore(s->mData, s->miDataLen) == CMS_ERROR)
-	{
-		logs->error("%s [CHttp::sendMetaData] %s 2 sendBefore fail ***",
-			mremoteAddr.c_str(), moriUrl.c_str());
-		return CMS_ERROR;
-	}
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 24);
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 16);
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 8);
-	*mbinaryWriter << (char)((s->miDataLen + 11));
-	if (msuper->sendBefore(mbinaryWriter->getData(), mbinaryWriter->getLength()) == CMS_ERROR)
+	mbyteWrite->writeByte((char)FLV_TAG_SCRIPT);
+	mbyteWrite->writeByte((char)(s->miDataLen >> 16));
+	mbyteWrite->writeByte((char)(s->miDataLen >> 8));
+	mbyteWrite->writeByte((char)(s->miDataLen));
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeBytes(s->mData, s->miDataLen);
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 24));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 16));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 8));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11)));
+	int n = mbyteWrite->size();
+	if (msuper->sendBefore(mbyteWrite->readBytes(n), n) == CMS_ERROR)
 	{
 		logs->error("%s [CHttp::sendMetaData] %s 3 sendBefore fail ***",
 			mremoteAddr.c_str(), moriUrl.c_str());
 		return CMS_ERROR;
 	}
-	mbinaryWriter->reset();
 	return CMS_OK;
 
 }
@@ -1205,50 +1193,38 @@ int CHttp::sendVideoOrAudio(Slice *s, uint32 uiTimestamp)
 {
 	if (s->miDataType == DATA_TYPE_AUDIO || s->miDataType == DATA_TYPE_FIRST_AUDIO)
 	{
-		*mbinaryWriter << (char)FLV_TAG_AUDIO;
+		mbyteWrite->writeByte((char)FLV_TAG_AUDIO);
 	}
 	else if (s->miDataType == DATA_TYPE_VIDEO || s->miDataType == DATA_TYPE_FIRST_VIDEO)
 	{
-		*mbinaryWriter << (char)FLV_TAG_VIDEO;
+		mbyteWrite->writeByte((char)FLV_TAG_VIDEO);
 	}
 	else
 	{
 		assert(0);
 	}
-	*mbinaryWriter << (char)(s->miDataLen >> 16);
-	*mbinaryWriter << (char)(s->miDataLen >> 8);
-	*mbinaryWriter << (char)(s->miDataLen);
-	*mbinaryWriter << (char)(uiTimestamp >> 16);
-	*mbinaryWriter << (char)(uiTimestamp >> 8);
-	*mbinaryWriter << (char)(uiTimestamp);
-	*mbinaryWriter << (char)(uiTimestamp >> 24);
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	*mbinaryWriter << (char)0x00;
-	if (msuper->sendBefore(mbinaryWriter->getData(), mbinaryWriter->getLength()) == CMS_ERROR)
-	{
-		logs->error("%s [CHttp::sendVideoOrAudio] %s 1 sendBefore fail ***",
-			mremoteAddr.c_str(), moriUrl.c_str());
-		return CMS_ERROR;
-	}
-	mbinaryWriter->reset();
-	if (msuper->sendBefore(s->mData, s->miDataLen) == CMS_ERROR)
-	{
-		logs->error("%s [CHttp::sendVideoOrAudio] %s 2 sendBefore fail ***",
-			mremoteAddr.c_str(), moriUrl.c_str());
-		return CMS_ERROR;
-	}
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 24);
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 16);
-	*mbinaryWriter << (char)((s->miDataLen + 11) >> 8);
-	*mbinaryWriter << (char)((s->miDataLen + 11));
-	if (msuper->sendBefore(mbinaryWriter->getData(), mbinaryWriter->getLength()) == CMS_ERROR)
+	mbyteWrite->writeByte((char)(s->miDataLen >> 16));
+	mbyteWrite->writeByte((char)(s->miDataLen >> 8));
+	mbyteWrite->writeByte((char)(s->miDataLen));
+	mbyteWrite->writeByte((char)(uiTimestamp >> 16));
+	mbyteWrite->writeByte((char)(uiTimestamp >> 8));
+	mbyteWrite->writeByte((char)(uiTimestamp));
+	mbyteWrite->writeByte((char)(uiTimestamp >> 24));
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeByte((char)0x00);
+	mbyteWrite->writeBytes(s->mData, s->miDataLen);
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 24));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 16));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11) >> 8));
+	mbyteWrite->writeByte((char)((s->miDataLen + 11)));
+	int n = mbyteWrite->size();
+	if (msuper->sendBefore(mbyteWrite->readBytes(n), n) == CMS_ERROR)
 	{
 		logs->error("%s [CHttp::sendVideoOrAudio] %s 3 sendBefore fail ***",
 			mremoteAddr.c_str(), moriUrl.c_str());
 		return CMS_ERROR;
 	}
-	mbinaryWriter->reset();
 	return CMS_OK;
 }
 

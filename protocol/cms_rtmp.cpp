@@ -61,6 +61,7 @@ CRtmpProtocol::CRtmpProtocol(void *super, RtmpType &rtmpType, CBufferReader *rd,
 	msuper = (CConnRtmp *)super;
 	mrdBuff = rd;
 	mwrBuff = wr;
+	mbyteReadWrite = new CByteReaderWriter(DEFAULT_BUFFER_SIZE / 2);
 	mrw = rw;
 	mrtmpStatus = RtmpStatusShakeNone;
 	mreadChunkSize = DEFAULT_CHUNK_SIZE;
@@ -131,6 +132,10 @@ CRtmpProtocol::~CRtmpProtocol()
 	{
 		xfree(mps1);
 		mps1 = NULL;
+	}
+	if (mbyteReadWrite)
+	{
+		delete mbyteReadWrite;
 	}
 }
 
@@ -2837,43 +2842,38 @@ bool CRtmpProtocol::sendPacket(char fmt, const char *timestamp, char *extentimes
 {
 	int iHandleLen = 0;
 	int ret = 0;
-	mwrBuff->writeByte(fmt);
-	mwrBuff->writeBytes(timestamp, 3);
-	mwrBuff->writeBytes(bodyLen, 3);
-	mwrBuff->writeByte(type);
-	mwrBuff->writeBytes(streamId, 4);
+	mbyteReadWrite->writeByte(fmt);
+	mbyteReadWrite->writeBytes(timestamp, 3);
+	mbyteReadWrite->writeBytes(bodyLen, 3);
+	mbyteReadWrite->writeByte(type);
+	mbyteReadWrite->writeBytes(streamId, 4);
 	if (extentimestamp)
 	{
-		mwrBuff->writeBytes(extentimestamp, 4);
+		mbyteReadWrite->writeBytes(extentimestamp, 4);
 	}
 	int iMaxLen = len > mwriteChunkSize ? mwriteChunkSize : len;
-	ret = mwrBuff->writeBytes(pData, iMaxLen);
-	if (ret == CMS_ERROR)
-	{
-		logs->error("*** %s [CRtmpProtocol::sendPacket] 1 rtmp %s send sendPacket fail,errno=%d,strerrno=%s ***",
-			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-		return false;
-	}
+	mbyteReadWrite->writeBytes(pData, iMaxLen);
 	iHandleLen += iMaxLen;
 	char chunkID = (char)(fmt & 0x3F);
 	char sameFmt = (HEADER_FORMAT_CONTINUATION << 6) | chunkID;
 	while (len > iHandleLen)//需要分块传输
 	{
-		mwrBuff->writeByte(sameFmt);
+		mbyteReadWrite->writeByte(sameFmt);
 		if (extentimestamp)
 		{
-			mwrBuff->writeBytes(extentimestamp, 4);
+			mbyteReadWrite->writeBytes(extentimestamp, 4);
 		}
 		int iMaxLen = (len - iHandleLen) > mwriteChunkSize ? mwriteChunkSize : (len - iHandleLen);
-		ret = mwrBuff->writeBytes(pData + iHandleLen, iMaxLen);
+		mbyteReadWrite->writeBytes(pData + iHandleLen, iMaxLen);
 		iHandleLen += iMaxLen;
-
-		if (ret == CMS_ERROR)
-		{
-			logs->error("*** %s [CRtmpProtocol::sendPacket] 2 rtmp %s send sendPacket fail,errno=%d,strerrno=%s ***",
-				mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
-			return false;
-		}
+	}
+	int n = mbyteReadWrite->size();
+	ret = mwrBuff->writeBytes(mbyteReadWrite->readBytes(n), n);
+	if (ret == CMS_ERROR)
+	{
+		logs->error("*** %s [CRtmpProtocol::sendPacket] rtmp %s send sendPacket fail,errno=%d,strerrno=%s ***",
+			mremoteAddr.c_str(), getRtmpType().c_str(), mwrBuff->errnos(), mwrBuff->errnoCode());
+		return false;
 	}
 	if (mwrBuff->size() > 0)
 	{

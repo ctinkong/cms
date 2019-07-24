@@ -69,13 +69,13 @@ CHttpServer::CHttpServer(CReaderWriter *rw, bool isTls)
 	assert(mrdBuff);
 	mwrBuff = new CBufferWriter(rw, DEFAULT_BUFFER_SIZE);
 	assert(mwrBuff);
+	mbyteReadWrite = new CByteReaderWriter(DEFAULT_BUFFER_SIZE / 2);
 	mrw = rw;
 	mhttp = new CHttp(this, mrdBuff, mwrBuff, rw, mremoteAddr, false, isTls);
 	mflvTrans = new CFlvTransmission(mhttp);
 	mllIdx = 0;
 	misDecodeHeader = false;
 	misWebSocket = false;
-	mbinaryWriter = NULL;
 	misAddConn = false;
 	misFlvRequest = false;
 	misM3U8TSRequest = false;
@@ -108,10 +108,7 @@ CHttpServer::~CHttpServer()
 	delete mhttp;
 	delete mrdBuff;
 	delete mwrBuff;
-	if (mbinaryWriter)
-	{
-		delete mbinaryWriter;
-	}
+	delete mbyteReadWrite;
 	mrw->close();
 	if (mrw->netType() == NetTcp)//udp 不调用
 	{
@@ -341,10 +338,6 @@ int CHttpServer::doDecode()
 			strHex = szCode;
 			msecWebSocketAccept = getBase64Encode(strHex); //base64 标准的
 			misWebSocket = true;
-			if (!mbinaryWriter)
-			{
-				mbinaryWriter = new BinaryWriter;
-			}
 		}
 		logs->info("%s [CHttpServer::doDecode] http request %s",
 			mremoteAddr.c_str(), murl.c_str());
@@ -1128,57 +1121,48 @@ int CHttpServer::sendBefore(const char *data, int len)
 		|                     Payload Data continued ...                |
 		+---------------------------------------------------------------+
 		*/
-		*mbinaryWriter << (char)(0x02 | (0x01 << 7));
+		mbyteReadWrite->writeByte((char)(0x02 | (0x01 << 7)));
 		if (len < 126)
 		{
-			*mbinaryWriter << (char)(len & 0x7F);
+			mbyteReadWrite->writeByte((char)(len & 0x7F));
 		}
 		else if (len < 65536)
 		{
-			*mbinaryWriter << (char)(126);
-			*mbinaryWriter << (char)(len >> 8);
-			*mbinaryWriter << (char)(len);
+			mbyteReadWrite->writeByte((char)(126));
+			mbyteReadWrite->writeByte((char)(len >> 8));
+			mbyteReadWrite->writeByte((char)(len));
 		}
 		else
 		{
-			*mbinaryWriter << (char)(127);
+			mbyteReadWrite->writeByte((char)(127));
 			int64 dl = int64(len);
-			*mbinaryWriter << (char)(dl >> 56);
-			*mbinaryWriter << (char)(dl >> 48);
-			*mbinaryWriter << (char)(dl >> 40);
-			*mbinaryWriter << (char)(dl >> 32);
-			*mbinaryWriter << (char)(dl >> 24);
-			*mbinaryWriter << (char)(dl >> 16);
-			*mbinaryWriter << (char)(dl >> 8);
-			*mbinaryWriter << (char)(dl);
+			mbyteReadWrite->writeByte((char)(dl >> 56));
+			mbyteReadWrite->writeByte((char)(dl >> 48));
+			mbyteReadWrite->writeByte((char)(dl >> 40));
+			mbyteReadWrite->writeByte((char)(dl >> 32));
+			mbyteReadWrite->writeByte((char)(dl >> 24));
+			mbyteReadWrite->writeByte((char)(dl >> 16));
+			mbyteReadWrite->writeByte((char)(dl >> 8));
+			mbyteReadWrite->writeByte((char)(dl));
 		}
-		int n = mbinaryWriter->getLength();
-		if (mhttp->write(mbinaryWriter->getData(), n) == CMS_ERROR)
-		{
-			return CMS_ERROR;
-		}
-		mbinaryWriter->reset();
 	}
 	if (misSendChunkedData)
 	{
 		snprintf(mpublicShortBuf, sizeof(mpublicShortBuf), "%x\r\n", len);
-		int ourLen = strlen(mpublicShortBuf);
-		if (mhttp->write(mpublicShortBuf, ourLen) == CMS_ERROR)
-		{
-			return CMS_ERROR;
-		}
+		mbyteReadWrite->writeBytes(mpublicShortBuf, strlen(mpublicShortBuf));
 	}
-	int ret = mhttp->write(data, len);
+	mbyteReadWrite->writeBytes(data, len);
 	if (misSendChunkedData)
 	{
 		snprintf(mpublicShortBuf, sizeof(mpublicShortBuf), "\r\n");
-		int ourLen = strlen(mpublicShortBuf);
-		if (mhttp->write(mpublicShortBuf, ourLen) == CMS_ERROR)
-		{
-			return CMS_ERROR;
-		}
+		mbyteReadWrite->writeBytes(mpublicShortBuf, strlen(mpublicShortBuf));
 	}
-	return ret;
+	int n = mbyteReadWrite->size();
+	if (mhttp->write(mbyteReadWrite->readBytes(n), n) == CMS_ERROR)
+	{
+		return CMS_ERROR;
+	}
+	return CMS_OK;
 }
 
 bool CHttpServer::isFinish()

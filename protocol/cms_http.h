@@ -162,9 +162,9 @@ private:
 	CBufferReader	*mrdBuff;
 	CBufferWriter	*mwrBuff;
 	CReaderWriter	*mrw;
-	CByteReaderWriter *mbyteReadWrite;
+	CByteReaderWriter *mbyteRead;
 
-	BinaryWriter	*mbinaryWriter;
+	CByteReaderWriter *mbyteWrite;
 
 	std::string		msProtocol;
 	int64			mwebsocketLen;

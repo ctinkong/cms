@@ -464,6 +464,7 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 					{
 						logs->info("%s %s %s AutoBitRateMode=%d,"\
 							" $$$rtmp drop video frame differ=%lld,lastdiffer=%lld,guestBufLen=%d,"\
+							"left slice=%d, sliceFrameRate=%d"\
 							"mloseBufferTimes=%d,int32(edgeCacheTT/2)=%d,te=%lld,r.connectTimestamp=%lld,sendTimestamp=%u,"\
 							"mno1AudioTimestamp=%u,(te - r.connectTimestamp)=%lld,int64(sendTimestamp-mno1AudioTimestamp)=%lld",
 							mremoteAddr.c_str(),
@@ -473,6 +474,8 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 							differ,
 							mlastDiffer,
 							guestBufLen,
+							sliceNum,
+							sliceFrameRate,
 							mloseBufferTimes,
 							int32(edgeCacheTT / 2),
 							te,
@@ -546,6 +549,7 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 					{
 						logs->info("%s %s %s AutoBitRateMode=%d,"\
 							" $$$rtmp drop video frame differ=%lld,lastdiffer=%lld,guestBufLen=%d,"\
+							"left slice=%d, sliceFrameRate=%d"\
 							"mloseBufferTimes=%d,int32(edgeCacheTT/2)=%d,te=%lld,r.connectTimestamp=%lld,sendTimestamp=%u,"\
 							"mno1VideoTimestamp=%u,(te - r.connectTimestamp)=%lld,int64(sendTimestamp-mno1VideoTimestamp)=%lld",
 							mremoteAddr.c_str(),
@@ -555,6 +559,8 @@ bool CFastBitRate::dropVideoFrame(int32 edgeCacheTT, int32 dataType, int32 slice
 							differ,
 							mlastDiffer,
 							guestBufLen,
+							sliceNum,
+							sliceFrameRate,
 							mloseBufferTimes,
 							int32(edgeCacheTT / 2),
 							te,

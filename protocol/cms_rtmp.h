@@ -140,6 +140,7 @@ private:
 	CBufferReader	*mrdBuff;
 	CBufferWriter	*mwrBuff;
 	CReaderWriter	*mrw;
+	CByteReaderWriter *mbyteReadWrite;
 	RtmpType		&mrtmpType;
 	RtmpConnStatus	mrtmpStatus;
 

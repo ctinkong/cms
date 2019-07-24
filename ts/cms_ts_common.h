@@ -34,12 +34,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #define CMS_TS_TIMEOUT_MILSECOND 0.03
 
-typedef struct _EvTimerParam
-{
-	uint32	  idx;
-	uint64    uid;
-}EvTimerParam;
-
 //FLV头基本信息
 typedef struct _SHead {
 	byte	version;	//

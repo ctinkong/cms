@@ -105,6 +105,7 @@ private:
 	CHttp			*mhttp;
 	CBufferReader	*mrdBuff;
 	CBufferWriter	*mwrBuff;
+	CByteReaderWriter *mbyteReadWrite;
 
 	//速度统计
 	int32			mxSecdownBytes;
@@ -116,8 +117,6 @@ private:
 	std::string		mwsOrigin;
 	std::string		msecWebSocketAccept;
 	std::string		msecWebSocketProtocol;
-
-	BinaryWriter	*mbinaryWriter;
 
 	unsigned long   mspeedTick;
 	int64			mtimeoutTick;
