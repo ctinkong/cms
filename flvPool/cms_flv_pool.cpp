@@ -112,7 +112,7 @@ CAutoSlice::~CAutoSlice()
 Slice *newSlice()
 {
 	Slice *s = (Slice*)xmalloc(sizeof(Slice));
-	s->mionly = 0;
+	s->mionly = 1;
 	s->miDataType = DATA_TYPE_NONE;
 	s->misHaveMediaInfo = false;
 	s->misPushTask = false;
@@ -420,7 +420,6 @@ void CFlvPool::push(uint32 i, Slice *s)
 	if (g_isTestServer)
 	{
 		//作为压测服务 不需要保存数据
-		atomicInc(s);
 		atomicDec(s);
 	}
 	else
@@ -1226,6 +1225,7 @@ bool CFlvPool::seekKeyFrame(uint32 i, HASH &hash, uint32 &st, int64 &transIdx)
 
 void CFlvPool::handleSlice(uint32 i, Slice *s)
 {
+	bool isNew = false;
 	StreamSlice *ss = NULL;
 	MapHashStreamIter iterM = mmapHashSlice[i].find(s->mpHash);
 	if (iterM == mmapHashSlice[i].end())
@@ -1233,16 +1233,16 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		if (s->misRemove)
 		{
 			logs->debug(">>>>>[handleSlice] task %s is remove but not find hash", s->mpUrl);
-			if (s->mData)
-			{
-				xfree(s->mData);
-			}
-			xfree(s);
+			atomicDec(s);
 			return;
 		}
-		atomicInc(s);
 		ss = newStreamSlice();
 		updateMediaInfo(ss, s);
+		ss->miAutoBitRateMode = s->miAutoBitRateMode;
+		ss->miAutoBitRateFactor = s->miAutoBitRateFactor;
+		ss->miAutoFrameFactor = s->miAutoFrameFactor;
+		ss->miBufferAbsolutely = s->miBufferAbsolutely;
+
 		ss->muid = getVid();
 		ss->mllCreateTime = getTimeUnix();
 		ss->mllAccessTime = ss->mllCreateTime;
@@ -1293,6 +1293,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		mhashSliceLock[i].WLock();
 		mmapHashSlice[i].insert(make_pair(s->mpHash, ss));
 		mhashSliceLock[i].UnWLock();
+		isNew = true;
 	}
 	else
 	{
@@ -1328,17 +1329,12 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		{
 			atomicDec(ss->mmetaDataSlice);
 		}
-		if (s->mData)
-		{
-			xfree(s->mData);
-		}
-		xfree(s);
+		atomicDec(s);
 		delete ss;
 	}
 	else
 	{
 		ss->mLock.WLock();
-		atomicInc(s);
 		if (s->misHaveMediaInfo)
 		{
 			updateMediaInfo(ss, s);
@@ -1356,7 +1352,11 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			}
 			if (ss->mmetaDataSlice)
 			{
-				atomicDec(ss->mmetaDataSlice);
+				if (!isNew)
+				{
+					//新任务不能删除 前面刚保存
+					atomicDec(ss->mmetaDataSlice);
+				}				
 			}
 			ss->misHaveMetaData = true;
 			ss->mllMetaDataIdx = s->mllIndex;
@@ -1372,7 +1372,11 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			}
 			if (ss->mfirstAudioSlice)
 			{
-				atomicDec(ss->mfirstAudioSlice);
+				if (!isNew)
+				{
+					//新任务不能删除 前面刚保存
+					atomicDec(ss->mfirstAudioSlice);
+				}
 			}
 			ss->mfirstAudioSlice = s;
 			ss->mllFirstAudioIdx = s->mllIndex;
@@ -1386,7 +1390,11 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			}
 			if (ss->mfirstVideoSlice)
 			{
-				atomicDec(ss->mfirstVideoSlice);
+				if (!isNew)
+				{
+					//新任务不能删除 前面刚保存
+					atomicDec(ss->mfirstVideoSlice);
+				}
 			}
 			ss->misH264 = s->misH264;
 			ss->misH265 = s->misH265;

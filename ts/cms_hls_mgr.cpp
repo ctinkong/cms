@@ -61,12 +61,11 @@ uint64 getUid(uint32 i)
 SSlice *newSSlice()
 {
 	SSlice *ss = new SSlice();
-	ss->mionly = 0;
+	ss->mionly = 1;
 	ss->msliceRange = 0;  //切片时长
 	ss->msliceLen = 0;    //切片大小
 	ss->msliceIndex = 0;  //切片序号
 	ss->msliceStart = 0;  //切片开始时间戳
-	atomicInc(ss);
 	return ss;
 }
 

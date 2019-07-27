@@ -514,7 +514,6 @@ bool CFlvTransmission::isShouldMergerFrame(Slice *&s, bool &isVideo, bool &isErr
 		if (CFlvPool::instance()->mergeKeyFrame(fs->mData, fs->miDataLen, s->mData, s->miDataLen, &d, dLen, mprotocol->getUrl()))
 		{
 			Slice *ss = newSlice();
-			atomicInc(ss);
 			ss->mData = d;
 			ss->miDataLen = dLen;
 			ss->miDataType = s->miDataType;

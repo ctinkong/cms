@@ -1,3 +1,28 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2017- cms(hsc)
+
+Author: 天空没有乌云/kisslovecsh@foxmail.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 #include <mem/cms_mf_mem.h>
 #include <log/cms_log.h>
 #include <core/cms_lock.h>
@@ -228,6 +253,7 @@ std::string printfMemUsage()
 	std::map<std::string, std::map<int, unsigned long long> > mapMemInfo;
 	for (int i = 0; i < CMS_LEADK_LIST_COUNT; i++)
 	{
+		//太耗时间 需要优化 可以弄个临时list 记录每个node
 		g_AllocHeadLocker[i].Lock();
 		CmsAllocNode *head = g_AllocHead[i];
 		while (head)
@@ -257,6 +283,7 @@ std::string printfMemUsage()
 		}
 		g_AllocHeadLocker[i].Unlock();
 	}
+	unsigned long memInfoE = getTickCount();
 
 	std::string memInfo = "mem info:\n";
 	std::string memSize;
@@ -297,10 +324,11 @@ std::string printfMemUsage()
 	unsigned long e = getTickCount();
 	snprintf(szMenInfo,
 		sizeof(szMenInfo),
-		"\n#####total mem %s, extra mem %s, extra percentage %llu, take time %lu ms\n",
+		"\n#####total mem %s, extra mem %s, extra percentage %llu, mem take time %lu ms, total take time %lu ms\n",
 		parseSpeed8Mem(totalMem, false).c_str(),
 		parseSpeed8Mem(extraMem, false).c_str(),
 		totalMem ? (extraMem * 100 / totalMem) : 0,
+		memInfoE - b,
 		e - b);
 	memInfo += szMenInfo;
 

@@ -38,51 +38,47 @@ enum FlvPoolDataType
 
 struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
 {
-	int				mionly;				//0 表示没被使用，大于0表示正在被使用次数
-	FlvPoolDataType miDataType;			//数据类型
+	int				mionly;				//0 表示没被使用，大于0表示正在被使用次数	
 	bool            misHaveMediaInfo;   //是否有修改过流信息
 	bool			misPushTask;
 	bool			misNoTimeout;
 	bool			misMetaData;		//该数据是否是metaData
 	bool			misRemove;			//删除任务标志
-	int				miNotPlayTimeout;	//超时时间，毫秒
-	uint32			muiTimestamp;	    //该slice数据对应rtmp的时间戳
-
+	bool			misRealTimeStream;	//是否从最新的数据发送
+	bool			misKeyFrame;
+	bool			misResetStreamTimestamp;
+	bool			misH264;
+	bool			misH265;
+	FlvPoolDataType miDataType;			//数据类型
 	int64			mllP2PIndex;		//p2p索引号
 	int64			mllIndex;           //该slice对应的序列号
 	int64			mllOffset;			//偏移位置（保留）
 	int64			mllStartTime;		//任务开始时间
-	char			*mData;				//数据
-	int             miDataLen;
-	char			*mpMajorHash;		//对于转码任务，该hash表示源流hash
-	char			*mpHash;				//当前任务hash
-	char			*mpUrl;
-	bool			misKeyFrame;
+	int64			mllCacheTT;			//缓存时间 毫秒
+	uint32			muiTimestamp;	    //该slice数据对应rtmp的时间戳
+	int				miNotPlayTimeout;	//超时时间，毫秒	
 	int				miMediaRate;
 	int				miVideoRate;		//视频码率
 	int				miAudioRate;		//音频码率
 	int				miVideoFrameRate;	//视频帧率
-	int				miAudioFrameRate;	//音频帧率
-	char			*mpVideoType;		//视频类型
-	char			*mpAudioType;		//音频类型
+	int				miAudioFrameRate;	//音频帧率	
 	int				miAudioChannelID;	//连麦流音频ID
-
-	bool			misH264;
-	bool			misH265;
-
-	char			*mpReferUrl;
-	int64			mllCacheTT;					//缓存时间 毫秒
 	int				miPlayStreamTimeout;		//多久没播放超时时间	
-	bool			misRealTimeStream;			//是否从最新的数据发送
 	int				miFirstPlaySkipMilSecond;	//首播丢帧时长
 	int				miAutoBitRateMode;			//动态丢帧模式(0/1/2)
 	int				miAutoBitRateFactor;		//动态变码率系数
 	int				miAutoFrameFactor;			//动态丢帧系数
 	int				miBufferAbsolutely;			//buffer百分比
-	bool			misResetStreamTimestamp;
-
 	int				miLiveStreamTimeout;
 	int				miNoHashTimeout;
+	int             miDataLen;
+	char			*mData;				//数据	
+	char			*mpMajorHash;		//对于转码任务，该hash表示源流hash
+	char			*mpHash;			//当前任务hash
+	char			*mpUrl;
+	char			*mpVideoType;		//视频类型
+	char			*mpAudioType;		//音频类型
+	char			*mpReferUrl;
 	char			*mpRemoteIP;
 	char			*mpHost;
 };
@@ -97,30 +93,30 @@ struct TTandKK
 struct StreamSlice
 {
 	//id唯一性 用于发送数据时 判断任务是否重启
-	uint64						muid;
-	//两个临时变量
-	int64						maxRelativeDuration;
-	int64						minRelativeDuration;
 	CRWlock						mLock;
-	//按时间戳查找
-	std::vector<TTandKK *>		msliceTTKK;
-	int64						mllNearKeyFrameIdx;
-	uint32						muiTheLastVideoTimestamp;
-
-	bool						misPushTask;
-	bool						mnoTimeout;			//任务是否不超时
+	std::vector<TTandKK *>		msliceTTKK;	//按时间戳查找
 	std::string					mstrUrl;
 	std::string					mstrReferUrl;
-	HASH						mhMajorHash;
-	int							miNotPlayTimeout;	//超时时间，毫秒
-	int64						mllAccessTime;		//记录时间戳，若一段时间没有用户访问，删除
-	int64						mllCreateTime;		//任务创建时间
-
+	std::string					mstrVideoType;		//视频类型
+	std::string					mstrAudioType;		//音频类型
+	std::string					mstrRemoteIP;
+	std::string					mstrHost;
 	std::vector<Slice *>		mavSlice;
 	std::vector<int64>			mavSliceIdx;
 	std::vector<int64>			mvKeyFrameIdx;		//关键帧位置
 	std::vector<int64>			mvP2PKeyFrameIdx;	//关键帧位置
 	std::map<int64, int64>		mp2pIdx2PacketIdx;
+	HASH						mhMajorHash;
+
+	uint64						muid;
+	//两个临时变量
+	int64						maxRelativeDuration;
+	int64						minRelativeDuration;	
+	int64						mllNearKeyFrameIdx;	
+	int64						mllAccessTime;		//记录时间戳，若一段时间没有用户访问，删除
+	int64						mllCreateTime;		//任务创建时间
+	uint32						muiTheLastVideoTimestamp;	
+	int							miNotPlayTimeout;	//超时时间，毫秒	
 	int							miVideoFrameCount;
 	int							miAudioFrameCount;
 	int							miMediaRate;
@@ -128,40 +124,40 @@ struct StreamSlice
 	int							miAudioRate;		//音频码率
 	int							miVideoFrameRate;	//视频帧率
 	int							miAudioFrameRate;	//音频帧率
-	std::string					mstrVideoType;		//视频类型
-	std::string					mstrAudioType;		//音频类型
-	uint32						muiKeyFrameDistance;
-	uint32						muiLastKeyFrameDistance;
-
-	int64						mllLastSliceIdx;
-
-	Slice						*mfirstVideoSlice;
-	int64						mllFirstVideoIdx;
-	Slice						*mfirstAudioSlice;
-	int64						mllFirstAudioIdx;
+	bool						misPushTask;		//是否是推流任务
+	bool						mnoTimeout;			//任务是否不超时
 	bool						misH264;
 	bool						misH265;
+	
+	uint32						muiKeyFrameDistance;
+	uint32						muiLastKeyFrameDistance;
+	int64						mllLastSliceIdx;
+	int64						mllFirstVideoIdx;
+	int64						mllFirstAudioIdx;
+	Slice						*mfirstVideoSlice;	
+	Slice						*mfirstAudioSlice;
+	Slice						*mmetaDataSlice;
+	
 	int64						mllVideoAbsoluteTimestamp;	//用于计算缓存数据
-	int64						mllAudioAbsoluteTimestamp;	//用于计算缓存数据		
-	bool						misHaveMetaData;
+	int64						mllAudioAbsoluteTimestamp;	//用于计算缓存数据	
 	int64						mllMetaDataIdx;
 	int64						mllMetaDataP2PIdx;
 
 	bool						misNoTimeout;
-
+	bool						misHaveMetaData;
+	bool						misRealTimeStream;			//是否从最新的数据发送
+	bool						misResetStreamTimestamp;
 	int64						mllLastMemSize;
 	int64						mllMemSize;
-	int64						mllMemSizeTick;
-	Slice						*mmetaDataSlice;
+	int64						mllMemSizeTick;	
 	int64						mllCacheTT;					//缓存时间 毫秒
-	int							miPlayStreamTimeout;		//多久没播放超时时间
-	bool						misRealTimeStream;			//是否从最新的数据发送
+	int							miPlayStreamTimeout;		//多久没播放超时时间	
 	int							miFirstPlaySkipMilSecond;	//首播丢帧时长
 	int							miAutoBitRateMode;			//动态丢帧模式(0/1/2)
 	int							miAutoBitRateFactor;		//动态变码率系数
 	int							miAutoFrameFactor;			//动态丢帧系数
 	int							miBufferAbsolutely;			//buffer百分比
-	bool						misResetStreamTimestamp;
+	
 
 	//边缘才会用到的保存流断开时的状态
 	bool						misNeedJustTimestamp;
@@ -178,9 +174,6 @@ struct StreamSlice
 	//边推才有效
 	int							miLiveStreamTimeout;
 	int							miNoHashTimeout;
-
-	std::string					mstrRemoteIP;
-	std::string					mstrHost;
 
 	OperatorNewDelete
 };
