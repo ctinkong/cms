@@ -1097,22 +1097,27 @@ int CRtmpProtocol::readRtmpPlayload(RtmpHeader &header, int fmt, int cid, int &h
 	{
 		pMsg = new RtmpMessage;
 		memset(pMsg, 0, sizeof(RtmpMessage));
-		pMsg->dataLen = 0;
+//		pMsg->dataLen = 0;
 		if (pIncs->lastHeader->msgLength > 0)
 		{
 			pMsg->bufLen = pIncs->lastHeader->msgLength;
+#ifdef __CMS_CYCLE_MEM__
+			pMsg->buffer = msuper->allocCycMem(pMsg->bufLen, header.msgTypeID);
+#else
 			pMsg->buffer = (char*)xmalloc(pMsg->bufLen);
+#endif
 		}
-		if (pIncs->currentMessage)
-		{
-			logs->warn("%s [CRtmpProtocol::readRtmpPlayload] %s rtmp %s current message is NULL but not delete",
-				mremoteAddr.c_str(), getRtmpType().c_str(), murl.c_str());
-			if (pIncs->currentMessage->buffer)
-			{
-				xfree(pIncs->currentMessage->buffer);
-			}
-			delete pIncs->currentMessage;
-		}
+		assert(!pIncs->currentMessage);
+// 		if (pIncs->currentMessage)
+// 		{
+// 			logs->warn("%s [CRtmpProtocol::readRtmpPlayload] %s rtmp %s current message is NULL but not delete",
+// 				mremoteAddr.c_str(), getRtmpType().c_str(), murl.c_str());
+// 			if (pIncs->currentMessage->buffer)
+// 			{
+// 				xfree(pIncs->currentMessage->buffer);
+// 			}
+// 			delete pIncs->currentMessage;
+// 		}
 		pIncs->currentMessage = pMsg;
 	}
 	else if (pMsg->dataLen == 0)
@@ -1120,9 +1125,13 @@ int CRtmpProtocol::readRtmpPlayload(RtmpHeader &header, int fmt, int cid, int &h
 		//重新开辟空间
 		if (pIncs->lastHeader->msgLength > 0 && pMsg->bufLen < pIncs->lastHeader->msgLength)
 		{
-			xfree(pMsg->buffer);
+			assert(!pMsg->buffer);
 			pMsg->bufLen = pIncs->lastHeader->msgLength;
+#ifdef __CMS_CYCLE_MEM__
+			pMsg->buffer = msuper->allocCycMem(pMsg->bufLen, header.msgTypeID);
+#else
 			pMsg->buffer = (char*)xmalloc(pMsg->bufLen);
+#endif			
 		}
 	}
 	memcpy(pMsg->buffer + pMsg->dataLen, mrdBuff->peek(handleLen + needSkip4Bytes + dataLen) + handleLen + needSkip4Bytes, dataLen);

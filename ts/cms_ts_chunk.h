@@ -26,18 +26,23 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define __CMS_TS_CHUNKED_H__
 #include <vector>
 #include <mem/cms_mf_mem.h>
+#include <common/cms_type.h>
 
 #define TS_CHUNK_SIZE 188
 #define TS_SLICE_LEN  (TS_CHUNK_SIZE*100)
 
 typedef struct _TsChunk
 {
+	uint32 midxMem;
 	char *mdata;
 	int  muse;		//使用大小
 	int  mchunkSize;//开辟空间
 }TsChunk;
 
-TsChunk *allocTsChunk(int chunkSize);
+void initTsMem();
+void releaseTsMem();
+
+TsChunk *allocTsChunk(uint32 idx, int chunkSize);
 void freeTsChunk(TsChunk *tc);
 
 
@@ -52,7 +57,7 @@ typedef struct _TsChunkArray
 TsChunkArray *allocTsChunkArray();
 void freeTsChunkArray(TsChunkArray *tca);
 
-int writeChunk(TsChunkArray *tca, char *data, int len);
+int writeChunk(uint32 idx, TsChunkArray *tca, char *data, int len);
 int beginChunk(TsChunkArray *tca);
 int endChunk(TsChunkArray *tca);
 int getChunk(TsChunkArray *tca, int i, TsChunk **tc);

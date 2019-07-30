@@ -23,6 +23,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "cms_lock.h"
+#include <sys/time.h>
 
 CCriticalSection::CCriticalSection(cms_thread_lock_t *lock)
 {
@@ -435,6 +436,18 @@ void CEevnt::Unlock()
 int CEevnt::Wait()
 {
 	return pthread_cond_wait(&m_cs, &m_lock.GetLock());
+}
+
+int CEevnt::WaitTime(long t)
+{
+	long sec = t / 1000;
+	long nsec = (t % 1000) * 1000 * 1000;
+	struct timeval now;
+	struct timespec outtime;
+	gettimeofday(&now, NULL);
+	outtime.tv_sec = now.tv_sec + sec;
+	outtime.tv_nsec = now.tv_usec * 1000 + nsec;
+	return pthread_cond_timedwait(&m_cs, &m_lock.GetLock(), &outtime);
 }
 
 int CEevnt::Signal()

@@ -34,7 +34,7 @@ public:
 	CMux();
 	~CMux();
 
-	void init();
+	void init(uint32 threadID);
 	void reset();
 	void release();
 	int  tag2Ts(byte *inBuf, int inLen, byte *outBuf, int &outLen, byte &outType, uint64 &outPts);
@@ -53,6 +53,9 @@ private:
 	void setPcr(uint64 DTS, byte **outBuf, int &outLen);
 	void tsHeadPack(byte afc, byte pusi, byte* mcc, int16 pid, byte PcrFlag, byte RadomAFlag, int StuffLen, uint32 timeStamp, byte *outBuf, int &outLen);
 	void pesHeadPack(byte DTSFlag, uint64 pts, uint64 dts, int dataLen, byte *outBuf, int &outLen);
+
+	uint32      mthreadID;
+
 	bool		mheadFlag;  //收到FVL头
 	bool		minfoTag;   //收到scriptTag
 	SHead		mhead;		//头信息

@@ -22,32 +22,31 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#ifndef __CMS_INTERFACE_STREAM_INFO_H__
-#define __CMS_INTERFACE_STREAM_INFO_H__
+
+#ifndef __CMS_MEM_COMMON_H__
+#define __CMS_MEM_COMMON_H__
 #include <common/cms_type.h>
-#ifdef __CMS_CYCLE_MEM__
-#include <mem/cms_cycle_mem.h>
-#endif
-#include <string>
 
-class CStreamInfo
-{
-public:
-	CStreamInfo();
-	virtual ~CStreamInfo();
 
-	virtual int		firstPlaySkipMilSecond() = 0;
-	virtual bool	isResetStreamTimestamp() = 0;
-	virtual bool	isNoTimeout() = 0;
-	virtual int		liveStreamTimeout() = 0;
-	virtual int		noHashTimeout() = 0;
-	virtual bool	isRealTimeStream() = 0;
-	virtual int64   cacheTT() = 0;
-	virtual std::string getRemoteIP() = 0;
-	virtual std::string getHost() = 0;
-	virtual void    makeOneTask() = 0;
-#ifdef __CMS_CYCLE_MEM__
-	virtual CmsCycleMem *getCycMem() = 0;
+#define CMS_NEED_ALIGNMENT       //是否启用地址对齐
+
+#define CMS_POOL_ALIGNMENT       16
+#ifndef CMS_ALIGNMENT
+#define CMS_ALIGNMENT   sizeof(unsigned long)    /* platform word */
+#endif //CMS_ALIGNMENT
+
+#ifdef CMS_NEED_ALIGNMENT
+//from nginx
+#define cms_align(d, a)    (((d) + (a - 1)) & ~(a - 1))
+// 对指针地址进行内存对齐，原理同上
+#define cms_align_ptr(p, a)                                                   \
+    (byte *) (((uint64) (p) + ((uint64) a - 1)) & ~((uint64) a - 1))
+#else
+#define cms_align(d, a)    (d)
+#define cms_align_ptr(p, a)  (p)
 #endif
-};
-#endif
+
+#define CMS_VOID_PTR void*
+
+#endif //__CMS_MEM_COMMON_H__
+

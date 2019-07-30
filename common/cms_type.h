@@ -49,6 +49,8 @@ typedef unsigned char		uint8;
 typedef unsigned char		byte;
 #endif
 
+#define CMS_CYCLE_MEM_NODE_SIZE (1024*512)
+
 #define CMS_HASH_LEN 20
 
 typedef struct _EvTimerParam

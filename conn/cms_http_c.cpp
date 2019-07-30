@@ -110,6 +110,11 @@ ChttpClient::ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std
 	}
 	std::string modeName = "ChttpClient";
 	mflvPump = new CFlvPump(this, mHash, mHashIdx, mremoteAddr, modeName, murl);
+
+#ifdef __CMS_CYCLE_MEM__
+	mcycMem = xmallocCycleMem(CMS_CYCLE_MEM_NODE_SIZE);
+#endif
+
 	initMediaConfig();
 }
 
@@ -241,7 +246,12 @@ int ChttpClient::stop(std::string reason)
 		{
 			mflvPump->stop();
 		}
-
+#ifdef __CMS_CYCLE_MEM__
+		else
+		{
+			xfreeCycleMem(mcycMem);
+		}
+#endif
 		if (misDown8upBytes)
 		{
 			down8upBytes();
@@ -258,6 +268,9 @@ int ChttpClient::stop(std::string reason)
 	if (misCreateHls)
 	{
 		CMissionMgr::instance()->destroy(mHashIdx, mHash);
+		logs->debug("%s [ChttpClient::stop] destroy hls, url %s",
+			mremoteAddr.c_str(),
+			murl.c_str());
 	}
 	return CMS_OK;
 }
@@ -300,7 +313,7 @@ int ChttpClient::doDecode()
 			//redirect
 			misRedirect = true;
 			mredirectUrl = mhttp->httpResponse()->getHeader(HTTP_HEADER_LOCATION);
-			logs->info("%s [ChttpClient::doDecode] http %s redirect %s ",
+			logs->info("%s [ChttpClient::doDecode] http %s code %d redirect %s ",
 				mremoteAddr.c_str(), moriUrl.c_str(), mhttp->httpResponse()->getStatusCode(), mredirectUrl.c_str());
 			ret = CMS_ERROR;
 		}
@@ -368,7 +381,11 @@ int ChttpClient::doReadData()
 			p[0] = tagHeader[6];
 			p[3] = tagHeader[7];
 			misReadTagHeader = true;
+#ifdef __CMS_CYCLE_MEM__
+			mtagFlv = allocCycMem(mtagLen, (int)miTagType);
+#else
 			mtagFlv = (char*)xmalloc(mtagLen);
+#endif
 			mtagReadLen = 0;
 		}
 
@@ -523,7 +540,11 @@ int ChttpClient::decodeMetaData(char *data, int len)
 	{
 		misPushFlv = true;
 	}
+#ifdef __CMS_CYCLE_MEM__
+	xumallocCycleBuf(mcycMem, data);
+#else
 	xfree(data);
+#endif	
 	return CMS_OK;
 }
 
@@ -537,7 +558,11 @@ int  ChttpClient::decodeVideo(char *data, int len, uint32 timestamp)
 	}
 	else
 	{
+#ifdef __CMS_CYCLE_MEM__
+		xumallocCycleBuf(mcycMem, data);
+#else
 		xfree(data);
+#endif	
 	}
 	if (misOpenHls && !misCreateHls)
 	{
@@ -560,7 +585,11 @@ int  ChttpClient::decodeAudio(char *data, int len, uint32 timestamp)
 	}
 	else
 	{
+#ifdef __CMS_CYCLE_MEM__
+		xumallocCycleBuf(mcycMem, data);
+#else
 		xfree(data);
+#endif		
 	}
 	if (misOpenHls && !misCreateHls)
 	{
@@ -662,3 +691,18 @@ CReaderWriter *ChttpClient::rwConn()
 {
 	return mrw;
 }
+
+#ifdef __CMS_CYCLE_MEM__
+char *ChttpClient::allocCycMem(uint32 size, unsigned int msgType)
+{
+	if (msgType != MESSAGE_TYPE_VIDEO && msgType != MESSAGE_TYPE_AUDIO)
+	{
+		return (char *)xmallocCycleBuf(mcycMem, size, 1);
+	}
+	return (char *)xmallocCycleBuf(mcycMem, size, 0);
+}
+#endif
+
+
+
+

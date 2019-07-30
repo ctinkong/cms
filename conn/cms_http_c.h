@@ -35,6 +35,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <protocol/cms_http.h>
 #include <strategy/cms_jitter.h>
 #include <mem/cms_mf_mem.h>
+#ifdef __CMS_CYCLE_MEM__
+#include <mem/cms_cycle_mem.h>
+#endif
 #include <string>
 
 class ChttpClient :public Conn, public CStreamInfo
@@ -79,6 +82,11 @@ public:
 	int doRead();
 	int doWrite();
 
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem *getCycMem() { return mcycMem; };
+	char *allocCycMem(uint32 size, unsigned int msgType);
+#endif
+
 	OperatorNewDelete
 private:
 	void initMediaConfig();
@@ -90,6 +98,10 @@ private:
 	int  decodeMetaData(char *data, int len);
 	int  decodeVideo(char *data, int len, uint32 timestamp);
 	int  decodeAudio(char *data, int len, uint32 timestamp);
+
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem		*mcycMem; //可能由flvpool释放 连接断开后 数据还在flvpool里面
+#endif
 
 	bool			misRequet;
 	bool			misDecodeHeader;

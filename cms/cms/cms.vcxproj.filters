@@ -300,6 +300,12 @@
     <ClCompile Include="..\..\rfc\cms_rfc1738.cpp">
       <Filter>rfc</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\mem\cms_fix_mem.cpp">
+      <Filter>mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\mem\cms_cycle_mem.cpp">
+      <Filter>mem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\enc\cms_base64.h">
@@ -541,6 +547,15 @@
     </ClInclude>
     <ClInclude Include="..\..\rfc\cms_rfc1738.h">
       <Filter>rfc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mem\cms_fix_mem.h">
+      <Filter>mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mem\cms_mem_common.h">
+      <Filter>mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\mem\cms_cycle_mem.h">
+      <Filter>mem</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

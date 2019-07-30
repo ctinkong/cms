@@ -3,6 +3,9 @@
 #include <common/cms_type.h>
 #include <core/cms_lock.h>
 #include <mem/cms_mf_mem.h>
+#ifdef __CMS_CYCLE_MEM__
+#include <mem/cms_cycle_mem.h>
+#endif
 #include <string>
 #include <vector>
 #include <map>
@@ -36,8 +39,11 @@ enum FlvPoolDataType
 
 #define DropVideoMinSeconds 1500
 
-struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
+struct StreamSlice;
+
+typedef struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
 {
+	uint32			midxFixMem;			//固定内存所在队列索引号
 	int				mionly;				//0 表示没被使用，大于0表示正在被使用次数	
 	bool            misHaveMediaInfo;   //是否有修改过流信息
 	bool			misPushTask;
@@ -81,7 +87,11 @@ struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
 	char			*mpReferUrl;
 	char			*mpRemoteIP;
 	char			*mpHost;
-};
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem     *mcycMem;
+	struct StreamSlice * mss;
+#endif
+}Slice;
 
 struct TTandKK
 {
@@ -92,6 +102,10 @@ struct TTandKK
 
 struct StreamSlice
 {
+#ifdef __CMS_CYCLE_MEM__
+	int							mionly;				//0 表示没被使用，大于0表示正在被使用次数
+													//使用循环内存时，会被Slice引用
+#endif
 	//id唯一性 用于发送数据时 判断任务是否重启
 	CRWlock						mLock;
 	std::vector<TTandKK *>		msliceTTKK;	//按时间戳查找

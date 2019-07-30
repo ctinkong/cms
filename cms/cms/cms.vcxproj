@@ -57,6 +57,8 @@
     <ClCompile Include="..\..\libev\libev-4.25\ev_select.c" />
     <ClCompile Include="..\..\libev\libev-4.25\ev_win32.c" />
     <ClCompile Include="..\..\log\cms_log.cpp" />
+    <ClCompile Include="..\..\mem\cms_cycle_mem.cpp" />
+    <ClCompile Include="..\..\mem\cms_fix_mem.cpp" />
     <ClCompile Include="..\..\mem\cms_mf_mem.cpp" />
     <ClCompile Include="..\..\net\cms_net_var.cpp" />
     <ClCompile Include="..\..\net\cms_tcp_conn.cpp" />
@@ -134,6 +136,9 @@
     <ClInclude Include="..\..\libev\libev-4.25\ev_vars.h" />
     <ClInclude Include="..\..\libev\libev-4.25\ev_wrap.h" />
     <ClInclude Include="..\..\log\cms_log.h" />
+    <ClInclude Include="..\..\mem\cms_cycle_mem.h" />
+    <ClInclude Include="..\..\mem\cms_fix_mem.h" />
+    <ClInclude Include="..\..\mem\cms_mem_common.h" />
     <ClInclude Include="..\..\mem\cms_mf_mem.h" />
     <ClInclude Include="..\..\net\cms_net_var.h" />
     <ClInclude Include="..\..\net\cms_tcp_conn.h" />

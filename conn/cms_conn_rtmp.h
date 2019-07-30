@@ -34,6 +34,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <strategy/cms_jitter.h>
 #include <common/cms_type.h>
 #include <protocol/cms_flv_pump.h>
+#ifdef __CMS_CYCLE_MEM__
+#include <mem/cms_cycle_mem.h>
+#endif
 #include <mem/cms_mf_mem.h>
 #include <string>
 
@@ -85,12 +88,16 @@ public:
 	void tryCreatePullTask();
 	void tryCreatePushTask(bool isRetry = false);
 
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem *getCycMem() { return mcycMem; };
+	char *allocCycMem(uint32 size, unsigned int msgType);
+#endif
 	OperatorNewDelete
 private:
 	void initMediaConfig();
 	int  decodeVideo(RtmpMessage *msg, bool &isSave);
 	int  decodeAudio(RtmpMessage *msg, bool &isSave);
-	int  decodeVideoAudio(RtmpMessage *msg);
+	int  decodeVideoAudio(RtmpMessage *msg, bool &isSave);
 	int	 doRead();
 	int	 doWrite();
 	void makeHash();
@@ -99,6 +106,10 @@ private:
 
 	bool		misStop;
 	RtmpType	mrtmpType;
+
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem		*mcycMem; //可能由flvpool释放 连接断开后 数据还在flvpool里面
+#endif
 
 	int   miFirstPlaySkipMilSecond;
 	bool  misResetStreamTimestamp;

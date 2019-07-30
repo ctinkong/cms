@@ -1,5 +1,7 @@
 #!/bin/bash
 MEMCHECK=""
+MEMPOOL=""
+MEMCYCLE=""
 CLEAN=""
 DEBUG=""
 for line in $*
@@ -8,12 +10,18 @@ do
 		CLEAN="clean"
 	elif [ $line == "memcheck" ];then
 		MEMCHECK="memcheck"
+	elif [ $line == "mempool" ];then
+		MEMPOOL="mempool"
+	elif [ $line == "memcycle" ];then
+		MEMCYCLE="memcycle"
 	elif [ $line == "debug" ];then
 		DEBUG="debug"
 	fi
 done
 
 export MemCheck=$MEMCHECK
+export MemPool=$MEMPOOL
+export MemCycle=$MEMCYCLE
 export Debug=$DEBUG
 
 if [ $CLEAN == "clean" ];then

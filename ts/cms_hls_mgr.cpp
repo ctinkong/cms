@@ -92,9 +92,10 @@ void atomicDec(SSlice *s)
 	}
 }
 
-CMission::CMission(HASH &hash, uint32 hashIdx, std::string url,
+CMission::CMission(HASH &hash, uint32 hashIdx, uint32 threadID, std::string url,
 	int tsDuration, int tsNum, int tsSaveNum)
 {
+	mthreadID = threadID;
 	mevLoop = NULL;
 	mtimerEtp.idx = 0;
 	mtimerEtp.uid = 0;
@@ -154,14 +155,14 @@ CMission::~CMission()
 void CMission::initMux()
 {
 	mMux = new CMux(); //×ªÂëÆ÷
-	mMux->init();
+	mMux->init(mthreadID);
 	mMux->packPSI();
 	mlastTca = NULL;
 	SSlice *ss = newSSlice();
 	ss->msliceIndex = msliceIndx;
 	mlastTca = allocTsChunkArray();
-	writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
-	writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+	writeChunk(mthreadID, mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+	writeChunk(mthreadID, mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 	ss->marray.push_back(mlastTca);
 	msliceList.push_back(ss);
 }
@@ -453,8 +454,8 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			mMux->packPSI();
 
 			mlastTca = allocTsChunkArray();
-			writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
-			writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+			writeChunk(mthreadID, mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+			writeChunk(mthreadID, mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
 			ss->marray.push_back(mlastTca);
@@ -500,8 +501,8 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			mMux->packPSI();
 
 			mlastTca = allocTsChunkArray();
-			writeChunk(mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
-			writeChunk(mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
+			writeChunk(mthreadID, mlastTca, (char *)mMux->getPAT(), TS_CHUNK_SIZE);
+			writeChunk(mthreadID, mlastTca, (char *)mMux->getPMT(), TS_CHUNK_SIZE);
 			mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
 
 			ss->marray.push_back(mlastTca);
@@ -700,6 +701,9 @@ bool CMissionMgr::run()
 			return false;
 		}
 	}
+#ifdef __CMS_POOL_MEM__
+	initTsMem();
+#endif
 	return true;
 }
 
@@ -714,6 +718,9 @@ void CMissionMgr::stop()
 		ev_loop_destroy(mevLoop[i]);
 		mevLoop[i] = NULL;
 	}
+#ifdef __CMS_POOL_MEM__
+	releaseTsMem();
+#endif
 	logs->debug("##### CMissionMgr::stop finish #####");
 }
 
@@ -748,7 +755,7 @@ int	 CMissionMgr::create(uint32 i, HASH &hash, std::string url, int tsDuration, 
 	std::map<HASH, CMission *>::iterator it = mMissionMap[ii].find(hash);
 	if (it == mMissionMap[ii].end())
 	{
-		CMission *cm = new CMission(hash, i, url, tsDuration, tsNum, tsSaveNum);
+		CMission *cm = new CMission(hash, i, ii, url, tsDuration, tsNum, tsSaveNum);
 		mMissionMap[ii][hash] = cm;
 		mMissionUidMap[ii][cm->getUid()] = cm;
 		cm->run(ii, mevLoop[ii]);

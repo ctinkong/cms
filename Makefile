@@ -4,6 +4,14 @@ ifeq ($(MemCheck), )
 	MemCheck = None
 endif
 
+ifeq ($(MemPool), )
+	MemPool = None
+endif
+
+ifeq ($(MemCycle), )
+	MemCycle = None
+endif
+
 ifeq ($(Debug), )
 	Debug = None
 endif
@@ -22,9 +30,20 @@ CFLAGS = -ggdb \
 	-o2
 endif
 
+#内存检测
 ifeq ($(MemCheck),memcheck)
 $(warning "making memory check version")
 CMS_MACRO_DEFINE += -D_CMS_LEAK_CHECK_
+endif
+#使用内存池
+ifeq ($(MemPool),mempool)
+$(warning "making memory pool version")
+CMS_MACRO_DEFINE += -D__CMS_POOL_MEM__
+endif
+#使用循环内存
+ifeq ($(MemCycle),memcycle)
+$(warning "making memory cycle version")
+CMS_MACRO_DEFINE += -D__CMS_CYCLE_MEM__
 endif
 
 #public CFLAGS

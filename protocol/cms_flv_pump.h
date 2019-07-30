@@ -31,6 +31,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <protocol/cms_amf0.h>
 #include <interface/cms_stream_info.h>
 #include <mem/cms_mf_mem.h>
+#ifdef __CMS_CYCLE_MEM__
+#include <mem/cms_cycle_mem.h>
+#endif
 #include <string>
 
 class CFlvPump
@@ -54,6 +57,7 @@ public:
 	byte getVideoType();
 	byte getAudioType();
 	void stop();
+	
 	void setPublish();
 
 	OperatorNewDelete

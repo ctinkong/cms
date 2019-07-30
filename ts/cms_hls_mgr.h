@@ -57,7 +57,7 @@ void atomicDec(SSlice *s);
 class CMission
 {
 public:
-	CMission(HASH &hash, uint32 hashIdx, std::string url,
+	CMission(HASH &hash, uint32 hashIdx, uint32 threadID, std::string url,
 		int tsDuration, int tsNum, int tsSaveNum);
 	~CMission();
 
@@ -79,6 +79,7 @@ private:
 	struct ev_loop		*mevLoop;
 	ev_timer		    mevTimer;
 
+	uint32  mthreadID;
 	uint64  muid;
 	HASH	mhash;			//用来识别任务的hash值
 	uint32  mhashIdx;		//

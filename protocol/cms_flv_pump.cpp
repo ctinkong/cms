@@ -121,7 +121,7 @@ int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 	logs->info("%s [CFlvPump::decodeMetaData] %s stream media rate=%d,width=%d,height=%d,video framerate=%d,audio samplerate=%d,audio framerate=%d",
 		mremoteAddr.c_str(), murl.c_str(), miMediaRate, miWidth, miHeight, miVideoFrameRate, miAudioSamplerate, miAudioFrameRate);
 
-	Slice *s = newSlice();
+	Slice *s = newSlice(mhashIdx);
 	if (isChangeMediaInfo)
 	{
 		copy2Slice(s);
@@ -222,6 +222,13 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 					}
 				}
 				isChangeMediaInfo = true;
+#ifdef __CMS_CYCLE_MEM__
+				//首帧视频存在时间比较久 不能再循环内存里面开辟
+				char *d = (char *)xmalloc(len);
+				memcpy(d, data, len);
+				umallocCycleBuf(msuper->getCycMem(), data);
+				data = d;
+#endif
 			}
 			else if (data[1] == 0x01)
 			{
@@ -229,7 +236,7 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 			}
 		}
 	}
-	Slice *s = newSlice();
+	Slice *s = newSlice(mhashIdx);
 	if (isChangeMediaInfo)
 	{
 		misH264 = isH264;
@@ -249,6 +256,9 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 	{
 		mllIdx++;
 		s->muiTimestamp = timestamp;
+#ifdef __CMS_CYCLE_MEM__
+	s->mcycMem = msuper->getCycMem();
+#endif
 	}
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
@@ -319,9 +329,16 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 				logs->info("%s [CFlvPump::decodeAudio] %s audio sampleRate=%d,audio frame rate=%d",
 					mremoteAddr.c_str(), murl.c_str(), miAudioSamplerate, miAudioFrameRate);
 			}
+#ifdef __CMS_CYCLE_MEM__
+			//首帧音频存在时间比较久 不能再循环内存里面开辟
+			char *d = (char *)xmalloc(len);
+			memcpy(d, data, len);
+			umallocCycleBuf(msuper->getCycMem(), data);
+			data = d;
+#endif
 		}
 	}
-	Slice *s = newSlice();
+	Slice *s = newSlice(mhashIdx);
 	if (isChangeMediaInfo)
 	{
 		copy2Slice(s);
@@ -338,6 +355,9 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 	{
 		mllIdx++;
 		s->muiTimestamp = timestamp;
+#ifdef __CMS_CYCLE_MEM__
+	s->mcycMem = msuper->getCycMem();
+#endif
 	}
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
@@ -396,10 +416,13 @@ byte CFlvPump::getAudioType()
 
 void CFlvPump::stop()
 {
-	Slice *s = newSlice();
+	Slice *s = newSlice(mhashIdx);
 	xCopyHash(&s->mpHash, mhash);
 	s->misPushTask = misPublish;
 	s->misRemove = true;
+#ifdef __CMS_CYCLE_MEM__
+	s->mcycMem = msuper->getCycMem();
+#endif
 	CFlvPool::instance()->push(mhashIdx, s);
 }
 

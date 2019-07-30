@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <protocol/cms_flv.h>
 #include <common/cms_char_int.h>
 #include <static/cms_static_common.h>
+#include <mem/cms_fix_mem.h>
 #include <app/cms_app_info.h>
 #include <app/cms_parse_args.h>
 #include <mem/cms_mf_mem.h>
@@ -39,12 +40,70 @@ using namespace std;
 #define VectorTTKKIter vector<TTandKK *>::iterator
 #define VectorSliceIter vector<Slice *>::iterator
 
+#ifdef __CMS_POOL_MEM__
+
+static CmsFixMem *sliceFixMem[APP_ALL_MODULE_THREAD_NUM];
+static CLock sliceLockFixMem[APP_ALL_MODULE_THREAD_NUM];
+
+static void initSliceFixMem()
+{
+	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
+	{
+		sliceFixMem[i] = xmallocFixMem(sizeof(Slice), 250);
+	}
+}
+
+static void releaseSliceFixMem()
+{
+	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
+	{
+		xfreeFixMem(sliceFixMem[i]);
+	}
+}
+
+static void *mallocSlice(int i)
+{
+	void *ptr = NULL;
+	sliceLockFixMem[i].Lock();
+	ptr = xmallocFix(sliceFixMem[i]);
+	sliceLockFixMem[i].Unlock();
+	return ptr;
+}
+
+static void freeSlice(int i, void *ptr)
+{
+	sliceLockFixMem[i].Lock();
+	xfreeFix(sliceFixMem[i], ptr);
+	sliceLockFixMem[i].Unlock();
+}
+
+
+void atomicInc(StreamSlice *ss)
+{
+	if (ss != NULL)
+	{
+		__sync_add_and_fetch(&ss->mionly, 1);//当数据超时，且没人使用时，删除
+	}
+}
+
+void atomicDec(StreamSlice *ss)
+{
+	if (ss != NULL)
+	{
+		__sync_sub_and_fetch(&ss->mionly, 1);
+	}
+}
+
+#endif //__CMS_POOL_MEM__
 
 void atomicInc(Slice *s)
 {
 	if (s != NULL)
 	{
 		__sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
+#ifdef __CMS_POOL_MEM__
+		atomicInc(s->mss);
+#endif		
 	}
 }
 
@@ -52,11 +111,27 @@ void atomicDec(Slice *s)
 {
 	if (s != NULL)
 	{
+#ifdef __CMS_POOL_MEM__
+		atomicDec(s->mss); //释放StreamSlice引用
+#endif	
 		if (__sync_sub_and_fetch(&s->mionly, 1) == 0)//当数据超时，且没人使用时，删除
 		{
 			if (s->mData)
 			{
+#ifdef __CMS_CYCLE_MEM__
+				if (s->mcycMem)
+				{
+					xfreeCycleBuf(s->mcycMem, s->mData);
+				}
+				else
+				{
+					//只有发送时临时创建的Slice才不在循环内存内 请看 mergeKeyFrame 函数调用
+					//或者 metaData、首帧音频和视频也不在循环内存内
+					xfree(s->mData);
+				}
+#else
 				xfree(s->mData);
+#endif		
 			}
 			if (s->mpMajorHash)
 			{
@@ -90,7 +165,11 @@ void atomicDec(Slice *s)
 			{
 				xfree(s->mpHost);
 			}
+#ifdef __CMS_POOL_MEM__
+			freeSlice(s->midxFixMem, s);
+#else
 			xfree(s);
+#endif			
 		}
 	}
 }
@@ -109,9 +188,15 @@ CAutoSlice::~CAutoSlice()
 	}
 }
 
-Slice *newSlice()
+Slice *newSlice(uint32 i)
 {
+#ifdef __CMS_POOL_MEM__
+	Slice *s = (Slice*)mallocSlice(i);
+#else
 	Slice *s = (Slice*)xmalloc(sizeof(Slice));
+#endif
+	s->midxFixMem = i;
+
 	s->mionly = 1;
 	s->miDataType = DATA_TYPE_NONE;
 	s->misHaveMediaInfo = false;
@@ -161,12 +246,20 @@ Slice *newSlice()
 	s->mpReferUrl = NULL;
 	s->mpRemoteIP = NULL;
 	s->mpHost = NULL;
+#ifdef __CMS_CYCLE_MEM__
+	s->mcycMem = NULL;
+	s->mss = NULL;
+#endif
 	return s;
 }
 
 StreamSlice *newStreamSlice()
 {
 	StreamSlice *ss = new StreamSlice;
+#ifdef __CMS_CYCLE_MEM__
+	ss->mionly = 0;
+#endif
+
 	ss->mllNearKeyFrameIdx = -1;
 	ss->muiTheLastVideoTimestamp = 0;
 
@@ -250,6 +343,9 @@ CFlvPool::CFlvPool()
 	{
 		mtid[i] = 0;
 	}
+#ifdef __CMS_CYCLE_MEM__
+	mtidCycMem = 0;
+#endif
 }
 
 CFlvPool::~CFlvPool()
@@ -276,55 +372,22 @@ CFlvPool::~CFlvPool()
 		for (MapHashStreamIter iterM = mmapHashSlice[i].begin(); iterM != mmapHashSlice[i].end();)
 		{
 			StreamSlice *ss = iterM->second;
-			for (VectorTTKKIter iterV = ss->msliceTTKK.begin(); iterV != ss->msliceTTKK.end();)
-			{
-				TTandKK *tk = *iterV;
-				if (tk)
-				{
-					xfree(tk);
-				}
-				iterV = ss->msliceTTKK.erase(iterV);
-			}
-			for (VectorSliceIter iterV = ss->mavSlice.begin(); iterV != ss->mavSlice.end();)
-			{
-				Slice *s = *iterV;
-				if (s)
-				{
-					atomicDec(s);
-				}
-				iterV = ss->mavSlice.erase(iterV);
-			}
-			if (ss->mfirstVideoSlice)
-			{
-				if (ss->mfirstVideoSlice->mData)
-				{
-					xfree(ss->mfirstVideoSlice->mData);
-				}
-				xfree(ss->mfirstVideoSlice);
-				ss->mfirstVideoSlice = NULL;
-			}
-			if (ss->mfirstAudioSlice)
-			{
-				if (ss->mfirstAudioSlice->mData)
-				{
-					xfree(ss->mfirstAudioSlice->mData);
-				}
-				xfree(ss->mfirstAudioSlice);
-				ss->mfirstAudioSlice = NULL;
-			}
-			if (ss->mmetaDataSlice)
-			{
-				if (ss->mmetaDataSlice->mData)
-				{
-					xfree(ss->mmetaDataSlice->mData);
-				}
-				xfree(ss->mmetaDataSlice);
-				ss->mmetaDataSlice = NULL;
-			}
+			releaseSS(ss);
 			mmapHashSlice[i].erase(iterM++);
 		}
 		mhashSliceLock[i].UnWLock();
 	}
+#ifdef __CMS_CYCLE_MEM__
+	mcycMemLoc.Lock();
+	std::list<StreamSlice *>::iterator it = mlistCycMem.begin();
+	for (; it != mlistCycMem.end(); )
+	{
+		releaseSS(*it);
+		mlistCycMem.erase(it++);
+	}
+	mcycMemLoc.Unlock();
+#endif
+
 }
 
 void *CFlvPool::routinue(void *param)
@@ -356,6 +419,54 @@ void CFlvPool::thread(uint32 i)
 	}
 }
 
+#ifdef __CMS_CYCLE_MEM__
+void *CFlvPool::routinueDelayReleaseCycMem(void *param)
+{
+	RoutinueParam *rp = (RoutinueParam *)param;
+	CFlvPool *pInstance = (CFlvPool *)rp->pInstance;
+	pInstance->threadDelayReleaseCycMem();
+	return NULL;
+}
+
+void CFlvPool::threadDelayReleaseCycMem()
+{
+	logs->debug("### CFlvPool threadDelayReleaseCycMem tid=%d ###", gettid());
+	setThreadName("cms-flv-dl");
+	StreamSlice *ss;
+	while (misRun)
+	{
+		mcycMemLoc.Lock();
+		mcycMemLoc.WaitTime(1000);
+		std::list<StreamSlice *>::iterator it = mlistCycMem.begin();
+		for (; it != mlistCycMem.end(); )
+		{
+			ss = *it;
+			if (ss->mionly == 0)
+			{
+				//没有引用可以删除了
+				releaseSS(ss);
+				mlistCycMem.erase(it++);
+				logs->debug("CFlvPool::threadDelayReleaseCycMem release cycle mem");
+			}
+			else
+			{
+				it++;
+			}
+		}
+		mcycMemLoc.Unlock();
+	}
+}
+
+void CFlvPool::pushSS(StreamSlice *ss)
+{
+	mcycMemLoc.Lock();
+	mcycMemLoc.Signal();
+	mlistCycMem.push_back(ss);
+	mcycMemLoc.Unlock();
+}
+
+#endif
+
 bool CFlvPool::run()
 {
 	misRun = true;
@@ -373,6 +484,21 @@ bool CFlvPool::run()
 			return false;
 		}
 	}
+#ifdef __CMS_POOL_MEM__
+	initSliceFixMem();
+
+	RoutinueParam *rp = new RoutinueParam;
+	rp->i = 0;
+	rp->pInstance = this;
+	int res = cmsCreateThread(&mtidCycMem, routinueDelayReleaseCycMem, rp, false);
+	if (res == -1)
+	{
+		char date[128] = { 0 };
+		getTimeStr(date);
+		logs->error("%s ***** file=%s,line=%d cmsCreateThread error *****", date, __FILE__, __LINE__);
+		return false;
+	}
+#endif
 	return true;
 }
 
@@ -406,6 +532,9 @@ void CFlvPool::stop()
 		cmsWaitForThread(mtid[i], NULL);
 		mtid[i] = 0;
 	}
+#ifdef __CMS_POOL_MEM__
+	releaseSliceFixMem();
+#endif
 	logs->debug("##### CFlvPool::stop finish #####");
 }
 
@@ -429,7 +558,7 @@ void CFlvPool::push(uint32 i, Slice *s)
 		{
 			mqueueLock[i].Signal();
 		}
-		mqueueSlice[i].push(s);		
+		mqueueSlice[i].push(s);
 		mqueueLock[i].Unlock();
 	}
 }
@@ -729,7 +858,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 			atomicInc(*s); //当数据超时，且没人使用时，删除
 		}
 		ss->mLock.UnRLock();
-		}
+	}
 	else
 	{
 #ifdef __CMS_DEBUG__
@@ -739,7 +868,7 @@ int  CFlvPool::readSlice(uint32 i, HASH &hash, int64 &llIdx, Slice **s, int &sli
 	}
 	mhashSliceLock[i].UnRLock();
 	return ret;
-	}
+}
 
 bool  CFlvPool::isHaveMetaData(uint32 i, HASH &hash)
 {
@@ -1234,6 +1363,9 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		{
 			logs->debug(">>>>>[handleSlice] task %s is remove but not find hash", s->mpUrl);
 			atomicDec(s);
+#ifdef __CMS_CYCLE_MEM__
+			xfreeCycleMem(s->mcycMem);
+#endif
 			return;
 		}
 		ss = newStreamSlice();
@@ -1307,30 +1439,12 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		mmapHashSlice[i].erase(iterM);
 		mhashSliceLock[i].UnWLock();
 
-		for (VectorTTKKIter iterTTKK = ss->msliceTTKK.begin(); iterTTKK != ss->msliceTTKK.end();)
-		{
-			xfree(*iterTTKK);
-			iterTTKK = ss->msliceTTKK.erase(iterTTKK);
-		}
-		for (VectorSliceIter iterSI = ss->mavSlice.begin(); iterSI != ss->mavSlice.end();)
-		{
-			atomicDec(*iterSI);
-			iterSI = ss->mavSlice.erase(iterSI);
-		}
-		if (ss->mfirstVideoSlice)
-		{
-			atomicDec(ss->mfirstVideoSlice);
-		}
-		if (ss->mfirstAudioSlice)
-		{
-			atomicDec(ss->mfirstAudioSlice);
-		}
-		if (ss->mmetaDataSlice)
-		{
-			atomicDec(ss->mmetaDataSlice);
-		}
+#ifdef __CMS_CYCLE_MEM__
+		pushSS(ss); //延迟删除
+#else
+		releaseSS(ss);
+#endif		
 		atomicDec(s);
-		delete ss;
 	}
 	else
 	{
@@ -1356,7 +1470,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 				{
 					//新任务不能删除 前面刚保存
 					atomicDec(ss->mmetaDataSlice);
-				}				
+				}
 			}
 			ss->misHaveMetaData = true;
 			ss->mllMetaDataIdx = s->mllIndex;
@@ -1718,5 +1832,64 @@ void CFlvPool::updateMediaInfo(StreamSlice *ss, Slice *s)
 		ss->mllCacheTT = 1000 * 5;
 	}
 }
+
+void CFlvPool::releaseSS(StreamSlice *ss)
+{
+#ifdef __CMS_CYCLE_MEM__
+	CmsCycleMem *cycMem = NULL;
+#endif
+	for (VectorTTKKIter iterTTKK = ss->msliceTTKK.begin(); iterTTKK != ss->msliceTTKK.end();)
+	{
+		xfree(*iterTTKK);
+		iterTTKK = ss->msliceTTKK.erase(iterTTKK);
+	}
+	for (VectorSliceIter iterSI = ss->mavSlice.begin(); iterSI != ss->mavSlice.end();)
+	{
+#ifdef __CMS_CYCLE_MEM__
+		if (!cycMem && *iterSI)
+		{
+			cycMem = (*iterSI)->mcycMem;
+		}
+#endif
+		atomicDec(*iterSI);
+		iterSI = ss->mavSlice.erase(iterSI);
+	}
+	if (ss->mfirstVideoSlice)
+	{
+#ifdef __CMS_CYCLE_MEM__
+		if (!cycMem)
+		{
+			cycMem = ss->mfirstVideoSlice->mcycMem;
+		}
+#endif
+		atomicDec(ss->mfirstVideoSlice);
+	}
+	if (ss->mfirstAudioSlice)
+	{
+#ifdef __CMS_CYCLE_MEM__
+		if (!cycMem)
+		{
+			cycMem = ss->mfirstAudioSlice->mcycMem;
+		}
+#endif
+		atomicDec(ss->mfirstAudioSlice);
+	}
+	if (ss->mmetaDataSlice)
+	{
+#ifdef __CMS_CYCLE_MEM__
+		if (!cycMem)
+		{
+			cycMem = ss->mmetaDataSlice->mcycMem;
+		}
+#endif
+		atomicDec(ss->mmetaDataSlice);
+	}
+	delete ss;
+#ifdef __CMS_CYCLE_MEM__
+	xfreeCycleMem(cycMem);
+#endif
+}
+
+
 
 

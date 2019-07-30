@@ -33,13 +33,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mem/cms_mf_mem.h>
 #include <string>
 #include <vector>
+#include <list>
 #include <map>
 #include <queue>
 #include <set>
 #include <assert.h>
 
 
-Slice *newSlice();
+Slice *newSlice(uint32 i);
 StreamSlice *newStreamSlice();
 
 void atomicInc(Slice *s);
@@ -64,6 +65,12 @@ public:
 	static void *routinue(void *param);
 	void thread(uint32 i);
 	bool run();
+#ifdef __CMS_CYCLE_MEM__
+	//循环内存需要延迟删除，因为删除的时候可能还有播放的请求
+	//在使用循环内存的内存，会导致不可预测的错误
+	static void *routinueDelayReleaseCycMem(void *param);
+	void threadDelayReleaseCycMem();
+#endif
 
 	static CFlvPool *instance();
 	static void freeInstance();
@@ -117,7 +124,10 @@ private:
 	void getRelativeDuration(StreamSlice *ss, Slice *s, bool isNewSlice,
 		int64 &maxRelativeDuration, int64 &minRelativeDuration);
 	void updateMediaInfo(StreamSlice *ss, Slice *s);
-
+	void releaseSS(StreamSlice *ss);
+#ifdef __CMS_CYCLE_MEM__
+	void pushSS(StreamSlice *ss);
+#endif
 
 	bool					misRun;
 	static CFlvPool			*minstance;
@@ -132,5 +142,10 @@ private:
 	CLock					msetHashLock[APP_ALL_MODULE_THREAD_NUM];
 
 	cms_thread_t			mtid[APP_ALL_MODULE_THREAD_NUM];
+#ifdef __CMS_CYCLE_MEM__
+	std::list<StreamSlice *>	mlistCycMem;
+	CEevnt					mcycMemLoc;
+	cms_thread_t			mtidCycMem;
+#endif
 };
 #endif

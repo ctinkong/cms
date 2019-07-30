@@ -245,45 +245,91 @@ bool sortFun(const CmsMemSizeInfo &v1, const CmsMemSizeInfo &v2)
 	return v1.size < v2.size;//升序排列  
 }
 
+
+
+static CmsAllocNode * addTmpNode(CmsAllocNode *head, size_t size, const char *file, int line)
+{
+	CmsAllocNode *n = (CmsAllocNode *)malloc(sizeof(CmsAllocNode));
+	snprintf(n->filename, CMS_FILENAME_LEN * sizeof(char), "%s", file);
+	n->line = line;
+	n->size = size;
+	n->addr = NULL;
+	n->prev = NULL;
+	n->next = head;
+	if (head)
+	{
+		head->prev = n;
+	}
+	else
+	{
+	}
+	head = n;
+	return head;
+}
+
+static void delAllTmpNode(CmsAllocNode *head)
+{
+	CmsAllocNode *node = head;
+	CmsAllocNode *next = NULL;
+	while (node)
+	{
+		next = node->next;
+		free(node);
+		node = next;
+	}
+}
+
 std::string printfMemUsage()
 {
-	unsigned long b = getTickCount();
+	unsigned long long nodeNum = 0;
 	unsigned long long extraMem = 0;
 	unsigned long long totalMem = 0;
-	std::map<std::string, std::map<int, unsigned long long> > mapMemInfo;
+	CmsAllocNode *tmpNodes = NULL;
+	unsigned long beginTime = getTickCount();
 	for (int i = 0; i < CMS_LEADK_LIST_COUNT; i++)
 	{
-		//太耗时间 需要优化 可以弄个临时list 记录每个node
+		//直接统计数据太耗时间 弄个临时list 记录每个node
 		g_AllocHeadLocker[i].Lock();
 		CmsAllocNode *head = g_AllocHead[i];
 		while (head)
 		{
-			totalMem += sizeof(CmsAllocNode) + head->size;
-			extraMem += sizeof(CmsAllocNode);
-			std::map<std::string, std::map<int, unsigned long long> >::iterator itFileName = mapMemInfo.find(head->filename);
-			if (itFileName != mapMemInfo.end())
-			{
-				std::map<int, unsigned long long>::iterator itLine = itFileName->second.find(head->line);
-				if (itLine != itFileName->second.end())
-				{
-					itLine->second += head->size;
-				}
-				else
-				{
-					itFileName->second.insert(std::make_pair(head->line, head->size));
-				}
-			}
-			else
-			{
-				std::map<int, unsigned long long> mapRecord;
-				mapRecord.insert(std::make_pair(head->line, head->size));
-				mapMemInfo.insert(std::make_pair(head->filename, mapRecord));
-			}
+			tmpNodes = addTmpNode(tmpNodes, head->size, head->filename, head->line); //临时拷贝
 			head = head->next;
+			nodeNum++;
 		}
 		g_AllocHeadLocker[i].Unlock();
 	}
-	unsigned long memInfoE = getTickCount();
+	unsigned long memInfoEndTime = getTickCount();
+
+	std::map<std::string, std::map<int, unsigned long long> > mapMemInfo;
+	CmsAllocNode *head = tmpNodes;
+	while (head)
+	{
+		totalMem += sizeof(CmsAllocNode) + head->size;
+		extraMem += sizeof(CmsAllocNode);
+		std::map<std::string, std::map<int, unsigned long long> >::iterator itFileName = mapMemInfo.find(head->filename);
+		if (itFileName != mapMemInfo.end())
+		{
+			std::map<int, unsigned long long>::iterator itLine = itFileName->second.find(head->line);
+			if (itLine != itFileName->second.end())
+			{
+				itLine->second += head->size;
+			}
+			else
+			{
+				itFileName->second.insert(std::make_pair(head->line, head->size));
+			}
+		}
+		else
+		{
+			std::map<int, unsigned long long> mapRecord;
+			mapRecord.insert(std::make_pair(head->line, head->size));
+			mapMemInfo.insert(std::make_pair(head->filename, mapRecord));
+		}
+		head = head->next;
+	}
+	delAllTmpNode(tmpNodes);
+	unsigned long tmpTime = getTickCount();
 
 	std::string memInfo = "mem info:\n";
 	std::string memSize;
@@ -321,15 +367,17 @@ std::string printfMemUsage()
 			memInfo += vecMemInfo.at((*itVec).idx).c_str();
 		}
 	}
-	unsigned long e = getTickCount();
+	unsigned long endTime = getTickCount();
 	snprintf(szMenInfo,
 		sizeof(szMenInfo),
-		"\n#####total mem %s, extra mem %s, extra percentage %llu, mem take time %lu ms, total take time %lu ms\n",
+		"\n#####total mem %s, extra mem %s, extra percentage %llu, node num %llu, mem take time %lu ms, tmp node time %lu ms, total take time %lu ms\n",
 		parseSpeed8Mem(totalMem, false).c_str(),
 		parseSpeed8Mem(extraMem, false).c_str(),
 		totalMem ? (extraMem * 100 / totalMem) : 0,
-		memInfoE - b,
-		e - b);
+		nodeNum,
+		memInfoEndTime - beginTime,
+		tmpTime - memInfoEndTime,
+		endTime - beginTime);
 	memInfo += szMenInfo;
 
 	logs->fatal("%s", memInfo.c_str());

@@ -98,6 +98,7 @@ public:
 	void Lock();
 	void Unlock();
 	int  Wait();
+	int  WaitTime(long t);
 	int  Signal();
 private:
 	CLock	m_lock;

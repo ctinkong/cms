@@ -25,13 +25,65 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_ts_chunk.h>
 #include <common/cms_utility.h>
 #include <mem/cms_mf_mem.h>
+#include <mem/cms_fix_mem.h>
+#include <app/cms_app_info.h>
 #include <assert.h>
 
-TsChunk *allocTsChunk(int chunkSize)
+#ifdef __CMS_POOL_MEM__
+
+static CmsFixMem *tsFixMem[APP_ALL_MODULE_THREAD_NUM]; //每个线程独享 不需要加锁
+
+static void initTsFixMem()
+{
+	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
+	{
+		tsFixMem[i] = xmallocFixMem(TS_SLICE_LEN, 10);
+	}
+}
+
+static void releaseTsFixMem()
+{
+	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
+	{
+		xfreeFixMem(tsFixMem[i]);
+	}
+}
+
+static void *mallocTsSlice(int i)
+{
+	void *ptr = NULL;
+	ptr = xmallocFix(tsFixMem[i]);
+	return ptr;
+}
+
+static void freeTsSlice(int i, void *ptr)
+{
+	xfreeFix(tsFixMem[i], ptr);
+}
+
+void initTsMem()
+{
+	initTsFixMem();
+}
+
+void releaseTsMem()
+{
+	releaseTsFixMem();
+}
+
+#endif //__CMS_POOL_MEM__
+
+TsChunk *allocTsChunk(uint32 idx, int chunkSize)
 {
 	TsChunk *tc = new TsChunk;
+	tc->midxMem = idx;
+
 	tc->mchunkSize = chunkSize;
+#ifdef __CMS_POOL_MEM__
+	tc->mdata = (char*)mallocTsSlice(idx);
+#else
 	tc->mdata = (char*)xmalloc(chunkSize);
+#endif	
 	tc->muse = 0;
 	return tc;
 }
@@ -41,7 +93,11 @@ void freeTsChunk(TsChunk *tc)
 	assert(tc != NULL);
 	if (tc->mdata)
 	{
+#ifdef __CMS_POOL_MEM__
+		freeTsSlice(tc->midxMem, tc->mdata);
+#else
 		xfree(tc->mdata);
+#endif			
 	}
 	delete tc;
 }
@@ -63,7 +119,7 @@ void freeTsChunkArray(TsChunkArray *tca)
 	}
 }
 
-int writeChunk(TsChunkArray *tca, char *data, int len)
+int writeChunk(uint32 idx, TsChunkArray *tca, char *data, int len)
 {
 	//返回一个ts剩余长度
 	int left = 0;
@@ -71,7 +127,7 @@ int writeChunk(TsChunkArray *tca, char *data, int len)
 	tc = NULL;
 	if (tca->mtsChunkArray.empty())
 	{
-		tc = allocTsChunk(TS_SLICE_LEN);
+		tc = allocTsChunk(idx, TS_SLICE_LEN);
 		tca->mtsChunkArray.push_back(tc);
 	}
 	else
@@ -80,7 +136,7 @@ int writeChunk(TsChunkArray *tca, char *data, int len)
 		if (tc->mchunkSize - tc->muse < len)
 		{
 			assert((tc->mchunkSize - tc->muse) % TS_CHUNK_SIZE == 0);
-			tc = allocTsChunk(TS_SLICE_LEN);
+			tc = allocTsChunk(idx, TS_SLICE_LEN);
 			tca->mtsChunkArray.push_back(tc);
 		}
 	}

@@ -100,6 +100,8 @@ void setPMT(int16 aPid, int16 vPid, int16 pcrPid, byte AstreamType, byte **outBu
 
 CMux::CMux()
 {
+	mthreadID = -1;
+
 	mheadFlag = false;  //收到FVL头
 	minfoTag = false;   //收到scriptTag
 	memset(&mhead, 0, sizeof(mhead));		//头信息
@@ -140,8 +142,9 @@ CMux::~CMux()
 }
 
 //初始化一些全局变量，在处理不同流的时候需要重新初始化
-void CMux::init()
+void CMux::init(uint32 threadID)
 {
+	mthreadID = threadID;
 	mheadFlag = false;
 	minfoTag = false;
 
@@ -1437,51 +1440,51 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 	RadomAFlag = 0;
 	PcrFlag = 0;
 	afc = 0x01;
-	PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
-	PackRemain = writeChunk(tca, (char *)PESHead, PESHeadLen);
+	PackRemain = writeChunk(mthreadID, tca, (char *)tsHead, tsHeadLen);
+	PackRemain = writeChunk(mthreadID, tca, (char *)PESHead, PESHeadLen);
 
 	//写适应apple的起始码
 	if (StartCodeFlag) {
-		PackRemain = writeChunk(tca, (char *)StartCode, StartCodeLen);
+		PackRemain = writeChunk(mthreadID, tca, (char *)StartCode, StartCodeLen);
 	}
 
 	//写SPS/PPS
 	if (SpsPpsFlag) {
 		if (PackRemain > mSpsNalLen) {
-			PackRemain = writeChunk(tca, (char *)mSpsNal, mSpsNalLen);
+			PackRemain = writeChunk(mthreadID, tca, (char *)mSpsNal, mSpsNalLen);
 		}
 		else { //当SPS大于一个ts包长度
 			int totalWriteLen = PackRemain;
-			PackRemain = writeChunk(tca, (char *)mSpsNal, PackRemain);
+			PackRemain = writeChunk(mthreadID, tca, (char *)mSpsNal, PackRemain);
 			for (; totalWriteLen < mSpsNalLen;) {
 				tsHeadLen = 0;
 				tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
-				PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
+				PackRemain = writeChunk(mthreadID, tca, (char *)tsHead, tsHeadLen);
 				int writeLen = PackRemain;
 				if (mSpsNalLen - totalWriteLen < writeLen/*184*/) {
 					writeLen = mSpsNalLen - totalWriteLen;
 					logs->debug("[CMux::onData] writeLen = mSpsNalLen - totalWriteLen");
 				}
-				PackRemain = writeChunk(tca, (char *)mSpsNal + totalWriteLen, writeLen);
+				PackRemain = writeChunk(mthreadID, tca, (char *)mSpsNal + totalWriteLen, writeLen);
 				totalWriteLen += writeLen;
 			}
 		}
 
 		if (PackRemain > mPpsNalLen) {
-			PackRemain = writeChunk(tca, (char *)mPpsNal, mPpsNalLen);
+			PackRemain = writeChunk(mthreadID, tca, (char *)mPpsNal, mPpsNalLen);
 		}
 		else { //当PPS大于一个ts包长度
 			int totalWriteLen = PackRemain;
-			PackRemain = writeChunk(tca, (char *)mPpsNal, PackRemain);
+			PackRemain = writeChunk(mthreadID, tca, (char *)mPpsNal, PackRemain);
 			for (; totalWriteLen < mPpsNalLen;) {
 				tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
-				PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
+				PackRemain = writeChunk(mthreadID, tca, (char *)tsHead, tsHeadLen);
 				int writeLen = PackRemain;
 				if (mPpsNalLen - totalWriteLen < writeLen/*184*/) {
 					writeLen = mSpsNalLen - totalWriteLen;
 					logs->debug("[CMux::onData] writeLen = mSpsNalLen - totalWriteLen");
 				}
-				PackRemain = writeChunk(tca, (char *)mPpsNal + totalWriteLen, writeLen);
+				PackRemain = writeChunk(mthreadID, tca, (char *)mPpsNal + totalWriteLen, writeLen);
 				totalWriteLen += writeLen;
 			}
 		}
@@ -1490,14 +1493,14 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 	//写NAL分隔符
 	if (false && framType != 'A') {
 		if (PackRemain > NalDivideLen) {
-			PackRemain = writeChunk(tca, (char *)NalDivide, NalDivideLen);
+			PackRemain = writeChunk(mthreadID, tca, (char *)NalDivide, NalDivideLen);
 		}
 		else {
 			int writeTotalLen = PackRemain;
-			PackRemain = writeChunk(tca, (char *)NalDivide, PackRemain);
+			PackRemain = writeChunk(mthreadID, tca, (char *)NalDivide, PackRemain);
 			tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
-			PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
-			PackRemain = writeChunk(tca, (char *)NalDivide + writeTotalLen, NalDivideLen - writeTotalLen);
+			PackRemain = writeChunk(mthreadID, tca, (char *)tsHead, tsHeadLen);
+			PackRemain = writeChunk(mthreadID, tca, (char *)NalDivide + writeTotalLen, NalDivideLen - writeTotalLen);
 		}
 
 	}
@@ -1505,7 +1508,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 	//写数据
 	int start = PackRemain;
 	if (PackRemain > 0 && PackRemain < TS_CHUNK_SIZE) {
-		PackRemain = writeChunk(tca, (char *)data, PackRemain);
+		PackRemain = writeChunk(mthreadID, tca, (char *)data, PackRemain);
 	}
 	else {
 		logs->debug("[OnData] PackRemain, dataLen %d-%d", PackRemain, dataLen);
@@ -1517,7 +1520,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 			afc = 0x03;
 		}
 		tsHeadPack(afc, pusi, mcc, pid, PcrFlag, RadomAFlag, StuffLen, timestamp, tsHead, tsHeadLen);
-		PackRemain = writeChunk(tca, (char *)tsHead, tsHeadLen);
+		PackRemain = writeChunk(mthreadID, tca, (char *)tsHead, tsHeadLen);
 		int writeLen = PackRemain;
 
 		if ((dataLen - start) < 184 && tsHeadLen + (dataLen - start) != TS_CHUNK_SIZE) {
@@ -1528,7 +1531,7 @@ void CMux::onData(TsChunkArray *tca, byte *inBuf, int inLen, byte framType, uint
 			//writeLen = dataLen - start
 		}
 
-		writeChunk(tca, (char *)data + start, writeLen);
+		writeChunk(mthreadID, tca, (char *)data + start, writeLen);
 		start += writeLen;
 	}
 	if (data)

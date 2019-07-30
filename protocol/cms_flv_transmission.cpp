@@ -513,7 +513,8 @@ bool CFlvTransmission::isShouldMergerFrame(Slice *&s, bool &isVideo, bool &isErr
 		int32 dLen = 0;
 		if (CFlvPool::instance()->mergeKeyFrame(fs->mData, fs->miDataLen, s->mData, s->miDataLen, &d, dLen, mprotocol->getUrl()))
 		{
-			Slice *ss = newSlice();
+			//开辟的内存d不在循环内存内
+			Slice *ss = newSlice(mreadHashIdx);
 			ss->mData = d;
 			ss->miDataLen = dLen;
 			ss->miDataType = s->miDataType;

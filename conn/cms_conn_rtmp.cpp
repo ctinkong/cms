@@ -101,6 +101,9 @@ CConnRtmp::CConnRtmp(HASH &hash, RtmpType rtmpType, CReaderWriter *rw, std::stri
 	{
 		setPushUrl(pushUrl);
 	}
+#ifdef __CMS_CYCLE_MEM__
+	mcycMem = xmallocCycleMem(CMS_CYCLE_MEM_NODE_SIZE);
+#endif
 	initMediaConfig();
 }
 
@@ -204,6 +207,13 @@ int CConnRtmp::stop(std::string reason)
 		{
 			mflvPump->stop();
 		}
+#ifdef __CMS_CYCLE_MEM__
+		else
+		{
+			xfreeCycleMem(mcycMem);
+		}
+#endif
+
 		if (misPlay || misPublish)
 		{
 			CTaskMgr::instance()->pullTaskDel(mHash);
@@ -228,6 +238,11 @@ int CConnRtmp::stop(std::string reason)
 	if (misCreateHls)
 	{
 		CMissionMgr::instance()->destroy(mHashIdx, mHash);
+		logs->debug("%s [CConnRtmp::stop] destroy hls, url %s, %s ,is push task %s ",
+			mremoteAddr.c_str(),
+			murl.c_str(),
+			mrtmp->getRtmpType().c_str(),
+			misPush ? "true" : "false");
 	}
 
 	return CMS_OK;
@@ -382,7 +397,7 @@ int CConnRtmp::decodeMessage(RtmpMessage *msg)
 	{
 		//logs->debug("%s [CConnRtmp::decodeMessage] rtmp %s received video audio message,discarding.",
 		//	mremoteAddr.c_str(),mrtmp->getRtmpType().c_str());
-		ret = decodeVideoAudio(msg);
+		ret = decodeVideoAudio(msg, isSave);
 	}
 	break;
 	default:
@@ -391,7 +406,11 @@ int CConnRtmp::decodeMessage(RtmpMessage *msg)
 	}
 	if (!isSave)
 	{
+#ifdef __CMS_CYCLE_MEM__
+		xumallocCycleBuf(mcycMem, msg->buffer);
+#else
 		xfree(msg->buffer);
+#endif		
 		msg->buffer = NULL;
 		msg->bufLen = 0;
 	}
@@ -445,39 +464,52 @@ int  CConnRtmp::decodeAudio(RtmpMessage *msg, bool &isSave)
 	return CMS_OK;
 }
 
-int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg)
+int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg, bool &isSave)
 {
+	int ret = CMS_OK;
 	uint32 uiHandleLen = 0;
 	uint32 uiOffset;
 	uint32 tagLen;
 	uint32 frameLen;
 	char pp[4];
 	char *p;
-	bool isSave;
+#ifdef __CMS_CYCLE_MEM__
+	isSave = true;  //循环内存不管音视频有没有保存 都有该函数马上释放
+	char *buffer = (char *)xmalloc(msg->dataLen);
+	memcpy(buffer, msg->buffer, msg->dataLen);
+	umallocCycleBuf(mcycMem, msg->buffer);
+#else
+	isSave = false;
+	char *buffer = msg->buffer;
+#endif
+	bool isSaveVideoAudio = false;
+
 	while (uiHandleLen < msg->dataLen)
 	{
-		uint32 dataType = (uint32)msg->buffer[0];
-		tagLen = bigUInt24(msg->buffer + uiHandleLen + 1);
+		uint32 dataType = (uint32)buffer[0];
+		tagLen = bigUInt24(buffer + uiHandleLen + 1);
 		if (msg->dataLen < uiHandleLen + 11 + tagLen + 4)
 		{
 			logs->error("%s [CConnRtmp::decodeVideoAudio] %s rtmp %s video audio check fail ***",
 				mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str());
-			return CMS_ERROR;
+			ret = CMS_ERROR;
+			goto End;
 		}
 		//时间戳
-		p = msg->buffer + uiHandleLen + 1 + 3;
+		p = buffer + uiHandleLen + 1 + 3;
 		pp[2] = p[0];
 		pp[1] = p[1];
 		pp[0] = p[2];
 		pp[3] = p[3];
 
 		uiOffset = uiHandleLen + 11 + tagLen;
-		frameLen = bigUInt32(msg->buffer + uiOffset);
+		frameLen = bigUInt32(buffer + uiOffset);
 		if (frameLen != tagLen + 11)
 		{
 			logs->error("%s [CConnRtmp::decodeVideoAudio] %s rtmp %s video audio tagLen=%u,frameLen=%u ***",
 				mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str(), tagLen, frameLen);
-			return CMS_ERROR;
+			ret = CMS_ERROR;
+			goto End;
 		}
 		if (tagLen == 0)
 		{
@@ -485,39 +517,62 @@ int  CConnRtmp::decodeVideoAudio(RtmpMessage *msg)
 			continue;
 		}
 		RtmpMessage *rm = new RtmpMessage;
+#ifdef __CMS_CYCLE_MEM__
+		rm->buffer = allocCycMem(tagLen, dataType);
+#else
 		rm->buffer = (char*)xmalloc(tagLen);
-		memcpy(rm->buffer, msg->buffer + uiHandleLen + 11, tagLen);
+#endif
+		memcpy(rm->buffer, buffer + uiHandleLen + 11, tagLen);
 		rm->dataLen = tagLen;
 		rm->msgType = dataType;
 		rm->streamId = msg->streamId;
 		rm->absoluteTimestamp = littleInt32(pp);
-		isSave = false;
+		isSaveVideoAudio = false;
 		if (dataType == MESSAGE_TYPE_VIDEO)
 		{
-			if (decodeVideo(rm, isSave) == CMS_ERROR)
+			if (decodeVideo(rm, isSaveVideoAudio) == CMS_ERROR)
 			{
+#ifdef __CMS_CYCLE_MEM__
+				umallocCycleBuf(mcycMem, rm->buffer);
+#else
 				xfree(rm->buffer);
+#endif
 				delete rm;
-				return CMS_ERROR;
+				ret = CMS_ERROR;
+				goto End;
 			}
 		}
 		else if (dataType == MESSAGE_TYPE_AUDIO)
 		{
-			if (decodeAudio(rm, isSave) == CMS_ERROR)
+			if (decodeAudio(rm, isSaveVideoAudio) == CMS_ERROR)
 			{
+#ifdef __CMS_CYCLE_MEM__
+				umallocCycleBuf(mcycMem, rm->buffer);
+#else
 				xfree(rm->buffer);
+#endif
 				delete rm;
-				return CMS_ERROR;
+				ret = CMS_ERROR;
+				goto End;
 			}
 		}
-		if (!isSave)
+		if (!isSaveVideoAudio)
 		{
+#ifdef __CMS_CYCLE_MEM__
+			umallocCycleBuf(mcycMem, rm->buffer);
+#else
 			xfree(rm->buffer);
+#endif			
 		}
 		delete rm;
 		uiHandleLen += (11 + tagLen + 1);
 	}
-	return CMS_OK;
+End:
+#ifdef __CMS_CYCLE_MEM__
+	xfree(buffer);
+#endif
+	return ret;
+
 }
 
 
@@ -843,5 +898,16 @@ bool CConnRtmp::isStreamTask()
 		mrtmpType == RtmpAsServerBPublish;
 }
 
+#ifdef __CMS_CYCLE_MEM__
+char *CConnRtmp::allocCycMem(uint32 size, unsigned int msgType)
+{
+	if (msgType != MESSAGE_TYPE_VIDEO && msgType != MESSAGE_TYPE_AUDIO)
+	{
+		return (char *)xmallocCycleBuf(mcycMem, size, 1);
+	}
+	return (char *)xmallocCycleBuf(mcycMem, size, 0);
+}
+
+#endif
 
 
