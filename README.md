@@ -1,11 +1,11 @@
 # cms
 cms is an industrial-strength live streaming server,support rtmp,http-flv,hls.in the future,it will support more protocol.
 # Building cms with new version number or memory optimization options.
---the options choose by yourself:  
-----memcheck: you can track most of alloc buf  
-----mempool: cms will cache some buf of very frequently malloc and free,which will improve memory performance,
+**the options choose by yourself: ** 
+***memcheck***: you can track most of alloc buf  
+***mempool***: cms will cache some buf of very frequently malloc and free,which will improve memory performance,
 of course the buf must be the same type  
-----memcycle: for the video/audio buf,it will malloc and free in the cycle buf  
+***memcycle***: for the video/audio buf,it will malloc and free in the cycle buf  
 ```shell
 git clone https://github.com/ctinkong/cms.git
 cd cms
