@@ -201,6 +201,14 @@ void setRlimit()
 	rlim.rlim_max = 0;
 	getrlimit(RLIMIT_NOFILE, &rlim);
 	logs->debug("+++ open file cur %d,open file max %d +++", rlim.rlim_cur, rlim.rlim_max);
+
+	struct rlimit rlcore;
+	rlcore.rlim_cur = RLIM_INFINITY;
+	rlcore.rlim_max = RLIM_INFINITY;
+	if (setrlimit(RLIMIT_CORE, &rlcore) != 0)
+	{
+		logs->warn("!setrlimit of core to UNLIMITED failed %d %s\n", errno, strerror(errno));
+	}
 }
 
 void createTestTask()

@@ -45,19 +45,24 @@ using namespace std;
 static CmsFixMem *sliceFixMem[APP_ALL_MODULE_THREAD_NUM];
 static CLock sliceLockFixMem[APP_ALL_MODULE_THREAD_NUM];
 
-static void initSliceFixMem()
+static CmsFixMem *tt8kkFixMem[APP_ALL_MODULE_THREAD_NUM];
+static CLock tt8kkLockFixMem[APP_ALL_MODULE_THREAD_NUM];
+
+static void initFlvFixMem()
 {
 	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
 		sliceFixMem[i] = xmallocFixMem(sizeof(Slice), 250);
+		tt8kkFixMem[i] = xmallocFixMem(sizeof(TTandKK), 1000);
 	}
 }
 
-static void releaseSliceFixMem()
+static void releaseFlvFixMem()
 {
 	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
 		xfreeFixMem(sliceFixMem[i]);
+		xfreeFixMem(tt8kkFixMem[i]);
 	}
 }
 
@@ -75,6 +80,23 @@ static void freeSlice(int i, void *ptr)
 	sliceLockFixMem[i].Lock();
 	xfreeFix(sliceFixMem[i], ptr);
 	sliceLockFixMem[i].Unlock();
+}
+
+
+static void *mallocTTandKK(int i)
+{
+	void *ptr = NULL;
+	tt8kkLockFixMem[i].Lock();
+	ptr = xmallocFix(tt8kkFixMem[i]);
+	tt8kkLockFixMem[i].Unlock();
+	return ptr;
+}
+
+static void freeTTandKK(int i, void *ptr)
+{
+	tt8kkLockFixMem[i].Lock();
+	xfreeFix(tt8kkFixMem[i], ptr);
+	tt8kkLockFixMem[i].Unlock();
 }
 
 
@@ -137,10 +159,10 @@ void atomicDec(Slice *s)
 			{
 				xfree(s->mpMajorHash);
 			}
-			if (s->mpHash)
-			{
-				xfree(s->mpHash);
-			}
+			// 			if (s->mpHash) //浅拷贝内存不能释放
+			// 			{
+			// 				xfree(s->mpHash);
+			// 			}
 			if (s->mpUrl)
 			{
 				xfree(s->mpUrl);
@@ -259,7 +281,7 @@ StreamSlice *newStreamSlice()
 #ifdef __CMS_CYCLE_MEM__
 	ss->mionly = 0;
 #endif
-
+	ss->mptrHash = NULL;
 	ss->mllNearKeyFrameIdx = -1;
 	ss->muiTheLastVideoTimestamp = 0;
 
@@ -485,7 +507,7 @@ bool CFlvPool::run()
 		}
 	}
 #ifdef __CMS_POOL_MEM__
-	initSliceFixMem();
+	initFlvFixMem();
 
 	RoutinueParam *rp = new RoutinueParam;
 	rp->i = 0;
@@ -533,7 +555,7 @@ void CFlvPool::stop()
 		mtid[i] = 0;
 	}
 #ifdef __CMS_POOL_MEM__
-	releaseSliceFixMem();
+	releaseFlvFixMem();
 #endif
 	logs->debug("##### CFlvPool::stop finish #####");
 }
@@ -1370,6 +1392,7 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 		}
 		ss = newStreamSlice();
 		updateMediaInfo(ss, s);
+		ss->mptrHash = s->mpHash;
 		ss->miAutoBitRateMode = s->miAutoBitRateMode;
 		ss->miAutoBitRateFactor = s->miAutoBitRateFactor;
 		ss->miAutoFrameFactor = s->miAutoFrameFactor;
@@ -1561,7 +1584,12 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 					ss->mvP2PKeyFrameIdx.push_back(s->mllP2PIndex);
 				}
 				ss->muiTheLastVideoTimestamp = s->muiTimestamp;
+#ifdef __CMS_POOL_MEM__
+				TTandKK *tk = (TTandKK*)mallocTTandKK(s->midxFixMem);
+				tk->midxFixMem = s->midxFixMem;
+#else
 				TTandKK *tk = (TTandKK*)xmalloc(sizeof(TTandKK));
+#endif
 				tk->mllIndex = s->mllIndex;
 				tk->mllKeyIndex = ss->mllNearKeyFrameIdx;
 				tk->muiTimestamp = s->muiTimestamp;
@@ -1612,7 +1640,12 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 					}
 					if (!ss->msliceTTKK.empty() && ss->msliceTTKK.at(0)->mllIndex == st->mllIndex)
 					{
+#ifdef __CMS_POOL_MEM__
+						TTandKK *tk = ss->msliceTTKK.at(0);
+						freeTTandKK(tk->midxFixMem, tk);
+#else
 						xfree(ss->msliceTTKK.at(0));
+#endif
 						ss->msliceTTKK.erase(ss->msliceTTKK.begin());
 					}
 					//时间戳记录
@@ -1640,12 +1673,30 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			if (ss->mllMemSize > ss->mllLastMemSize + 100 * 1024)
 			{
 				ss->mllLastMemSize = ss->mllMemSize;
+#ifdef __CMS_CYCLE_MEM__
+				int64 totalCycleMem = 0;
+				if (s->mcycMem)
+				{
+					totalCycleMem = s->mcycMem->totalMemSize;
+				}
+				makeOneTaskMem(s->mpHash, ss->mllLastMemSize, totalCycleMem);
+#else
 				makeOneTaskMem(s->mpHash, ss->mllLastMemSize);
+#endif
 			}
 			else if (ss->mllMemSize + 100 * 1024 < ss->mllLastMemSize)
 			{
 				ss->mllLastMemSize = ss->mllMemSize;
+#ifdef __CMS_CYCLE_MEM__
+				int64 totalCycleMem = 0;
+				if (s->mcycMem)
+				{
+					totalCycleMem = s->mcycMem->totalMemSize;
+				}
+				makeOneTaskMem(s->mpHash, ss->mllLastMemSize, totalCycleMem);
+#else
 				makeOneTaskMem(s->mpHash, ss->mllLastMemSize);
+#endif
 			}
 			int64 tt = getTimeUnix();
 			if (tt - ss->mllMemSizeTick > 60)
@@ -1840,7 +1891,12 @@ void CFlvPool::releaseSS(StreamSlice *ss)
 #endif
 	for (VectorTTKKIter iterTTKK = ss->msliceTTKK.begin(); iterTTKK != ss->msliceTTKK.end();)
 	{
+#ifdef __CMS_POOL_MEM__
+		TTandKK *tk = *iterTTKK;
+		freeTTandKK(tk->midxFixMem, tk);
+#else
 		xfree(*iterTTKK);
+#endif		
 		iterTTKK = ss->msliceTTKK.erase(iterTTKK);
 	}
 	for (VectorSliceIter iterSI = ss->mavSlice.begin(); iterSI != ss->mavSlice.end();)
@@ -1883,6 +1939,10 @@ void CFlvPool::releaseSS(StreamSlice *ss)
 		}
 #endif
 		atomicDec(ss->mmetaDataSlice);
+	}
+	if (ss->mptrHash)
+	{
+		xfreeHash(ss->mptrHash);
 	}
 	delete ss;
 #ifdef __CMS_CYCLE_MEM__

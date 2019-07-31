@@ -169,7 +169,7 @@ void CStatic::push(OneTaskPacket *otp)
 	{
 		mlockOneTaskPacket.Signal();
 	}
-	mqueueOneTaskPacket.push(otp);	
+	mqueueOneTaskPacket.push(otp);
 	mlockOneTaskPacket.Unlock();
 }
 
@@ -357,6 +357,9 @@ void CStatic::handle(OneTaskMem *otm)
 	if (it != mmapHashTask.end())
 	{
 		it->second->mtotalMem = otm->totalMem;
+#ifdef __CMS_CYCLE_MEM__
+		it->second->mtotalCycMem = otm->totalCycMem;
+#endif
 	}
 	mlockHashTask.Unlock();
 }
@@ -376,7 +379,34 @@ std::string CStatic::dump()
 
 	cJSON_AddItemToObject(root, "version", cJSON_CreateString(appVersion.c_str()));
 	cJSON_AddItemToObject(root, "build_time", cJSON_CreateString(strBuildTime.c_str()));
+#ifdef __CMS_CYCLE_MEM__
+	cJSON_AddItemToObject(root, "build_cycle_mem", cJSON_CreateBool(1));
+#endif
+#ifdef __CMS_POOL_MEM__
+	cJSON_AddItemToObject(root, "build_pool_mem", cJSON_CreateBool(1));
+#endif
+#ifdef _CMS_LEAK_CHECK_
+	cJSON_AddItemToObject(root, "build_check_mem", cJSON_CreateBool(1));
+#endif
+
+#ifdef __CMS_CYCLE_MEM__
+	int64 totalMem = 0;
+	int64 totalCycMem = 0;
+	cJSON_AddItemToObject(root, "task_num", cJSON_CreateNumber(getTaskInfo(&taskArray, totalMem, totalCycMem)));
+	if (totalCycMem)
+	{
+		char szPer[20] = { 0 };
+		snprintf(szPer, sizeof(szPer), "%lld%%", (totalMem * 100) / totalCycMem);
+		cJSON_AddItemToObject(root, "cycle_mem_per", cJSON_CreateString(szPer));
+	}
+	else
+	{
+		cJSON_AddItemToObject(root, "cycle_mem_per", cJSON_CreateString("-"));
+	}
+#else
 	cJSON_AddItemToObject(root, "task_num", cJSON_CreateNumber(getTaskInfo(&taskArray)));
+#endif
+
 
 	cJSON_AddItemToObject(root, "task_list", taskArray);
 	cJSON_AddItemToObject(root, "conn_num", cJSON_CreateNumber(mtotalConn));
@@ -417,7 +447,11 @@ std::string CStatic::dump()
 	return strJson;
 }
 
+#ifdef __CMS_CYCLE_MEM__
+int CStatic::getTaskInfo(cJSON **value, int64 &totalMem, int64 &totalCycMem)
+#else
 int CStatic::getTaskInfo(cJSON **value)
+#endif
 {
 	*value = cJSON_CreateArray();
 	int size = 0;
@@ -460,7 +494,23 @@ int CStatic::getTaskInfo(cJSON **value)
 
 		cJSON_AddItemToObject(v, "total_mem", cJSON_CreateNumber(otk->mtotalMem));
 		cJSON_AddItemToObject(v, "total_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mtotalMem, false).c_str()));
+#ifdef __CMS_CYCLE_MEM__
+		cJSON_AddItemToObject(v, "total_cycle_mem", cJSON_CreateNumber(otk->mtotalCycMem));
+		cJSON_AddItemToObject(v, "total_cycle_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mtotalCycMem, false).c_str()));
+		if (otk->mtotalCycMem)
+		{
+			char szPer[20] = { 0 };
+			snprintf(szPer, sizeof(szPer), "%lld%%", (otk->mtotalMem * 100) / otk->mtotalCycMem);
+			cJSON_AddItemToObject(v, "cycle_mem_per", cJSON_CreateString(szPer));
+		}
+		else
+		{
+			cJSON_AddItemToObject(v, "cycle_mem_per", cJSON_CreateString("-"));
+		}
 
+		totalMem += otk->mtotalMem;
+		totalCycMem += otk->mtotalCycMem;
+#endif
 		cJSON_AddItemToArray(*value, v);
 	}
 	mlockHashTask.Unlock();

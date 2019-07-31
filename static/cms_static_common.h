@@ -88,6 +88,9 @@ struct OneTaskMem
 	int		packetID;
 	HASH	hash;
 	int64	totalMem;
+#ifdef __CMS_CYCLE_MEM__
+	int64	totalCycMem;
+#endif
 
 	OperatorNewDelete
 };
@@ -118,6 +121,9 @@ struct OneTask
 	std::string		mreferer;			//refer
 
 	int64			mtotalMem;			//当前任务数据占用内存
+#ifdef __CMS_CYCLE_MEM__
+	int64			mtotalCycMem;		//循环内存大小
+#endif
 
 	time_t			mttCreate;
 	std::string		mremoteAddr;
@@ -188,6 +194,13 @@ void makeOneTaskMedia(HASH	&hash,
 	std::string url,
 	std::string remoteAddr, 
 	bool isUdp);
-void makeOneTaskMem(HASH hash, 
+#ifdef __CMS_CYCLE_MEM__
+void makeOneTaskMem(HASH hash,
+	int64 totalMem, 
+	int64 totalCycMem);										//统计内存占用
+#else
+void makeOneTaskMem(HASH hash,
 	int64 totalMem);										//统计内存占用
+#endif
+
 #endif

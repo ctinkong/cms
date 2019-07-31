@@ -50,14 +50,17 @@ OneTask *newOneTask()
 	otk->mtotalConn = 0;		//该任务当前连接数
 
 	otk->mtotalMem = 0;		//当前任务数据占用内存
+#ifdef __CMS_CYCLE_MEM__
+	otk->mtotalCycMem = 0;		//循环内存大小
+#endif
 
 	otk->mttCreate = getTimeUnix();
 	return otk;
 }
 
-void makeOneTaskDownload(HASH &hash, 
-	int32 downloadBytes, 
-	bool isRemove, 
+void makeOneTaskDownload(HASH &hash,
+	int32 downloadBytes,
+	bool isRemove,
 	bool isFromeTask,
 	bool isPublishTask/* = false*/)
 {
@@ -72,8 +75,8 @@ void makeOneTaskDownload(HASH &hash,
 	CStatic::instance()->push((OneTaskPacket *)otd);
 }
 
-void makeOneTaskupload(HASH	&hash, 
-	int32 uploadBytes, 
+void makeOneTaskupload(HASH	&hash,
+	int32 uploadBytes,
 	int connAct)
 {
 	OneTaskUpload *otu = new OneTaskUpload;
@@ -84,17 +87,17 @@ void makeOneTaskupload(HASH	&hash,
 	CStatic::instance()->push((OneTaskPacket *)otu);
 }
 
-void makeOneTaskMedia(HASH	&hash, 
-	int32 videoFramerate, 
-	int32 audioFramerate, 
-	int32 iWidth, 
+void makeOneTaskMedia(HASH	&hash,
+	int32 videoFramerate,
+	int32 audioFramerate,
+	int32 iWidth,
 	int32 iHeight,
-	int32 audioSamplerate, 
-	int32 mediaRate, 
-	std::string videoType, 
-	std::string audioType, 
+	int32 audioSamplerate,
+	int32 mediaRate,
+	std::string videoType,
+	std::string audioType,
 	std::string url,
-	std::string remoteAddr, 
+	std::string remoteAddr,
 	bool isUdp)
 {
 	OneTaskMeida *otm = new OneTaskMeida;
@@ -114,12 +117,21 @@ void makeOneTaskMedia(HASH	&hash,
 	CStatic::instance()->push((OneTaskPacket *)otm);
 }
 
-void makeOneTaskMem(HASH hash, 
+#ifdef __CMS_CYCLE_MEM__
+void makeOneTaskMem(HASH hash,
+	int64 totalMem,
+	int64 totalCycMem)
+#else
+void makeOneTaskMem(HASH hash,
 	int64 totalMem)
+#endif
 {
 	OneTaskMem *otm = new OneTaskMem;
 	otm->packetID = PACKET_ONE_TASK_MEM;
 	otm->hash = hash;
 	otm->totalMem = totalMem;
+#ifdef __CMS_CYCLE_MEM__
+	otm->totalCycMem = totalCycMem;
+#endif
 	CStatic::instance()->push((OneTaskPacket *)otm);
 }

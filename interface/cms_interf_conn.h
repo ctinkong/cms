@@ -43,7 +43,7 @@ public:
 	virtual int stop(std::string reason) = 0;
 	virtual std::string getUrl() = 0;
 	virtual std::string getPushUrl() = 0;
-	virtual std::string getRemoteIP() = 0;
+	virtual std::string &getRemoteIP() = 0;
 
 	virtual void down8upBytes() = 0;
 	virtual void reset() = 0;

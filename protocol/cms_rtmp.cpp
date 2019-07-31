@@ -105,10 +105,12 @@ CRtmpProtocol::~CRtmpProtocol()
 			}
 			if (itIn->second->currentMessage != NULL)
 			{
+#ifndef __CMS_CYCLE_MEM__ //循环内存不需要内部块 CConnRtmp stop 已经释放
 				if (itIn->second->currentMessage->buffer != NULL)
 				{
 					xfree(itIn->second->currentMessage->buffer);
 				}
+#endif
 				delete itIn->second->currentMessage;
 			}
 			delete itIn->second;

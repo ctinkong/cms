@@ -118,5 +118,7 @@ void xCopyString(char **dst, const char *src, int len);
 //拷贝内存，如果dst不为空，则会释放
 void xCopyMem(char **dst, char *src, int len);
 void xCopyHash(char **dst, HASH &hash);
+char *xmallocHash(int size);
+void xfreeHash(char *hash);
 #endif
 

@@ -96,7 +96,13 @@ typedef struct _CmsMemSizeInfo
 {
 	unsigned long long size;
 	unsigned int idx;
-} CmsMemSizeInfo;
+}CmsMemSizeInfo;
+
+typedef struct _CmsMemInfo
+{
+	unsigned long long size;
+	unsigned long long memNum;
+}CmsMemInfo;
 
 CmsAllocNode *g_AllocHead[CMS_LEADK_LIST_COUNT] = { NULL };
 CLock g_AllocHeadLocker[CMS_LEADK_LIST_COUNT];
@@ -301,29 +307,36 @@ std::string printfMemUsage()
 	}
 	unsigned long memInfoEndTime = getTickCount();
 
-	std::map<std::string, std::map<int, unsigned long long> > mapMemInfo;
+	std::map<std::string, std::map<int, CmsMemInfo> > mapMemInfo;
 	CmsAllocNode *head = tmpNodes;
 	while (head)
 	{
 		totalMem += sizeof(CmsAllocNode) + head->size;
 		extraMem += sizeof(CmsAllocNode);
-		std::map<std::string, std::map<int, unsigned long long> >::iterator itFileName = mapMemInfo.find(head->filename);
+		std::map<std::string, std::map<int, CmsMemInfo> >::iterator itFileName = mapMemInfo.find(head->filename);
 		if (itFileName != mapMemInfo.end())
 		{
-			std::map<int, unsigned long long>::iterator itLine = itFileName->second.find(head->line);
+			std::map<int, CmsMemInfo>::iterator itLine = itFileName->second.find(head->line);
 			if (itLine != itFileName->second.end())
 			{
-				itLine->second += head->size;
+				itLine->second.size += head->size;
+				itLine->second.memNum++;
 			}
 			else
 			{
-				itFileName->second.insert(std::make_pair(head->line, head->size));
+				CmsMemInfo cmi;
+				cmi.memNum = 1;
+				cmi.size = head->size;
+				itFileName->second.insert(std::make_pair(head->line, cmi));
 			}
 		}
 		else
 		{
-			std::map<int, unsigned long long> mapRecord;
-			mapRecord.insert(std::make_pair(head->line, head->size));
+			CmsMemInfo cmi;
+			cmi.memNum = 1;
+			cmi.size = head->size;
+			std::map<int, CmsMemInfo> mapRecord;
+			mapRecord.insert(std::make_pair(head->line, cmi));
 			mapMemInfo.insert(std::make_pair(head->filename, mapRecord));
 		}
 		head = head->next;
@@ -337,22 +350,32 @@ std::string printfMemUsage()
 	std::vector<std::string> vecMemInfo;
 	std::vector<CmsMemSizeInfo> vecMemSize;
 	char szMenInfo[1024 * 4];
-	std::map<std::string, std::map<int, unsigned long long> >::iterator itFileName;
+	snprintf(szMenInfo,
+		sizeof(szMenInfo),
+		"%-40s%-10s%-8s%-10s%-15s\n",
+		"file",
+		"line",
+		"size",
+		"unit",
+		"count");
+	memInfo += szMenInfo;
+	std::map<std::string, std::map<int, CmsMemInfo> >::iterator itFileName;
 	for (itFileName = mapMemInfo.begin(); itFileName != mapMemInfo.end(); itFileName++)
 	{
-		std::map<int, unsigned long long>::iterator itLine;
+		std::map<int, CmsMemInfo>::iterator itLine;
 		for (itLine = itFileName->second.begin(); itLine != itFileName->second.end(); itLine++)
 		{
-			parseSpeed8Mem(itLine->second, false, memSize, unit);
+			parseSpeed8Mem(itLine->second.size, false, memSize, unit);
 			snprintf(szMenInfo,
 				sizeof(szMenInfo),
-				"+++++file   %-40s line %-10d size %-8s %s\n",
+				"%-40s%-10d%-8s%-10s%-15llu\n",
 				itFileName->first.c_str(),
 				itLine->first,
 				memSize.c_str(),
-				unit.c_str());
+				unit.c_str(),
+				itLine->second.memNum);
 			CmsMemSizeInfo cmsi;
-			cmsi.size = itLine->second;
+			cmsi.size = itLine->second.size;
 			cmsi.idx = vecMemSize.size();
 			vecMemSize.push_back(cmsi);
 			vecMemInfo.push_back(szMenInfo);

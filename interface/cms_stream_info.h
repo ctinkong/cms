@@ -43,8 +43,8 @@ public:
 	virtual int		noHashTimeout() = 0;
 	virtual bool	isRealTimeStream() = 0;
 	virtual int64   cacheTT() = 0;
-	virtual std::string getRemoteIP() = 0;
-	virtual std::string getHost() = 0;
+	virtual std::string &getRemoteIP() = 0;
+	virtual std::string &getHost() = 0;
 	virtual void    makeOneTask() = 0;
 #ifdef __CMS_CYCLE_MEM__
 	virtual CmsCycleMem *getCycMem() = 0;

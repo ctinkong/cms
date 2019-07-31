@@ -47,7 +47,7 @@ public:
 	int stop(std::string reason);
 	std::string getUrl();
 	std::string getPushUrl() { return ""; };
-	std::string getRemoteIP();
+	std::string &getRemoteIP();
 	void down8upBytes();
 
 	CReaderWriter *rwConn();

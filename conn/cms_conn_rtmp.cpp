@@ -666,7 +666,7 @@ std::string CConnRtmp::getPushUrl()
 	return mstrPushUrl;
 }
 
-std::string CConnRtmp::getRemoteIP()
+std::string &CConnRtmp::getRemoteIP()
 {
 	return mremoteIP;
 }
@@ -874,7 +874,7 @@ int64   CConnRtmp::cacheTT()
 	return mllCacheTT;
 }
 
-std::string CConnRtmp::getHost()
+std::string &CConnRtmp::getHost()
 {
 	return mHost;
 }

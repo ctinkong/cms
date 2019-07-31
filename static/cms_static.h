@@ -61,7 +61,11 @@ private:
 	void handle(OneTaskMeida *otm);
 	void handle(OneTaskMem *otm);
 
+#ifdef __CMS_CYCLE_MEM__
+	int getTaskInfo(cJSON **value, int64 &totalMem, int64 &totalCycMem);
+#else
 	int getTaskInfo(cJSON **value);
+#endif
 
 	float		getMemUsage();
 	int			getMemSize();

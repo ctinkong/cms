@@ -94,6 +94,9 @@ int   CBufferReader::grow(int n)
 			ncanUserBuffer = mbufferSize - me;
 		}
 	}
+	//多读点数据
+	needRead = ncanUserBuffer;
+
 	while (needRead > 0)
 	{
 		if (ms2nConn == NULL)
@@ -139,7 +142,7 @@ int   CBufferReader::grow(int n)
 		break;
 	}
 	//尝试多读数据
-// 	if (mbufferSize-me > 0)
+// 	if (!lastReadZero && mbufferSize-me > 0)
 // 	{
 // 		nread = 0;
 // 		ret = mrd->read(mbuffer+me,mbufferSize-me,nread);

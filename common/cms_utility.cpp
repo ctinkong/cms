@@ -1168,8 +1168,20 @@ void xCopyHash(char **dst, HASH &hash)
 	{
 		xfree(*dst);
 	}
-	*dst = (char*)xmalloc(sizeof(hash.data));
+	*dst = xmallocHash(sizeof(hash.data));
 	memcpy(*dst, hash.data, sizeof(hash.data));
 }
+
+char *xmallocHash(int size)
+{
+	return (char*)xmalloc(size);
+}
+
+void xfreeHash(char *hash)
+{
+	xfree(hash);
+}
+
+
 
 

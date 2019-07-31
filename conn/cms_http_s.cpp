@@ -222,7 +222,7 @@ std::string CHttpServer::getUrl()
 	return murl;
 }
 
-std::string CHttpServer::getRemoteIP()
+std::string &CHttpServer::getRemoteIP()
 {
 	return mremoteIP;
 }

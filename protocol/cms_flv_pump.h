@@ -64,6 +64,7 @@ public:
 private:
 	void copy2Slice(Slice *s);
 	HASH	mhash;
+	char*   mptrHash; //主要用于优化频繁开辟内存，该指针只能在flvpool释放
 	uint32	mhashIdx;
 	CStreamInfo *msuper;
 	//流信息
@@ -90,5 +91,12 @@ private:
 	int64           mllIdx;
 	bool			misPublish;		//是否是客户端publish
 	bool            misPushFlv;		//是否往flvPool投递过数据
+
+	//针对内存优化
+	std::string mlastUrl;
+	byte mlastVideoType;
+	byte mlastAudioType;
+	bool misSetRemoteIP;
+	bool misSetHost;
 };
 #endif

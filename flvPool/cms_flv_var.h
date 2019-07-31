@@ -80,7 +80,7 @@ typedef struct Slice //该结构体不能出现有构造函数的变量!!!!!!!!!!
 	int             miDataLen;
 	char			*mData;				//数据	
 	char			*mpMajorHash;		//对于转码任务，该hash表示源流hash
-	char			*mpHash;			//当前任务hash
+	char			*mpHash;			//当前任务hash 是个浅拷贝内存不能由Slice释放
 	char			*mpUrl;
 	char			*mpVideoType;		//视频类型
 	char			*mpAudioType;		//音频类型
@@ -98,6 +98,9 @@ struct TTandKK
 	int64			mllIndex;		//普通视频数据
 	int64			mllKeyIndex;
 	uint32			muiTimestamp;	//时间戳
+#ifdef __CMS_POOL_MEM__
+	uint32			midxFixMem;			//固定内存所在队列索引号
+#endif
 };
 
 struct StreamSlice
@@ -122,6 +125,7 @@ struct StreamSlice
 	std::map<int64, int64>		mp2pIdx2PacketIdx;
 	HASH						mhMajorHash;
 
+	char					   *mptrHash;
 	uint64						muid;
 	//两个临时变量
 	int64						maxRelativeDuration;

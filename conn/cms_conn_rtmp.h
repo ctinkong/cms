@@ -55,7 +55,7 @@ public:
 	int stop(std::string reason);
 	std::string getUrl();
 	std::string getPushUrl();
-	std::string getRemoteIP();
+	std::string &getRemoteIP();
 	int doDecode() { return 0; };
 	int doReadData() { return CMS_OK; };
 	int doTransmission();
@@ -75,7 +75,7 @@ public:
 	bool	isRealTimeStream();
 	int64   cacheTT();
 	//std::string getRemoteIP() = 0;
-	std::string getHost();
+	std::string &getHost();
 	void    makeOneTask();
 
 	void setUrl(std::string url);		//拉流或者被推流或者被播放的地址

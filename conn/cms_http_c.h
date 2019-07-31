@@ -54,7 +54,7 @@ public:
 	int stop(std::string reason);
 	std::string getUrl();
 	std::string getPushUrl();
-	std::string getRemoteIP();
+	std::string &getRemoteIP();
 	void down8upBytes();
 
 	CReaderWriter *rwConn();
@@ -68,7 +68,7 @@ public:
 	bool	isRealTimeStream();
 	int64   cacheTT();
 	//std::string getRemoteIP() = 0;
-	std::string getHost();
+	std::string &getHost();
 	void    makeOneTask();
 
 	int doDecode();

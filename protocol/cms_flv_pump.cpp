@@ -33,6 +33,7 @@ CFlvPump::CFlvPump(CStreamInfo *super, HASH &hash, uint32 &hashIdx, std::string 
 {
 	msuper = super;
 	mhash = hash;
+	mptrHash = NULL;
 	mhashIdx = hashIdx;
 	miWidth = 0;
 	miHeight = 0;
@@ -59,6 +60,11 @@ CFlvPump::CFlvPump(CStreamInfo *super, HASH &hash, uint32 &hashIdx, std::string 
 
 	misH264 = false;
 	misH265 = false;
+
+	mlastVideoType = 0xFF;
+	mlastAudioType = 0xFF;
+	misSetRemoteIP = false;
+	misSetHost = false;
 }
 
 CFlvPump::~CFlvPump()
@@ -128,7 +134,11 @@ int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 	}
 	s->mData = saveData;
 	s->miDataLen = len;
-	xCopyHash(&s->mpHash, mhash);
+	if (!mptrHash)
+	{
+		xCopyHash(&mptrHash, mhash);
+	}
+	s->mpHash = mptrHash; // 该指针是浅拷贝 需要在flvpool释放
 	s->misMetaData = true;
 	s->mllIndex = mllIdx;
 	s->misPushTask = misPublish;
@@ -229,13 +239,13 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 				umallocCycleBuf(msuper->getCycMem(), data);
 				data = d;
 #endif
-			}
+					}
 			else if (data[1] == 0x01)
 			{
 
 			}
-		}
-	}
+				}
+			}
 	Slice *s = newSlice(mhashIdx);
 	if (isChangeMediaInfo)
 	{
@@ -245,7 +255,11 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 	}
 	s->mData = data;
 	s->miDataLen = len;
-	xCopyHash(&s->mpHash, mhash);
+	if (!mptrHash)
+	{
+		xCopyHash(&mptrHash, mhash);
+	}
+	s->mpHash = mptrHash; // 该指针是浅拷贝 需要在flvpool释放
 	s->miDataType = dataType;
 	s->misKeyFrame = isKeyFrame;
 	s->mllIndex = mllIdx;
@@ -257,13 +271,13 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 		mllIdx++;
 		s->muiTimestamp = timestamp;
 #ifdef __CMS_CYCLE_MEM__
-	s->mcycMem = msuper->getCycMem();
+		s->mcycMem = msuper->getCycMem();
 #endif
 	}
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
 	return 1;
-}
+		}
 
 int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeMediaInfo)
 {
@@ -336,8 +350,8 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 			umallocCycleBuf(msuper->getCycMem(), data);
 			data = d;
 #endif
+			}
 		}
-	}
 	Slice *s = newSlice(mhashIdx);
 	if (isChangeMediaInfo)
 	{
@@ -345,7 +359,11 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 	}
 	s->mData = data;
 	s->miDataLen = len;
-	xCopyHash(&s->mpHash, mhash);
+	if (!mptrHash)
+	{
+		xCopyHash(&mptrHash, mhash);
+	}
+	s->mpHash = mptrHash; // 该指针是浅拷贝 需要在flvpool释放
 	s->miDataType = dataType;
 	s->mllIndex = mllIdx;
 	s->misPushTask = misPublish;
@@ -356,13 +374,13 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 		mllIdx++;
 		s->muiTimestamp = timestamp;
 #ifdef __CMS_CYCLE_MEM__
-	s->mcycMem = msuper->getCycMem();
+		s->mcycMem = msuper->getCycMem();
 #endif
 	}
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
 	return 1;
-}
+	}
 
 int CFlvPump::getWidth()
 {
@@ -417,7 +435,11 @@ byte CFlvPump::getAudioType()
 void CFlvPump::stop()
 {
 	Slice *s = newSlice(mhashIdx);
-	xCopyHash(&s->mpHash, mhash);
+	if (!mptrHash)
+	{
+		xCopyHash(&mptrHash, mhash);
+	}
+	s->mpHash = mptrHash; // 该指针是浅拷贝 需要在flvpool释放
 	s->misPushTask = misPublish;
 	s->misRemove = true;
 #ifdef __CMS_CYCLE_MEM__
@@ -441,23 +463,41 @@ void CFlvPump::copy2Slice(Slice *s)
 	s->miAudioRate = miAudioRate;
 	s->miFirstPlaySkipMilSecond = msuper->firstPlaySkipMilSecond();
 	s->misResetStreamTimestamp = msuper->isResetStreamTimestamp();
-	xCopyString(&s->mpUrl, murl.c_str(), murl.length());
+	if (mlastUrl != murl)
+	{
+		xCopyString(&s->mpUrl, murl.c_str(), murl.length());
+		mlastUrl = murl;
+	}
 	s->miMediaRate = miMediaRate;
 	s->miVideoRate = miVideoRate;
 	s->miAudioRate = miAudioRate;
 	s->miVideoFrameRate = miVideoFrameRate;
 	s->miAudioFrameRate = miAudioFrameRate;
 	s->misNoTimeout = msuper->isNoTimeout();
-	strTmp = ::getVideoType(mvideoType);
-	xCopyString(&s->mpVideoType, strTmp.c_str(), strTmp.length());
-	strTmp = ::getAudioType(maudioType);
-	xCopyString(&s->mpAudioType, strTmp.c_str(), strTmp.length());
+	if (mlastVideoType != mvideoType)
+	{
+		strTmp = ::getVideoType(mvideoType);
+		xCopyString(&s->mpVideoType, strTmp.c_str(), strTmp.length());
+		mlastVideoType = mvideoType;
+	}
+	if (mlastAudioType != maudioType)
+	{
+		strTmp = ::getAudioType(maudioType);
+		xCopyString(&s->mpAudioType, strTmp.c_str(), strTmp.length());
+		mlastAudioType = maudioType;
+	}
 	s->miLiveStreamTimeout = msuper->liveStreamTimeout();
 	s->miNoHashTimeout = msuper->noHashTimeout();
-	strTmp = msuper->getRemoteIP();
-	xCopyString(&s->mpRemoteIP, strTmp.c_str(), strTmp.length());
-	strTmp = msuper->getHost();
-	xCopyString(&s->mpHost, strTmp.c_str(), strTmp.length());
+	if (!misSetRemoteIP && !msuper->getRemoteIP().empty())
+	{
+		xCopyString(&s->mpRemoteIP, msuper->getRemoteIP().c_str(), msuper->getRemoteIP().length());
+		misSetRemoteIP = true;
+	}
+	if (!misSetHost && !msuper->getHost().empty())
+	{
+		xCopyString(&s->mpHost, msuper->getHost().c_str(), msuper->getHost().length());
+		misSetHost = true;
+	}
 	s->misRealTimeStream = msuper->isRealTimeStream();
 	s->mllCacheTT = msuper->cacheTT();
 	s->misH264 = misH264;

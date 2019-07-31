@@ -285,7 +285,7 @@ std::string ChttpClient::getPushUrl()
 	return "";
 }
 
-std::string ChttpClient::getRemoteIP()
+std::string &ChttpClient::getRemoteIP()
 {
 	return mremoteIP;
 }
@@ -673,7 +673,7 @@ int64   ChttpClient::cacheTT()
 	return mllCacheTT;
 }
 
-std::string ChttpClient::getHost()
+std::string &ChttpClient::getHost()
 {
 	return mHost;
 }
