@@ -53,7 +53,9 @@ static void initFlvFixMem()
 	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
 		sliceFixMem[i] = xmallocFixMem(sizeof(Slice), 250);
+		sliceFixMem[i]->idx = i;
 		tt8kkFixMem[i] = xmallocFixMem(sizeof(TTandKK), 1000);
+		tt8kkFixMem[i]->idx = i;
 	}
 }
 
@@ -99,9 +101,13 @@ static void freeTTandKK(int i, void *ptr)
 	tt8kkLockFixMem[i].Unlock();
 }
 
+#endif //__CMS_POOL_MEM__
 
+
+#ifdef __CMS_CYCLE_MEM__
 void atomicInc(StreamSlice *ss)
 {
+
 	if (ss != NULL)
 	{
 		__sync_add_and_fetch(&ss->mionly, 1);//当数据超时，且没人使用时，删除
@@ -116,15 +122,19 @@ void atomicDec(StreamSlice *ss)
 	}
 }
 
-#endif //__CMS_POOL_MEM__
+#endif //__CMS_CYCLE_MEM__
 
 void atomicInc(Slice *s)
 {
 	if (s != NULL)
 	{
-		__sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
-#ifdef __CMS_POOL_MEM__
-		atomicInc(s->mss);
+		int ionly = __sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
+#ifdef __CMS_CYCLE_MEM__
+		if (ionly > 1 && s->mcycMem)
+		{
+			//s->mionly == 1 时，只有 StreamSlice 引用了Slice 这时不需要增加
+			atomicInc(s->mss);
+		}
 #endif		
 	}
 }
@@ -133,10 +143,13 @@ void atomicDec(Slice *s)
 {
 	if (s != NULL)
 	{
-#ifdef __CMS_POOL_MEM__
-		atomicDec(s->mss); //释放StreamSlice引用
-#endif	
+#ifdef __CMS_CYCLE_MEM__		
+		int ionly = 0;
+		if ((ionly = __sync_sub_and_fetch(&s->mionly, 1)) == 0)//当数据超时，且没人使用时，删除
+#else
 		if (__sync_sub_and_fetch(&s->mionly, 1) == 0)//当数据超时，且没人使用时，删除
+#endif	
+
 		{
 			if (s->mData)
 			{
@@ -193,6 +206,13 @@ void atomicDec(Slice *s)
 			xfree(s);
 #endif			
 		}
+#ifdef __CMS_CYCLE_MEM__
+		if (ionly >= 1 && s->mcycMem)
+		{
+			//表示 s->mss 增加被引用过
+			atomicDec(s->mss); //释放StreamSlice引用
+		}
+#endif
 	}
 }
 
@@ -463,6 +483,7 @@ void CFlvPool::threadDelayReleaseCycMem()
 		for (; it != mlistCycMem.end(); )
 		{
 			ss = *it;
+// 			printf("ss->mionly=%d\n", ss->mionly);
 			if (ss->mionly == 0)
 			{
 				//没有引用可以删除了
@@ -487,6 +508,11 @@ void CFlvPool::pushSS(StreamSlice *ss)
 	mcycMemLoc.Unlock();
 }
 
+void CFlvPool::ss2s(StreamSlice *ss, Slice *s)
+{
+	s->mss = ss;
+}
+
 #endif
 
 bool CFlvPool::run()
@@ -508,7 +534,8 @@ bool CFlvPool::run()
 	}
 #ifdef __CMS_POOL_MEM__
 	initFlvFixMem();
-
+#endif
+#ifdef __CMS_CYCLE_MEM__
 	RoutinueParam *rp = new RoutinueParam;
 	rp->i = 0;
 	rp->pInstance = this;
@@ -1391,6 +1418,10 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 			return;
 		}
 		ss = newStreamSlice();
+#ifdef __CMS_CYCLE_MEM__
+		ss2s(ss, s);
+#endif
+
 		updateMediaInfo(ss, s);
 		ss->mptrHash = s->mpHash;
 		ss->miAutoBitRateMode = s->miAutoBitRateMode;
@@ -1472,6 +1503,9 @@ void CFlvPool::handleSlice(uint32 i, Slice *s)
 	else
 	{
 		ss->mLock.WLock();
+#ifdef __CMS_CYCLE_MEM__
+		ss2s(ss, s);
+#endif
 		if (s->misHaveMediaInfo)
 		{
 			updateMediaInfo(ss, s);

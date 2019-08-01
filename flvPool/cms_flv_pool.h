@@ -127,6 +127,7 @@ private:
 	void releaseSS(StreamSlice *ss);
 #ifdef __CMS_CYCLE_MEM__
 	void pushSS(StreamSlice *ss);
+	void ss2s(StreamSlice *ss, Slice *s);
 #endif
 
 	bool					misRun;

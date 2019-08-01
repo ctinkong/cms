@@ -29,6 +29,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_ts.h>
 #include <core/cms_lock.h>
 #include <strategy/cms_duration_timestamp.h>
+#include <interface/cms_inerf_var.h>
 #include <app/cms_app_info.h>
 #include <mem/cms_mf_mem.h>
 #include <flvPool/cms_flv_var.h>
@@ -158,12 +159,20 @@ public:
 
 	void tsAliveCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
 	void tsTimerCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
+	void hlsMgrPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents);
 
 	OperatorNewDelete
 private:
 	struct ev_loop *mevLoop[APP_ALL_MODULE_THREAD_NUM];
 	EvTimerParam	mtimerEtp[APP_ALL_MODULE_THREAD_NUM];
 	ev_timer		mevTimer[APP_ALL_MODULE_THREAD_NUM];
+	int             mfdPipe[APP_ALL_MODULE_THREAD_NUM][2];
+	EvCallBackParam	mreadPipeEcp[APP_ALL_MODULE_THREAD_NUM];
+	ev_io           mevIO[APP_ALL_MODULE_THREAD_NUM];
+	char			mpipeBuff[APP_ALL_MODULE_THREAD_NUM][CMS_PIPE_BUF_SIZE];
+
+	CLock			mmsgLock[APP_ALL_MODULE_THREAD_NUM];
+	std::queue<HlsMissionMsg*> mmsgQueue[APP_ALL_MODULE_THREAD_NUM];
 
 	static CMissionMgr *minstance;
 	cms_thread_t mtid[APP_ALL_MODULE_THREAD_NUM];

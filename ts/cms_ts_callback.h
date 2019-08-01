@@ -5,4 +5,5 @@
 
 void tsAliveCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
 void tsTimerCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
+void hlsMgrPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents);
 #endif

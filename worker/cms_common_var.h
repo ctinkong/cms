@@ -4,7 +4,6 @@
 #include <interface/cms_interf_conn.h>
 #include <mem/cms_mf_mem.h>
 
-#define CMS_PIPE_BUF_SIZE 8192
 #define CMS_CONN_TIMEOUT_MILSECOND 0.03
 
 typedef struct _FdQueeu

@@ -81,7 +81,7 @@ bool CDnsCache::host2ip(const char* host, unsigned long &ip)
 		if (needGetHost)
 		{
 			struct sockaddr_in saddr;
-			struct addrinfo hints, *ares;
+			struct addrinfo hints, *ares = NULL;
 			int err;
 			memset(&hints, 0, sizeof(struct addrinfo));
 			hints.ai_socktype = SOCK_STREAM;
@@ -89,6 +89,10 @@ bool CDnsCache::host2ip(const char* host, unsigned long &ip)
 			if ((err = getaddrinfo(host, NULL, &hints, &ares)) != 0)
 			{
 				logs->error("*** [CDnsCache::host2ip] can't resolve address: %s,errno=%d,strerrno=%s ***", host, errno, strerror(errno));
+				if (ares)
+				{
+					freeaddrinfo(ares);
+				}
 				return false;
 			}
 			saddr.sin_addr.s_addr = ((struct sockaddr_in*)(ares->ai_addr))->sin_addr.s_addr;

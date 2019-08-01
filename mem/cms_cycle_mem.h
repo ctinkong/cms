@@ -79,7 +79,7 @@ void umallocCycleBuf(CmsCycleMem *m, void *p);
 #define xfreeCycleMem(m) freeCycleMem((m))
 #define xmallocCycleBuf(m, size, g) mallocCycleBuf((m), (size), (g), __FILE__, __LINE__)
 #define xfreeCycleBuf(m, p) freeCycleBuf((m), (p))
-#define xumallocCycleBuf(m, p) freeCycleBuf((m), (p))
+#define xumallocCycleBuf(m, p) umallocCycleBuf((m), (p))
 
 #endif
 

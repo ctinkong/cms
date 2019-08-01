@@ -201,6 +201,8 @@ CmsFixMem *mallocFixMem(int nodeSize, int count, const char * file, int line)
 	m->nodeCount = count;
 	m->curent = NULL;
 	m->emptyCount = 0;
+	m->idx = 0;
+	m->curNum = 0;
 
 	return m;
 }
@@ -247,8 +249,9 @@ void *mallocFix(CmsFixMem *m, const char * file, int line)
 	if (m->curent == NULL)
 	{
 		isNew = 1;
-		CmsFixChunk *fc = mallocFixChunk(m->nodeSize, m->nodeCount, file, line);		
+		CmsFixChunk *fc = mallocFixChunk(m->nodeSize, m->nodeCount, file, line);
 		m->curent = fc;
+		m->curNum++;
 	}
 	else if (m->curent->available == 0)
 	{
@@ -263,6 +266,7 @@ void *mallocFix(CmsFixMem *m, const char * file, int line)
 			m->curent->next = fc;
 			fc->prev = m->curent;
 			m->curent = fc;
+			m->curNum++;
 		}
 		else
 		{
@@ -296,9 +300,23 @@ void freeFix(CmsFixMem *m, void *p)
 		if (CMS_FIX_MEM_EMPTY_NUM == 0 || (m->emptyCount >= CMS_FIX_MEM_EMPTY_NUM &&
 			m->curent != fc))
 		{
+			m->curNum--;
 			if (m->curent == fc)
 			{
-				m->curent = m->curent->next;
+// 				printf("release curent m=%p curnum=%d, m->curent->next=%p,  m->curent->prev=%p",
+// 					m,
+// 					m->curNum,
+// 					m->curent->next,
+// 					m->curent->prev);
+
+				if (m->curent->next)//删除当前节点时，如果下一节点不为空 则指向下一可分配节点 否则指向上一满配节点!!!!!
+				{
+					m->curent = m->curent->next;
+				}
+				else
+				{
+					m->curent = m->curent->prev;
+				}
 			}
 			if (fc->next)
 			{
@@ -308,7 +326,7 @@ void freeFix(CmsFixMem *m, void *p)
 			{
 				fc->prev->next = fc->next;
 			}
-			freeFixChunk(fc);			
+			freeFixChunk(fc);
 			return;
 		}
 		else
@@ -339,10 +357,10 @@ void freeFix(CmsFixMem *m, void *p)
 			}
 			m->curent->next = fc;
 			fc->prev = m->curent;
-// 			if (isFixChunkFull(m->curent))
-// 			{
-// 				m->curent = fc;
-// 			}
+			// 			if (isFixChunkFull(m->curent))
+			// 			{
+			// 				m->curent = fc;
+			// 			}
 		}
 	}
 }

@@ -55,14 +55,14 @@ bool CWorker::run(int i)
 		printf("gsdn select mode\n");
 	}
 
-	ev_timer *evTimer = (ev_timer *)malloc(sizeof(ev_timer));
+	ev_timer *evTimer = (ev_timer *)xmalloc(sizeof(ev_timer));
 	mtimerEcp.base = this;
 	evTimer->data = (void *)&mtimerEcp;
 	ev_timer_init(evTimer, ::workerAliveCallBack, 0., 0.1); //检测线程是否被外部停止
 	ev_timer_again(mevLoop, evTimer); //需要重复
 	msetEvTimer.insert(evTimer);
 
-	ev_io *evIO = (ev_io*)malloc(sizeof(ev_io));
+	ev_io *evIO = (ev_io*)xmalloc(sizeof(ev_io));
 	mreadPipeEcp.base = this;
 	evIO->data = (void*)&mreadPipeEcp;
 	ev_io_init(evIO, ::workerPipeCallBack, mfdPipe[0], EV_READ);

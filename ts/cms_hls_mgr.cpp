@@ -33,6 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ts/cms_ts_callback.h>
 #include <mem/cms_mf_mem.h>
 #include <time.h>
+#include <errno.h>
 #include <assert.h>
 
 #define M3U8_CONTENT_PART1 "#EXTM3U\n\
@@ -634,6 +635,11 @@ CMissionMgr::CMissionMgr()
 		misRunning[i] = false;
 		mtid[i] = 0;
 		mevLoop[i] = NULL;
+		mfdPipe[i][0] = 0;
+		mfdPipe[i][1] = 0;
+		memset(&mreadPipeEcp[i], 0, sizeof(EvCallBackParam));
+		memset(&mevTimer[i], 0, sizeof(ev_timer));
+		memset(&mevIO[i], 0, sizeof(ev_io));
 	}
 }
 
@@ -673,6 +679,13 @@ bool CMissionMgr::run()
 	}
 	for (uint32 i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
+		if (pipe(mfdPipe[i]) != 0)
+		{
+			logs->error("[CMissionMgr::run] create pipe err,errno=%d, strerror=%s *****", errno, strerror(errno));
+			return false;
+		}
+		nonblocking(mfdPipe[i][0]);//设置管道非阻塞
+
 		misRunning[i] = true;
 		HlsMgrThreadParam *hmtp = new HlsMgrThreadParam;
 		hmtp->pinstance = this;
@@ -691,6 +704,13 @@ bool CMissionMgr::run()
 		{
 			printf("gsdn select mode\n");
 		}
+
+		mreadPipeEcp[i].base = this;
+		mreadPipeEcp[i].idx = i;
+		mevIO[i].data = (void*)&mreadPipeEcp[i];
+		ev_io_init(&mevIO[i], ::hlsMgrPipeCallBack, mfdPipe[i][0], EV_READ);
+		ev_io_start(mevLoop[i], &mevIO[i]);
+
 		int res = cmsCreateThread(&mtid[i], routinue, hmtp, false);
 		if (res == -1)
 		{
@@ -717,6 +737,15 @@ void CMissionMgr::stop()
 		mtid[i] = 0;
 		ev_loop_destroy(mevLoop[i]);
 		mevLoop[i] = NULL;
+
+		if (mfdPipe[i][0])
+		{
+			::close(mfdPipe[i][0]);
+	    }
+		if (mfdPipe[i][1])
+		{
+			::close(mfdPipe[i][1]);
+		}
 	}
 #ifdef __CMS_POOL_MEM__
 	releaseTsMem();
@@ -748,42 +777,35 @@ int	 CMissionMgr::create(uint32 i, HASH &hash, std::string url, int tsDuration, 
 	{
 		return CMS_OK;
 	}
+	HlsMissionMsg *msg = new HlsMissionMsg();
+	msg->act = CMS_HLS_CREATE;
+	msg->hasIdx = i;
+	msg->hash = hash;
+	msg->url = url;
+	msg->tsDuration = tsDuration;
+	msg->tsNum = tsNum;
+	msg->tsSaveNum = tsSaveNum;
 
-	int ret = CMS_ERROR;
-	uint32 ii = i % APP_ALL_MODULE_THREAD_NUM;
-	mMissionMapLock[ii].WLock();
-	std::map<HASH, CMission *>::iterator it = mMissionMap[ii].find(hash);
-	if (it == mMissionMap[ii].end())
-	{
-		CMission *cm = new CMission(hash, i, ii, url, tsDuration, tsNum, tsSaveNum);
-		mMissionMap[ii][hash] = cm;
-		mMissionUidMap[ii][cm->getUid()] = cm;
-		cm->run(ii, mevLoop[ii]);
-		ret = CMS_OK;
-		logs->debug("### [CMissionMgr::create] thread idx=%d have hls num %d ###", i, mMissionUidMap[ii].size());
-	}
-	mMissionMapLock[ii].UnWLock();
-	return ret;
+	uint32 idx = i % APP_ALL_MODULE_THREAD_NUM;
+	mmsgLock[idx].Lock();
+	mmsgQueue[idx].push(msg);
+	mmsgLock[idx].Unlock();
+	write(mfdPipe[idx][1], &i, sizeof(i));	
+	return CMS_OK;
 }
 
 void CMissionMgr::destroy(uint32 i, HASH &hash)
 {
-	i = i % APP_ALL_MODULE_THREAD_NUM;
-	mMissionMapLock[i].WLock();
-	std::map<HASH, CMission *>::iterator it = mMissionMap[i].find(hash);
-	if (it != mMissionMap[i].end())
-	{
-		std::map<int64, CMission *>::iterator it1 = mMissionUidMap[i].find(it->second->getUid());
-		if (it1 != mMissionUidMap[i].end())
-		{
-			mMissionUidMap[i].erase(it1);
-		}
+	HlsMissionMsg *msg = new HlsMissionMsg();
+	msg->act = CMS_HLS_DELETE;
+	msg->hasIdx = i;
+	msg->hash = hash;
 
-		it->second->stop();
-		delete it->second;
-		mMissionMap[i].erase(it);
-	}
-	mMissionMapLock[i].UnWLock();
+	uint32 idx = i % APP_ALL_MODULE_THREAD_NUM;
+	mmsgLock[idx].Lock();
+	mmsgQueue[idx].push(msg);
+	mmsgLock[idx].Unlock();
+	write(mfdPipe[idx][1], &i, sizeof(i));	
 }
 
 int CMissionMgr::readHlsM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt)
@@ -910,3 +932,64 @@ void CMissionMgr::tsTimerCallBack(struct ev_loop *loop, struct ev_timer *watcher
 	EvTimerParam *etp = (EvTimerParam*)watcher->data;
 	tick(etp->idx, etp->uid);
 }
+
+void CMissionMgr::hlsMgrPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents)
+{
+	EvCallBackParam	*readPipeEcp = (EvCallBackParam *)watcher->data;
+	uint32 &idx = readPipeEcp->idx;
+	do
+	{
+		int n = read(watcher->fd, mpipeBuff[idx], CMS_PIPE_BUF_SIZE);
+		if (n <= 0)
+		{
+			break;
+		}
+	} while (1);
+	logs->debug("[CMissionMgr::hlsMgrPipeCallBack] hls-worker-%d handle one", idx);
+	
+	mmsgLock[idx].Lock();
+	while (!mmsgQueue[idx].empty())
+	{
+		HlsMissionMsg* msg = mmsgQueue[idx].front();
+		mmsgQueue[idx].pop();
+		
+		if (msg->act == CMS_HLS_CREATE)
+		{
+			mMissionMapLock[idx].WLock();
+			std::map<HASH, CMission *>::iterator it = mMissionMap[idx].find(msg->hash);
+			if (it == mMissionMap[idx].end())
+			{
+				CMission *cm = new CMission(msg->hash, msg->hasIdx, idx, msg->url, msg->tsDuration, msg->tsNum, msg->tsSaveNum);
+				mMissionMap[idx][msg->hash] = cm;
+				mMissionUidMap[idx][cm->getUid()] = cm;
+				cm->run(idx, mevLoop[idx]);
+				logs->debug("### [CMissionMgr::create] thread idx=%d have hls num %d ###", idx, mMissionUidMap[idx].size());
+			}
+			mMissionMapLock[idx].UnWLock();
+		}
+		else
+		{
+			mMissionMapLock[idx].WLock();
+			std::map<HASH, CMission *>::iterator it = mMissionMap[idx].find(msg->hash);
+			if (it != mMissionMap[idx].end())
+			{
+				std::map<int64, CMission *>::iterator it1 = mMissionUidMap[idx].find(it->second->getUid());
+				if (it1 != mMissionUidMap[idx].end())
+				{
+					mMissionUidMap[idx].erase(it1);
+				}
+
+				it->second->stop();
+				delete it->second;
+				mMissionMap[idx].erase(it);
+			}
+			mMissionMapLock[idx].UnWLock();
+		}
+	}
+	mmsgLock[idx].Unlock();
+}
+
+
+
+
+

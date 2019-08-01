@@ -119,9 +119,11 @@ typedef struct _CmsDataHeader
 
 typedef struct _CmsFixMem
 {
+	int idx;				//主要是为了测试
 	int nodeSize;			//每个申请的内存大小
 	int nodeCount;			//每个chunk包含多少个node
 	int emptyCount;			//可用chunk数
+	int curNum;				//临时使用
 	CmsFixChunk *curent;	//当前可用块
 }CmsFixMem;
 

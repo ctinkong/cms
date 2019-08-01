@@ -38,6 +38,7 @@ static void initTsFixMem()
 	for (int i = 0; i < APP_ALL_MODULE_THREAD_NUM; i++)
 	{
 		tsFixMem[i] = xmallocFixMem(TS_SLICE_LEN, 10);
+		tsFixMem[i]->idx = i;
 	}
 }
 

@@ -12,6 +12,8 @@ typedef struct _EvCallBackParam
 	// 	uint32 conv;
 	bool   isPassive;
 	uint32 tick;
+	uint32 idx;
+
 	OperatorNewDelete
 }EvCallBackParam;
 

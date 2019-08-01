@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_TS_COMMON_H__
 #define __CMS_TS_COMMON_H__
 #include <common/cms_type.h>
+#include <mem/cms_mf_mem.h>
 
 #define PATpid	0
 #define PMTpid	0x1000
@@ -32,7 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define Vpid	0x100
 #define PCRpid	0x100
 
-#define CMS_TS_TIMEOUT_MILSECOND 0.03
+#define CMS_TS_TIMEOUT_MILSECOND 0.1
 
 //FLV头基本信息
 typedef struct _SHead {
@@ -95,4 +96,22 @@ typedef struct _STagInfo
 	SAudioInfo	audio;
 	SVideoInfo	video;
 }STagInfo;
+
+//hls mgr msg
+typedef struct _HlsMissionMsg
+{	
+	int act;
+	int tsDuration;
+	int tsNum;
+	int tsSaveNum;
+	uint32 hasIdx;
+	HASH hash;
+	std::string url;
+
+	OperatorNewDelete
+}HlsMissionMsg;
+
+#define CMS_HLS_CREATE 0x01
+#define CMS_HLS_DELETE 0x02
+
 #endif
