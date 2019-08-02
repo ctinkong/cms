@@ -70,6 +70,7 @@ CConnRtmp::CConnRtmp(HASH &hash, RtmpType rtmpType, CReaderWriter *rw, std::stri
 	misPushFlv = false;
 	misDown8upBytes = false;
 	misAddConn = false;
+	misNeed2TryAddPublishTask = false;
 	mflvTrans = new CFlvTransmission(mrtmp, mrtmpType == RtmpAsClient2Publish);
 	misStop = false;
 	misPush = false;
@@ -199,8 +200,13 @@ int CConnRtmp::stop(std::string reason)
 {
 	//可能会被调用两次,任务断开时,正常调用一次 reason 为空,
 	//主动断开时,会调用,reason 是调用原因
-	logs->debug("%s [CConnRtmp::stop] %s rtmp %s has been stop,is push task %s ",
-		mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str(), misPush ? "true" : "false");
+	logs->debug("%s [CConnRtmp::stop] %s rtmp %s has been stop, reason [%s],is push task %s ",
+		mremoteAddr.c_str(),
+		murl.c_str(),
+		mrtmp->getRtmpType().c_str(),
+		reason.c_str(),
+		misPush ? "true" : "false");
+
 	if (!misStop)
 	{
 		if (misPushFlv)
@@ -254,7 +260,14 @@ int CConnRtmp::handleEv(bool isRead)
 	{
 		return CMS_ERROR;
 	}
-
+	if (misNeed2TryAddPublishTask)
+	{
+		setPublishTask();
+		if (misNeed2TryAddPublishTask)
+		{
+			return CMS_OK; //没成功前 不能接收数据 还有些变量没初始化
+		}
+	}
 	if (isRead)
 	{
 		return doRead();
@@ -281,6 +294,14 @@ int CConnRtmp::handleTimeout()
 	// 	{
 	// 		return CMS_ERROR;
 	// 	}
+	if (misNeed2TryAddPublishTask)
+	{
+		setPublishTask();
+		if (misNeed2TryAddPublishTask)
+		{
+			return CMS_OK; //没成功前 不能接收数据 还有些变量没初始化
+		}
+	}
 	if (mrtmp->want2Write() == CMS_ERROR)
 	{
 		return CMS_ERROR;
@@ -584,7 +605,6 @@ int CConnRtmp::decodeMetaData(amf0::Amf0Block *block)
 	int len = strMetaData.length();
 	char *data = (char*)xmalloc(len);
 	memcpy(data, strMetaData.c_str(), len);
-
 	int ret = mflvPump->decodeMetaData(data, len, misChangeMediaInfo);
 	if (ret == 1)
 	{
@@ -708,11 +728,28 @@ int CConnRtmp::setPublishTask()
 {
 	if (!CTaskMgr::instance()->pullTaskAdd(mHash, this))
 	{
-		logs->error("***** %s [CConnRtmp::setPublishTask] %s rtmp %s publish task is exist *****",
-			mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str());
-		return CMS_ERROR;
+		if (CConfig::instance()->media()->getCover())//开启新流覆盖旧流
+		{
+			if (!misNeed2TryAddPublishTask)
+			{
+				CTaskMgr::instance()->pullTaskStop(mHash);
+				misNeed2TryAddPublishTask = true;
+			}
+			return CMS_OK;
+		}
+		else
+		{
+			logs->error("***** %s [CConnRtmp::setPublishTask] %s rtmp %s publish task is exist *****",
+				mremoteAddr.c_str(), murl.c_str(), mrtmp->getRtmpType().c_str());
+			return CMS_ERROR;
+		}
+	}
+	if (misNeed2TryAddPublishTask)
+	{
+		logs->debug("[CConnRtmp::setPublishTask] %s rtmp %s publish task try add succ.");
 	}
 	misPublish = true;
+	misNeed2TryAddPublishTask = false;
 	mrw->setReadBuffer(1024 * 32);
 
 	std::string modeName = "CConnRtmp " + mrtmp->getRtmpType();

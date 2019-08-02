@@ -315,7 +315,7 @@ bool CTaskMgr::pullTaskStop(HASH &hash)
 	Conn *conn = NULL;
 	mlockPullTaskConn.Lock();
 	MapTaskConnIteror it = mmapPullTaskConn.find(hash);
-	if (it != mmapPullTaskConn.end())
+	if (it == mmapPullTaskConn.end())
 	{
 		mlockPullTaskConn.Unlock();
 		return false;
@@ -421,7 +421,7 @@ bool CTaskMgr::pushTaskStop(HASH &hash)
 	Conn *conn = NULL;
 	mlockPushTaskConn.Lock();
 	MapTaskConnIteror it = mmapPushTaskConn.find(hash);
-	if (it != mmapPushTaskConn.end())
+	if (it == mmapPushTaskConn.end())
 	{
 		mlockPushTaskConn.Unlock();
 		return false;

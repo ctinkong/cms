@@ -88,6 +88,8 @@ public:
 	void tryCreatePullTask();
 	void tryCreatePushTask(bool isRetry = false);
 
+	bool wait4Read() { return misNeed2TryAddPublishTask; };
+
 #ifdef __CMS_CYCLE_MEM__
 	CmsCycleMem *getCycMem() { return mcycMem; };
 	char *allocCycMem(uint32 size, unsigned int msgType);
@@ -147,6 +149,7 @@ private:
 	bool			misPush;		//是否是push任务
 	bool			misDown8upBytes;//是否统计过数据
 	bool			misAddConn;		//是否发送数据的连接
+	bool			misNeed2TryAddPublishTask;//
 	//速度统计
 	int32			mxSecdownBytes;
 	int32			mxSecUpBytes;

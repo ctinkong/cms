@@ -40,8 +40,7 @@ private:
 	std::set<ev_timer *> msetEvTimer;
 	std::set<ev_io *>    msetEvIO;
 
-	std::queue<FdQueeu*> mfdAddConnQueue;
-	std::queue<FdQueeu*> mfdDelConnQueue;
+	std::queue<FdQueeu*> mfdConnQueue;
 	CLock				 mlockFdQueue;
 
 	std::map<int, Conn*> mfdConn;

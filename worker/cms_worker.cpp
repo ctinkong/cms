@@ -105,10 +105,10 @@ void CWorker::stop()
 	msetEvIO.clear();
 
 	FdQueeu* fq = NULL;
-	while (!mfdAddConnQueue.empty())
+	while (!mfdConnQueue.empty())
 	{
-		fq = mfdAddConnQueue.front();
-		mfdAddConnQueue.pop();
+		fq = mfdConnQueue.front();
+		mfdConnQueue.pop();
 		fq->conn->stop("being stop.");
 		delete fq->conn;
 		delete fq;
@@ -156,10 +156,11 @@ void *CWorker::routinue(void *p)
 void CWorker::addOneConn(int fd, Conn *conn)
 {
 	FdQueeu *fq = new FdQueeu;
+	fq->act = CMS_WORKER_ADD_CONN;
 	fq->fd = fd;
 	fq->conn = conn;
 	mlockFdQueue.Lock();
-	mfdAddConnQueue.push(fq);
+	mfdConnQueue.push(fq);
 	mlockFdQueue.Unlock();
 	write(mfdPipe[1], &fd, sizeof(fd));
 	logs->debug("[CWorker::addOneConn] worker-%d add one", midx);
@@ -168,10 +169,11 @@ void CWorker::addOneConn(int fd, Conn *conn)
 void CWorker::delOneConn(int fd, Conn *conn)
 {
 	FdQueeu *fq = new FdQueeu;
+	fq->act = CMS_WORKER_DEL_CONN;
 	fq->fd = fd;
-	fq->conn = NULL;
+	fq->conn = conn;
 	mlockFdQueue.Lock();
-	mfdDelConnQueue.push(fq);
+	mfdConnQueue.push(fq);
 	mlockFdQueue.Unlock();
 	write(mfdPipe[1], &fd, sizeof(fd));
 }
@@ -200,38 +202,44 @@ void CWorker::workerPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, in
 		}
 	} while (1);
 	logs->debug("[CWorker::workerPipeCallBack] worker-%d handle one", midx);
+	std::map<int, Conn*>::iterator itFdConn;
 	mlockFdQueue.Lock();
-	while (!mfdDelConnQueue.empty())
+	while (!mfdConnQueue.empty())
 	{
-		FdQueeu *fq = mfdDelConnQueue.front();
-		mfdDelConnQueue.pop();
-		std::map<int, Conn*>::iterator itFdConn = mfdConn.find(fq->fd);
-		if (itFdConn != mfdConn.end() &&
-			fq->conn == itFdConn->second)
+		FdQueeu *fq = mfdConnQueue.front();
+		mfdConnQueue.pop();
+		if (fq->act == CMS_WORKER_ADD_CONN)
 		{
-			//fd 一样不代表conn一样 又可能是新创建的任务 重用了相同的fd
-			itFdConn->second->stop("task been deleted.");
-			delete itFdConn->second;
-			mfdConn.erase(itFdConn);
+			itFdConn = mfdConn.find(fq->fd);
+			assert(itFdConn == mfdConn.end());
+			mfdConn.insert(make_pair(fq->fd, fq->conn));
+			fq->conn->activateEV(this, mevLoop);
+			fq->conn->doit();
 		}
-		delete fq;
-	}
-	while (!mfdAddConnQueue.empty())
-	{
-		FdQueeu *fq = mfdAddConnQueue.front();
-		mfdAddConnQueue.pop();
-		std::map<int, Conn*>::iterator itFdConn = mfdConn.find(fq->fd);
-		assert(itFdConn == mfdConn.end());
-		mfdConn.insert(make_pair(fq->fd, fq->conn));
-		fq->conn->activateEV(this, mevLoop);
-		fq->conn->doit();
+		else if (fq->act == CMS_WORKER_DEL_CONN)
+		{
+			itFdConn = mfdConn.find(fq->fd);
+			if (itFdConn != mfdConn.end() &&
+				fq->conn == itFdConn->second)
+			{
+				//fd 一样不代表conn一样 又可能是新创建的任务 重用了相同的fd
+				itFdConn->second->stop("task been deleted");
+				delete itFdConn->second;
+				mfdConn.erase(itFdConn);
+				logs->debug("[CWorker::workerPipeCallBack] will delete one");
+			}
+			else if (itFdConn != mfdConn.end())
+			{
+				logs->debug("[CWorker::workerPipeCallBack] delete one fail");
+			}
+		}
 		delete fq;
 	}
 	mlockFdQueue.Unlock();
 }
 
 void CWorker::connIOCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents)
-{
+{	
 	EvCallBackParam *ecp = (EvCallBackParam*)watcher->data;
 	std::map<int, Conn*>::iterator itFdConn = mfdConn.find(ecp->fd);
 	assert(itFdConn != mfdConn.end());

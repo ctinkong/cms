@@ -567,6 +567,10 @@ int CRtmpProtocol::want2Read()
 	}
 	while (mfinishShake)
 	{
+		if (msuper->wait4Read())
+		{
+			break;
+		}
 		int ret = readMessage();
 		if (ret == CMS_ERROR)
 		{

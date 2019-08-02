@@ -507,6 +507,7 @@ CMedia::CMedia()
 	mtsDuration = 3;
 	mtsNum = 3;
 	mtsSaveNum = 5;
+	misOpenCover = false;
 }
 
 CMedia::~CMedia()
@@ -524,7 +525,8 @@ void CMedia::set(int iFirstPlaySkipMilSecond,
 	bool  isOpenHls,
 	int   tsDuration,
 	int   tsNum,
-	int   tsSaveNum)
+	int   tsSaveNum,
+	bool  isOpenCover)
 {
 	miFirstPlaySkipMilSecond = iFirstPlaySkipMilSecond;
 	misResetStreamTimestamp = isResetStreamTimestamp;
@@ -537,6 +539,7 @@ void CMedia::set(int iFirstPlaySkipMilSecond,
 	mtsDuration = tsDuration;
 	mtsNum = tsNum;
 	mtsSaveNum = tsSaveNum;
+	misOpenCover = isOpenCover;
 }
 
 int CMedia::getFirstPlaySkipMilSecond()
@@ -593,6 +596,11 @@ int CMedia::getTsNum()
 int CMedia::getTsSaveNum()
 {
 	return mtsSaveNum;
+}
+
+bool CMedia::getCover()
+{
+	return misOpenCover;
 }
 
 CConfig *CConfig::minstance = NULL;
@@ -1134,6 +1142,7 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 	int   tsDuration = 3;
 	int   tsNum = 3;
 	int   tsSaveNum = 5;
+	bool  isOpenCover = false;
 	cJSON *T = cJSON_GetObjectItem(media, "first_play_milsecond");
 	if (T != NULL && T->type != cJSON_Number)
 	{
@@ -1303,6 +1312,18 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 			}
 		}
 	}
+	T = cJSON_GetObjectItem(media, "open_cover");
+	if (T != NULL && T->type != cJSON_True && T->type != cJSON_False)
+	{
+		printf("*** [CConfig::init] config file %s media term open_cover illegal  ***\n",
+			configPath);
+		return false;
+	}
+	if (T->type == cJSON_True)
+	{
+		isOpenCover = true;
+	}
+
 	printf("config [media]::: "
 		"\n\tfirstPlaySkipMilSecond=%d "
 		"\n\tisResetStreamTimestamp=%s "
@@ -1314,7 +1335,8 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		"\n\topenHls=%s "
 		"\n\ttsDuradion=%d"
 		"\n\ttsNum=%d "
-		"\n\ttsSaveNum=%d\n",
+		"\n\ttsSaveNum=%d"
+		"\n\topenCover=%s\n",
 		iFirstPlaySkipMilSecond,
 		isResetStreamTimestamp ? "true" : "false",
 		isNoTimeout ? "true" : "false",
@@ -1325,7 +1347,8 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		isOpenHls ? "true" : "false",
 		tsDuration,
 		tsNum,
-		tsSaveNum);
+		tsSaveNum,
+		isOpenCover ? "true" : "false");
 
 	mmedia->set(iFirstPlaySkipMilSecond,
 		isResetStreamTimestamp,
@@ -1337,7 +1360,8 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		isOpenHls,
 		tsDuration,
 		tsNum,
-		tsSaveNum);
+		tsSaveNum,
+		isOpenCover);
 	return true;
 }
 

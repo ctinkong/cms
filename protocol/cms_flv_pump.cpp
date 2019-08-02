@@ -87,7 +87,10 @@ int	CFlvPump::decodeMetaData(char *data, int len, bool &isChangeMediaInfo)
 	}
 	std::string strRtmpContent = amf0::amf0BlockDump(block);
 	logs->info("%s [CFlvPump::decodeMetaData] %s received metaData: %s",
-		mremoteAddr.c_str(), murl.c_str(), strRtmpContent.c_str());
+		mremoteAddr.c_str(),
+		murl.c_str(),
+		strRtmpContent.c_str());
+
 	string strRtmpData = amf0::amf0Block2String(block);
 
 	string rate;
@@ -273,11 +276,11 @@ int CFlvPump::decodeVideo(char *data, int len, uint32 timestamp, bool &isChangeM
 #ifdef __CMS_CYCLE_MEM__
 		s->mcycMem = msuper->getCycMem();
 #endif
-	}
+		}
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
 	return 1;
-		}
+	}
 
 int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeMediaInfo)
 {
@@ -380,7 +383,7 @@ int CFlvPump::decodeAudio(char *data, int len, uint32 timestamp, bool &isChangeM
 	CFlvPool::instance()->push(mhashIdx, s);
 	misPushFlv = true;
 	return 1;
-	}
+}
 
 int CFlvPump::getWidth()
 {
@@ -446,7 +449,7 @@ void CFlvPump::stop()
 	s->mcycMem = msuper->getCycMem();
 #endif
 	CFlvPool::instance()->push(mhashIdx, s);
-}
+	}
 
 void CFlvPump::setPublish()
 {

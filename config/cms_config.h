@@ -139,7 +139,8 @@ public:
 		bool  isOpenHls,
 		int   tsDuration,
 		int   tsNum,
-		int   tsSaveNum);
+		int   tsSaveNum,
+		bool  isOpenCover);
 	int   getFirstPlaySkipMilSecond();
 	bool  isResetStreamTimestamp();
 	bool  isNoTimeout();
@@ -151,18 +152,20 @@ public:
 	int   getTsDuration();
 	int   getTsNum();
 	int   getTsSaveNum();
+	bool  getCover();
 private:
-	int   miFirstPlaySkipMilSecond;	//首播丢帧
+	int64 mllCacheTT;				//缓存时长 单位毫秒	
 	bool  misResetStreamTimestamp;	//首播重设时间戳
 	bool  misNoTimeout;				//
-	int   miLiveStreamTimeout;		//直播流超时时间 单位毫秒
-	int   miNoHashTimeout;			//播放任务不存在超时时间 单位毫秒
 	bool  misRealTimeStream;		//低延时直播
-	int64 mllCacheTT;				//缓存时长 单位毫秒
 	bool  misOpenHls;				//开启内存切片
 	int   mtsDuration;				//每块ts时长 单位秒
 	int   mtsNum;					//m3u8 ts片数
 	int   mtsSaveNum;				//内存缓存ts片数
+	int   miFirstPlaySkipMilSecond;	//首播丢帧	
+	int   miLiveStreamTimeout;		//直播流超时时间 单位毫秒
+	int   miNoHashTimeout;			//播放任务不存在超时时间 单位毫秒
+	bool  misOpenCover;				//新的推流任务覆盖旧流
 };
 
 class CWorkerCfg
