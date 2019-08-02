@@ -1319,9 +1319,12 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 			configPath);
 		return false;
 	}
-	if (T->type == cJSON_True)
+	if (T)
 	{
-		isOpenCover = true;
+		if (T->type == cJSON_True)
+		{
+			isOpenCover = true;
+		}
 	}
 
 	printf("config [media]::: "

@@ -31,6 +31,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <app/cms_app_info.h>
 #include <app/cms_parse_args.h>
 #include <ts/cms_ts_callback.h>
+#include <static/cms_static_common.h>
 #include <mem/cms_mf_mem.h>
 #include <time.h>
 #include <errno.h>
@@ -131,6 +132,11 @@ CMission::CMission(HASH &hash, uint32 hashIdx, uint32 threadID, std::string url,
 	mbFIFrame = false;
 	mullTransUid = 0;
 	mtimeStamp = 0;
+
+	mtotalMemSize = 0;
+	mtotalDataSize = 0;
+	mmemTick = getTickCount();
+
 	mdurationtt = new CDurationTimestamp();
 	initMux();
 }
@@ -412,7 +418,7 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 	// 		mtsNum,
 	// 		mtsSaveNum,
 	// 		mtsDuration);
-
+	unsigned long tt = getTickCount();
 	SSlice *ss = NULL;
 	if ((msliceList[msliceCount]->msliceStart != 0) &&
 		timestamp - msliceList[msliceCount]->msliceStart > (uint64)(mtsDuration * 900) &&
@@ -448,6 +454,12 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 
 			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
 
+			if (!msliceList[msliceCount]->marray.empty())
+			{
+				mtotalDataSize += msliceList[msliceCount]->marray.at(0)->mchunkTotalSize;
+				mtotalMemSize += msliceList[msliceCount]->marray.at(0)->mtotalMemSize;
+			}
+
 			msliceIndx++;
 			ss = newSSlice();
 			ss->msliceIndex = msliceIndx;
@@ -465,6 +477,11 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			std::vector<SSlice *>::iterator it = msliceList.begin();
 			ss = *it;
 			msliceList.erase(it);
+			if (!ss->marray.empty())
+			{
+				mtotalDataSize -= ss->marray.at(0)->mchunkTotalSize;
+				mtotalMemSize -= ss->marray.at(0)->mtotalMemSize;
+			}
 			atomicDec(ss);
 		}
 		else
@@ -494,6 +511,12 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 				timestamp - msliceList[msliceCount]->msliceStart);
 			msliceList[msliceCount]->msliceRange = (float)((timestamp - msliceList[msliceCount]->msliceStart));
 
+			if (!msliceList[msliceCount]->marray.empty())
+			{
+				mtotalDataSize += msliceList[msliceCount]->marray.at(0)->mchunkTotalSize;
+				mtotalMemSize += msliceList[msliceCount]->marray.at(0)->mtotalMemSize;
+			}
+
 			msliceCount++;
 			msliceIndx++;
 			ss = newSSlice();
@@ -518,6 +541,13 @@ int CMission::pushData(Slice *s, byte frameType, uint64 timestamp)
 			ss->msliceStart = timestamp;
 		}
 		mMux->onData(mlastTca, (byte*)s->mData, s->miDataLen, frameType, timestamp);
+	}
+	if (tt - mmemTick > 1000)
+	{
+		makeOneTaskHlsMem(mhash,
+			mtotalMemSize + (mlastTca ? mlastTca->mtotalMemSize : 0),
+			mtotalDataSize + (mlastTca ? mlastTca->mchunkTotalSize : 0));
+		mmemTick = tt;
 	}
 	return 0;
 }
@@ -725,7 +755,7 @@ bool CMissionMgr::run()
 	initTsMem();
 #endif
 	return true;
-}
+		}
 
 void CMissionMgr::stop()
 {
@@ -741,7 +771,7 @@ void CMissionMgr::stop()
 		if (mfdPipe[i][0])
 		{
 			::close(mfdPipe[i][0]);
-	    }
+		}
 		if (mfdPipe[i][1])
 		{
 			::close(mfdPipe[i][1]);
@@ -751,7 +781,7 @@ void CMissionMgr::stop()
 	releaseTsMem();
 #endif
 	logs->debug("##### CMissionMgr::stop finish #####");
-}
+		}
 
 CMissionMgr *CMissionMgr::instance()
 {
@@ -790,7 +820,7 @@ int	 CMissionMgr::create(uint32 i, HASH &hash, std::string url, int tsDuration, 
 	mmsgLock[idx].Lock();
 	mmsgQueue[idx].push(msg);
 	mmsgLock[idx].Unlock();
-	write(mfdPipe[idx][1], &i, sizeof(i));	
+	write(mfdPipe[idx][1], &i, sizeof(i));
 	return CMS_OK;
 }
 
@@ -805,7 +835,7 @@ void CMissionMgr::destroy(uint32 i, HASH &hash)
 	mmsgLock[idx].Lock();
 	mmsgQueue[idx].push(msg);
 	mmsgLock[idx].Unlock();
-	write(mfdPipe[idx][1], &i, sizeof(i));	
+	write(mfdPipe[idx][1], &i, sizeof(i));
 }
 
 int CMissionMgr::readHlsM3U8(uint32 i, HASH &hash, std::string url, std::string addr, std::string &outData, int64 &tt)
@@ -946,13 +976,13 @@ void CMissionMgr::hlsMgrPipeCallBack(struct ev_loop *loop, struct ev_io *watcher
 		}
 	} while (1);
 	logs->debug("[CMissionMgr::hlsMgrPipeCallBack] hls-worker-%d handle one", idx);
-	
+
 	mmsgLock[idx].Lock();
 	while (!mmsgQueue[idx].empty())
 	{
 		HlsMissionMsg* msg = mmsgQueue[idx].front();
 		mmsgQueue[idx].pop();
-		
+
 		if (msg->act == CMS_HLS_CREATE)
 		{
 			mMissionMapLock[idx].WLock();

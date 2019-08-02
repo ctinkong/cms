@@ -107,6 +107,7 @@ TsChunkArray *allocTsChunkArray()
 {
 	TsChunkArray *tca = new TsChunkArray;
 	tca->mchunkTotalSize = 0;
+	tca->mtotalMemSize = 0;
 	return tca;
 }
 
@@ -130,6 +131,7 @@ int writeChunk(uint32 idx, TsChunkArray *tca, char *data, int len)
 	{
 		tc = allocTsChunk(idx, TS_SLICE_LEN);
 		tca->mtsChunkArray.push_back(tc);
+		tca->mtotalMemSize += TS_SLICE_LEN;
 	}
 	else
 	{
@@ -139,6 +141,7 @@ int writeChunk(uint32 idx, TsChunkArray *tca, char *data, int len)
 			assert((tc->mchunkSize - tc->muse) % TS_CHUNK_SIZE == 0);
 			tc = allocTsChunk(idx, TS_SLICE_LEN);
 			tca->mtsChunkArray.push_back(tc);
+			tca->mtotalMemSize += TS_SLICE_LEN;
 		}
 	}
 	left = TS_CHUNK_SIZE - (tc->muse%TS_CHUNK_SIZE);

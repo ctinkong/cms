@@ -32,6 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define PACKET_ONE_TASK_UPLOAD		0x01
 #define PACKET_ONE_TASK_MEDIA		0x02
 #define PACKET_ONE_TASK_MEM			0x03
+#define PACKET_ONE_TASK_HLS_MEM		0x04
 
 #define PACKET_CONN_ADD				0x01
 #define PACKET_CONN_DEL				0x02
@@ -88,6 +89,7 @@ struct OneTaskMem
 	int		packetID;
 	HASH	hash;
 	int64	totalMem;
+	int64   hlsMem;
 #ifdef __CMS_CYCLE_MEM__
 	int64	totalCycMem;
 #endif
@@ -98,6 +100,11 @@ struct OneTaskMem
 struct OneTask
 {
 	std::string		murl;
+	std::string		mreferer;			//refer
+	std::string		mvideoType;			//视频类型
+	std::string		maudioType;			//音频类型
+	std::string		mremoteAddr;
+
 	int64			mdownloadTotal;		//用于统计下载速度
 	int64			mdownloadTick;
 	int64			mdownloadSpeed;
@@ -113,23 +120,21 @@ struct OneTask
 	int32			maudioFramerate;	//音频帧率
 	int32			maudioSamplerate;	//音频采样率
 	int32			miWidth;			//视频宽
-	int32			miHeight;			//视频高
-	std::string		mvideoType;			//视频类型
-	std::string		maudioType;			//音频类型
-
-	int32			mtotalConn;			//该任务当前连接数
-	std::string		mreferer;			//refer
+	int32			miHeight;			//视频高	
+	int32			mtotalConn;			//该任务当前连接数	
 
 	int64			mtotalMem;			//当前任务数据占用内存
+	int64			mhlsMem;			//当前任务内存切片有效占用内存
+	int64			mtotalHlsMem;		//当前任务内存切片实际占用内存
 #ifdef __CMS_CYCLE_MEM__
 	int64			mtotalCycMem;		//循环内存大小
 #endif
 
-	time_t			mttCreate;
-	std::string		mremoteAddr;
+	time_t			mttCreate;	
 
 	bool			misUDP;
 	bool			misPublishTask;
+	bool			misHls;
 
 	OperatorNewDelete
 };
@@ -202,5 +207,8 @@ void makeOneTaskMem(HASH hash,
 void makeOneTaskMem(HASH hash,
 	int64 totalMem);										//统计内存占用
 #endif
+void makeOneTaskHlsMem(HASH hash,
+	int64 totalHlsMem,
+	int64 hlsMem);
 
 #endif

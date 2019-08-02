@@ -136,6 +136,11 @@ void CStatic::thread()
 				handle(otmm);
 				delete otmm;
 				break;
+			case PACKET_ONE_TASK_HLS_MEM:
+				otmm = (OneTaskMem *)otp;
+				handle(otmm);
+				delete otmm;
+				break;
 			default:
 				logs->error("*** [CStatic::thread] unexpect packet %d ***", otp->packetID);
 				break;
@@ -356,10 +361,19 @@ void CStatic::handle(OneTaskMem *otm)
 	MapHashOneTaskIterator it = mmapHashTask.find(otm->hash);
 	if (it != mmapHashTask.end())
 	{
-		it->second->mtotalMem = otm->totalMem;
+		if (otm->packetID == PACKET_ONE_TASK_MEM)
+		{
+			it->second->mtotalMem = otm->totalMem;
 #ifdef __CMS_CYCLE_MEM__
-		it->second->mtotalCycMem = otm->totalCycMem;
+			it->second->mtotalCycMem = otm->totalCycMem;
 #endif
+		}
+		else if (otm->packetID == PACKET_ONE_TASK_HLS_MEM)
+		{
+			it->second->mhlsMem = otm->hlsMem;
+			it->second->mtotalHlsMem = otm->totalMem;
+			it->second->misHls = true;
+		}
 	}
 	mlockHashTask.Unlock();
 }
@@ -474,6 +488,10 @@ int CStatic::getTaskInfo(cJSON **value)
 		cJSON_AddItemToObject(v, "addr", cJSON_CreateString(otk->mremoteAddr.c_str()));
 		cJSON_AddItemToObject(v, "conn_num", cJSON_CreateNumber(otk->mtotalConn));
 
+		cJSON_AddItemToObject(v, "udp", cJSON_CreateBool(otk->misUDP ? 1 : 0));
+		cJSON_AddItemToObject(v, "publish", cJSON_CreateBool(otk->misPublishTask ? 1 : 0));
+		cJSON_AddItemToObject(v, "open_hls", cJSON_CreateBool(otk->misHls ? 1 : 0));
+
 		cJSON_AddItemToObject(v, "media_rate", cJSON_CreateNumber(otk->mmediaRate));
 		cJSON_AddItemToObject(v, "video_frame_rate", cJSON_CreateNumber(otk->mvideoFramerate));
 		cJSON_AddItemToObject(v, "video_type", cJSON_CreateString(otk->mvideoType.c_str()));
@@ -484,9 +502,6 @@ int CStatic::getTaskInfo(cJSON **value)
 		cJSON_AddItemToObject(v, "audio_sample_rate", cJSON_CreateNumber(otk->maudioSamplerate));
 		cJSON_AddItemToObject(v, "audio_type", cJSON_CreateString(otk->maudioType.c_str()));
 
-		cJSON_AddItemToObject(v, "udp", cJSON_CreateBool(otk->misUDP ? 1 : 0));
-		cJSON_AddItemToObject(v, "is_publish", cJSON_CreateBool(otk->misPublishTask ? 1 : 0));
-
 		cJSON_AddItemToObject(v, "download_speed", cJSON_CreateNumber(otk->mdownloadSpeed));
 		cJSON_AddItemToObject(v, "download_speed_s", cJSON_CreateString(parseSpeed8Mem(otk->mdownloadSpeed, true).c_str()));
 		cJSON_AddItemToObject(v, "upload_speed", cJSON_CreateNumber(otk->muploadSpeed));
@@ -494,6 +509,12 @@ int CStatic::getTaskInfo(cJSON **value)
 
 		cJSON_AddItemToObject(v, "total_mem", cJSON_CreateNumber(otk->mtotalMem));
 		cJSON_AddItemToObject(v, "total_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mtotalMem, false).c_str()));
+
+		cJSON_AddItemToObject(v, "hls_data_mem", cJSON_CreateNumber(otk->mhlsMem));
+		cJSON_AddItemToObject(v, "hls_data_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mhlsMem, false).c_str()));
+		cJSON_AddItemToObject(v, "hls_total_mem", cJSON_CreateNumber(otk->mtotalHlsMem));
+		cJSON_AddItemToObject(v, "hls_total_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mtotalHlsMem, false).c_str()));
+		
 #ifdef __CMS_CYCLE_MEM__
 		cJSON_AddItemToObject(v, "total_cycle_mem", cJSON_CreateNumber(otk->mtotalCycMem));
 		cJSON_AddItemToObject(v, "total_cycle_mem_s", cJSON_CreateString(parseSpeed8Mem(otk->mtotalCycMem, false).c_str()));

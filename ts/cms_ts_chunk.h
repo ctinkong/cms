@@ -48,6 +48,7 @@ void freeTsChunk(TsChunk *tc);
 
 typedef struct _TsChunkArray
 {
+	int mtotalMemSize;
 	int mchunkTotalSize;		//ts 有效数据长度
 	std::vector<TsChunk *> mtsChunkArray;
 

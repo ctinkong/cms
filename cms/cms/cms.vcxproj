@@ -48,14 +48,6 @@
     <ClCompile Include="..\..\interface\cms_stream_info.cpp" />
     <ClCompile Include="..\..\interface\cms_thread.cpp" />
     <ClCompile Include="..\..\kcp\ikcp.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\event.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_epoll.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_kqueue.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_poll.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_port.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_select.c" />
-    <ClCompile Include="..\..\libev\libev-4.25\ev_win32.c" />
     <ClCompile Include="..\..\log\cms_log.cpp" />
     <ClCompile Include="..\..\mem\cms_cycle_mem.cpp" />
     <ClCompile Include="..\..\mem\cms_fix_mem.cpp" />
@@ -130,11 +122,6 @@
     <ClInclude Include="..\..\interface\cms_stream_info.h" />
     <ClInclude Include="..\..\interface\cms_thread.h" />
     <ClInclude Include="..\..\kcp\ikcp.h" />
-    <ClInclude Include="..\..\libev\libev-4.25\ev++.h" />
-    <ClInclude Include="..\..\libev\libev-4.25\ev.h" />
-    <ClInclude Include="..\..\libev\libev-4.25\event.h" />
-    <ClInclude Include="..\..\libev\libev-4.25\ev_vars.h" />
-    <ClInclude Include="..\..\libev\libev-4.25\ev_wrap.h" />
     <ClInclude Include="..\..\log\cms_log.h" />
     <ClInclude Include="..\..\mem\cms_cycle_mem.h" />
     <ClInclude Include="..\..\mem\cms_fix_mem.h" />

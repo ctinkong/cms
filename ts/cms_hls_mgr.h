@@ -76,6 +76,8 @@ public:
 	OperatorNewDelete
 private:
 	void initMux();
+	unsigned long mmemTick;
+
 	EvTimerParam		mtimerEtp;
 	struct ev_loop		*mevLoop;
 	ev_timer		    mevTimer;
@@ -110,6 +112,8 @@ private:
 	bool	mbFIFrame;  //首个I帧，用来做切片的参考
 	CMux	*mMux;      //转码器
 	TsChunkArray *mlastTca;//节省空间
+	int		mtotalMemSize; //ts总内存大小
+	int		mtotalDataSize;//ts有效数据大小
 
 	uint64  mullTransUid;
 

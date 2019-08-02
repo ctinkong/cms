@@ -67,12 +67,6 @@
     <Filter Include="worker">
       <UniqueIdentifier>{477c90cb-bea2-4df6-8efd-5af2ee4b1864}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libev">
-      <UniqueIdentifier>{f3217a75-8f30-4a65-a840-c793543a5613}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="libev\libev-4.25">
-      <UniqueIdentifier>{d4b32ff5-fea8-45d3-bee7-68b7a7c371a1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="rfc">
       <UniqueIdentifier>{5627aba9-67dc-4f2d-abbf-b9c7b4af1062}</UniqueIdentifier>
     </Filter>
@@ -260,30 +254,6 @@
     </ClCompile>
     <ClCompile Include="..\..\worker\cms_master_callback.cpp">
       <Filter>worker</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_epoll.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_kqueue.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_poll.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_port.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_select.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\ev_win32.c">
-      <Filter>libev\libev-4.25</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libev\libev-4.25\event.c">
-      <Filter>libev\libev-4.25</Filter>
     </ClCompile>
     <ClCompile Include="..\..\ts\cms_ts_callback.cpp">
       <Filter>ts</Filter>
@@ -511,21 +481,6 @@
     </ClInclude>
     <ClInclude Include="..\..\worker\cms_master_callback.h">
       <Filter>worker</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libev\libev-4.25\ev.h">
-      <Filter>libev\libev-4.25</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libev\libev-4.25\ev_vars.h">
-      <Filter>libev\libev-4.25</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libev\libev-4.25\ev_wrap.h">
-      <Filter>libev\libev-4.25</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libev\libev-4.25\ev++.h">
-      <Filter>libev\libev-4.25</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libev\libev-4.25\event.h">
-      <Filter>libev\libev-4.25</Filter>
     </ClInclude>
     <ClInclude Include="..\..\interface\cms_inerf_var.h">
       <Filter>interface</Filter>

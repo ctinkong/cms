@@ -50,11 +50,17 @@ OneTask *newOneTask()
 	otk->mtotalConn = 0;		//该任务当前连接数
 
 	otk->mtotalMem = 0;		//当前任务数据占用内存
+	otk->mhlsMem = 0;
+	otk->mtotalHlsMem = 0;
 #ifdef __CMS_CYCLE_MEM__
 	otk->mtotalCycMem = 0;		//循环内存大小
 #endif
-
 	otk->mttCreate = getTimeUnix();
+
+	otk->misUDP = false;
+	otk->misPublishTask = false;
+	otk->misHls = false;
+
 	return otk;
 }
 
@@ -130,8 +136,22 @@ void makeOneTaskMem(HASH hash,
 	otm->packetID = PACKET_ONE_TASK_MEM;
 	otm->hash = hash;
 	otm->totalMem = totalMem;
+	otm->hlsMem = 0;
 #ifdef __CMS_CYCLE_MEM__
 	otm->totalCycMem = totalCycMem;
 #endif
 	CStatic::instance()->push((OneTaskPacket *)otm);
 }
+
+void makeOneTaskHlsMem(HASH hash,
+	int64 totalHlsMem,
+	int64 hlsMem)
+{
+	OneTaskMem *otm = new OneTaskMem;
+	otm->packetID = PACKET_ONE_TASK_HLS_MEM;
+	otm->hash = hash;
+	otm->totalMem = totalHlsMem;
+	otm->hlsMem = hlsMem;
+	CStatic::instance()->push((OneTaskPacket *)otm);
+}
+
