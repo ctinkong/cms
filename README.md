@@ -2,10 +2,10 @@
 cms is an industrial-strength live streaming server,support rtmp,http-flv,hls.in the future,it will support more protocol.
 # Building cms with new version number or memory optimization options.
 the options choose by yourself:  
-***memcheck***: you can track most of alloc buf  
-***mempool***: cms will cache some buf,which is been malloc and free very frequently,that will improve memory performance,
-of course the buf must be the same type  
-***memcycle***: for the video/audio buf,it will malloc and free in the cycle buf  
+***memcheck***: you can track most of alloc buffer  
+***mempool***: cms will cache some buffer,which is been malloc and free very frequently,that will improve memory performance,
+of course the buffer must be the same type  
+***memcycle***: the video/audio buffer,it will malloc and free in the cycle buffer  
 ```shell
 git clone https://github.com/ctinkong/cms.git
 cd cms
@@ -19,7 +19,7 @@ make
 ```
 # Notice
 ```shell
-to build cms needs s2n,whitch supports TLS/SSL protocols.see https://github.com/awslabs/s2n
+to build cms needs s2n,which supports TLS/SSL protocols.see https://github.com/awslabs/s2n
 and current version,s2n is builded with openssl-1.1.1b.
 ```
 # Config

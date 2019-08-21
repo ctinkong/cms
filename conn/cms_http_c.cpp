@@ -129,7 +129,14 @@ ChttpClient::~ChttpClient()
 	}
 	if (mtagFlv != NULL)
 	{
+#ifdef __CMS_CYCLE_MEM__
+		if (mcycMem)
+		{
+			xfreeCycleBuf(mcycMem, mtagFlv);
+		}	
+#else
 		xfree(mtagFlv);
+#endif		
 	}
 	delete mhttp;
 	delete mrdBuff;
@@ -249,7 +256,12 @@ int ChttpClient::stop(std::string reason)
 #ifdef __CMS_CYCLE_MEM__
 		else
 		{
+			if (mtagFlv != NULL)
+			{
+				xfreeCycleBuf(mcycMem, mtagFlv);
+			}
 			xfreeCycleMem(mcycMem);
+			mcycMem = NULL;
 		}
 #endif
 		if (misDown8upBytes)

@@ -36,7 +36,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mem/cms_mf_mem.h>
 #include <regex.h>
 
-std::string gCrossDomainRsp = "HTTP/1.1 200 OK\r\nServer: cms\r\nConnection: keep-alive\r\nContent-Length: 189\r\nContent-Type: text/xml\r\n\r\n<?xml version=\"1.0\"?><!DOCTYPE cross-domain-policy SYSTEM \"http://www.adobe.com/xml/dtds/cross-domain-policy.dtd\"><cross-domain-policy><allow-access-from domain=\"*\" /></cross-domain-policy>";
+#define _CROSSDomainRsp(a,appname,b) a appname b
+std::string gCrossDomainRsp = _CROSSDomainRsp("HTTP/1.1 200 OK\r\n"
+	"Server: ", APP_NAME, "\r\n"
+	"Connection: keep-alive\r\n"
+	"Content-Length: 189\r\n"
+	"Content-Type: text/xml\r\n\r\n"
+	"<?xml version=\"1.0\"?>"
+	"<!DOCTYPE cross-domain-policy SYSTEM \"http://www.adobe.com/xml/dtds/cross-domain-policy.dtd\">"
+	"<cross-domain-policy><allow-access-from domain=\"*\" />"
+	"</cross-domain-policy>");
 
 CHttpServer::CHttpServer(CReaderWriter *rw, bool isTls)
 {

@@ -127,14 +127,16 @@ void atomicDec(StreamSlice *ss)
 void atomicInc(Slice *s)
 {
 	if (s != NULL)
-	{
-		int ionly = __sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
+	{		
 #ifdef __CMS_CYCLE_MEM__
+		int ionly = __sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
 		if (ionly > 1 && s->mcycMem)
 		{
 			//s->mionly == 1 时，只有 StreamSlice 引用了Slice 这时不需要增加
 			atomicInc(s->mss);
 		}
+#else
+		__sync_add_and_fetch(&s->mionly, 1);//当数据超时，且没人使用时，删除
 #endif		
 	}
 }
