@@ -97,7 +97,8 @@ CPPSRCS = $(wildcard app/*.cpp) \
 		$(wildcard strategy/*.cpp) \
 		$(wildcard taskmgr/*.cpp) \
 		$(wildcard ts/*.cpp) \
-		$(wildcard worker/*.cpp)
+		$(wildcard worker/*.cpp) \
+		$(wildcard http/*.cpp)
 
 
 COBJS := $(CSRCS:.c=.o)

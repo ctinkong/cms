@@ -26,6 +26,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define __CMS_HTTP_CONST_H__
 #include <common/cms_type.h>
 
+#define HTTP_METHOD_GET "GET"
+#define HTTP_METHOD_POST "POST"
+
 #define HTTP_VERSION						"HTTP/1.1"
 #define HTTP_HEADER_UPGRADE					"upgrade"
 #define HTTP_HEADER_WEBSOCKET				"websocket"

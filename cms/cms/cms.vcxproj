@@ -41,6 +41,7 @@
     <ClCompile Include="..\..\enc\cms_crc32n.cpp" />
     <ClCompile Include="..\..\enc\cms_sha1.cpp" />
     <ClCompile Include="..\..\flvPool\cms_flv_pool.cpp" />
+    <ClCompile Include="..\..\http\cms_http_client.cpp" />
     <ClCompile Include="..\..\interface\cms_conn_listener.cpp" />
     <ClCompile Include="..\..\interface\cms_interf_conn.cpp" />
     <ClCompile Include="..\..\interface\cms_protocol.cpp" />
@@ -114,6 +115,7 @@
     <ClInclude Include="..\..\enc\cms_sha1.h" />
     <ClInclude Include="..\..\flvPool\cms_flv_pool.h" />
     <ClInclude Include="..\..\flvPool\cms_flv_var.h" />
+    <ClInclude Include="..\..\http\cms_http_client.h" />
     <ClInclude Include="..\..\interface\cms_conn_listener.h" />
     <ClInclude Include="..\..\interface\cms_inerf_var.h" />
     <ClInclude Include="..\..\interface\cms_interf_conn.h" />

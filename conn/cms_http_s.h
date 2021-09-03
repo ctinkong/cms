@@ -34,11 +34,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mem/cms_mf_mem.h>
 #include <string>
 
-class CHttpServer :public Conn
+class CHttpFlvServer :public Conn
 {
 public:
-	CHttpServer(CReaderWriter *rw, bool isTls);
-	~CHttpServer();
+	CHttpFlvServer(CReaderWriter *rw, bool isTls);
+	~CHttpFlvServer();
 
 	int activateEV(void *base, struct ev_loop *evLoop);
 	int doit();

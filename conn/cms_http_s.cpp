@@ -47,7 +47,7 @@ std::string gCrossDomainRsp = _CROSSDomainRsp("HTTP/1.1 200 OK\r\n"
 	"<cross-domain-policy><allow-access-from domain=\"*\" />"
 	"</cross-domain-policy>");
 
-CHttpServer::CHttpServer(CReaderWriter *rw, bool isTls)
+CHttpFlvServer::CHttpFlvServer(CReaderWriter *rw, bool isTls)
 {
 	char szaddr[23] = { 0 };
 	rw->remoteAddr(szaddr, sizeof(szaddr));
@@ -104,9 +104,9 @@ CHttpServer::CHttpServer(CReaderWriter *rw, bool isTls)
 	misHttpResponseFinish = false;
 }
 
-CHttpServer::~CHttpServer()
+CHttpFlvServer::~CHttpFlvServer()
 {
-	logs->debug("######### %s [CHttpServer::~CHttpServer] http enter ",
+	logs->debug("######### %s [CHttpFlvServer::~CHttpFlvServer] http enter ",
 		mremoteAddr.c_str());
 	if (mevLoop)
 	{
@@ -126,7 +126,7 @@ CHttpServer::~CHttpServer()
 	}
 }
 
-void CHttpServer::reset()
+void CHttpFlvServer::reset()
 {
 	//目前只有CHttp反调该函数，这里千万不要调用 mhttp->reset() 否则死循环
 	misHttpResponseFinish = false;
@@ -135,11 +135,11 @@ void CHttpServer::reset()
 	mreferer.clear();
 	misFlvRequest = false;;
 	misM3U8TSRequest = false;
-	logs->debug("######### %s [CHttpServer::reset] http has been reseted",
+	logs->debug("######### %s [CHttpFlvServer::reset] http has been reseted",
 		mremoteAddr.c_str());
 }
 
-int CHttpServer::activateEV(void *base, struct ev_loop *evLoop)
+int CHttpFlvServer::activateEV(void *base, struct ev_loop *evLoop)
 {
 	mbase = base;
 	mevLoop = evLoop;
@@ -158,7 +158,7 @@ int CHttpServer::activateEV(void *base, struct ev_loop *evLoop)
 	return 0;
 }
 
-int CHttpServer::doit()
+int CHttpFlvServer::doit()
 {
 	if (!mhttp->run())
 	{
@@ -167,7 +167,7 @@ int CHttpServer::doit()
 	return CMS_OK;
 }
 
-int CHttpServer::handleEv(bool isRead)
+int CHttpFlvServer::handleEv(bool isRead)
 {
 	if (misStop)
 	{
@@ -186,13 +186,13 @@ int CHttpServer::handleEv(bool isRead)
 	return CMS_OK;
 }
 
-int CHttpServer::handleTimeout()
+int CHttpFlvServer::handleTimeout()
 {
 	{
 		int64 tn = getTimeUnix();
 		if (tn - mtimeoutTick > 30)
 		{
-			logs->error("%s [CHttpServer::handleTimeout] http %s is timeout ***",
+			logs->error("%s [CHttpFlvServer::handleTimeout] http %s is timeout ***",
 				mremoteAddr.c_str(), murl.c_str());
 			return CMS_ERROR;
 		}
@@ -208,13 +208,13 @@ int CHttpServer::handleTimeout()
 	return CMS_OK;
 }
 
-int CHttpServer::stop(std::string reason)
+int CHttpFlvServer::stop(std::string reason)
 {
 	//可能会被调用两次,任务断开时,正常调用一次 reason 为空,
 	//主动断开时,会调用,reason 是调用原因
 	if (!misStop)
 	{
-		logs->info("%s [CHttpServer::stop] http %s stop with reason: %s ***",
+		logs->info("%s [CHttpFlvServer::stop] http %s stop with reason: %s ***",
 			mremoteAddr.c_str(), murl.c_str(), reason.c_str());
 		if (misAddConn)
 		{
@@ -226,27 +226,27 @@ int CHttpServer::stop(std::string reason)
 	return CMS_OK;
 }
 
-std::string CHttpServer::getUrl()
+std::string CHttpFlvServer::getUrl()
 {
 	return murl;
 }
 
-std::string &CHttpServer::getRemoteIP()
+std::string &CHttpFlvServer::getRemoteIP()
 {
 	return mremoteIP;
 }
 
-int CHttpServer::doRead()
+int CHttpFlvServer::doRead()
 {
 	return mhttp->want2Read();
 }
 
-int CHttpServer::doWrite()
+int CHttpFlvServer::doWrite()
 {
 	return mhttp->want2Write();
 }
 
-int CHttpServer::doReadData()
+int CHttpFlvServer::doReadData()
 {
 	if (misDecodeHeader)
 	{
@@ -261,13 +261,13 @@ int CHttpServer::doReadData()
 			if (ret == CMS_ERROR)
 			{
 				//正常逻辑
-				logs->debug("%s [CHttpServer::doReadData] %s http fail,errno=%d,strerrno=%s ***",
+				logs->debug("%s [CHttpFlvServer::doReadData] %s http fail,errno=%d,strerrno=%s ***",
 					mremoteAddr.c_str(), mhttp->getUrl().c_str(), mrw->errnos(), mrw->errnoCode());
 				return CMS_ERROR;
 			}
 			else if (nRead > 0)
 			{
-				logs->debug("%s [CHttpServer::doReadData] %s http illigal,do not support keep-alive connections ***",
+				logs->debug("%s [CHttpFlvServer::doReadData] %s http illigal,do not support keep-alive connections ***",
 					mremoteAddr.c_str(), mhttp->getUrl().c_str());
 			}
 			else if (nRead == 0)
@@ -279,7 +279,7 @@ int CHttpServer::doReadData()
 	return CMS_OK;
 }
 
-int CHttpServer::doDecode()
+int CHttpFlvServer::doDecode()
 {
 	int ret = CMS_OK;
 	if (!misDecodeHeader)
@@ -310,7 +310,7 @@ int CHttpServer::doDecode()
 				strUpgrade == HTTP_HEADER_WEBSOCKET &&
 				strSecWebSocketVersion == HTTP_HEADER_WEBSOCKET_VERSION_NUM))
 			{
-				logs->debug("***** %s [CHttpServer::doDecode] %s websocket http header error *****",
+				logs->debug("***** %s [CHttpFlvServer::doDecode] %s websocket http header error *****",
 					mremoteAddr.c_str(), murl.c_str());
 				return CMS_ERROR;
 			}
@@ -326,11 +326,11 @@ int CHttpServer::doDecode()
 				msecWebSocketProtocol = trim(swp[0], delim);
 			}
 			strSecWebSocketKey += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-			logs->debug("%s [CHttpServer::doDecode] %s websocket make key string %s",
+			logs->debug("%s [CHttpFlvServer::doDecode] %s websocket make key string %s",
 				mremoteAddr.c_str(), murl.c_str(), strSecWebSocketKey.c_str());
 			HASH hash = ::makeHash(strSecWebSocketKey.c_str(), strSecWebSocketKey.length());
 			strSecWebSocketKey = hash2Char(hash.data);
-			logs->debug("%s [CHttpServer::doDecode] %s websocket make string hash %s",
+			logs->debug("%s [CHttpFlvServer::doDecode] %s websocket make string hash %s",
 				mremoteAddr.c_str(), murl.c_str(), strSecWebSocketKey.c_str());
 			std::string strHex;
 			char szCode[21] = { 0 };
@@ -348,14 +348,14 @@ int CHttpServer::doDecode()
 			msecWebSocketAccept = getBase64Encode(strHex); //base64 标准的
 			misWebSocket = true;
 		}
-		logs->info("%s [CHttpServer::doDecode] http request %s",
+		logs->info("%s [CHttpFlvServer::doDecode] http request %s",
 			mremoteAddr.c_str(), murl.c_str());
 		ret = handle();
 	}
 	return ret;
 }
 
-int CHttpServer::handle()
+int CHttpFlvServer::handle()
 {
 	int ret = CMS_OK;
 	do
@@ -394,21 +394,21 @@ int CHttpServer::handle()
 		{
 			break;
 		}
-		logs->warn("***** %s [CHttpServer::handleFlv] http %s unknow request *****",
+		logs->warn("***** %s [CHttpFlvServer::handleFlv] http %s unknow request *****",
 			mremoteAddr.c_str(), murl.c_str());
 		ret = CMS_ERROR;
 	} while (0);
 	return ret;
 }
 
-int CHttpServer::handleCrossDomain(int &ret)
+int CHttpFlvServer::handleCrossDomain(int &ret)
 {
 	if (murl.find("crossdomain.xml") != string::npos)
 	{
 		ret = sendBefore(gCrossDomainRsp.c_str(), gCrossDomainRsp.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleCrossDomain] http %s send header fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleCrossDomain] http %s send header fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -420,14 +420,14 @@ int CHttpServer::handleCrossDomain(int &ret)
 	return 0;
 }
 
-int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
+int	CHttpFlvServer::handleFlv(int &ret, bool isDefault/* = false*/)
 {
 	if (murl.find(".flv") != string::npos || isDefault)
 	{
 		LinkUrl linkUrl;
 		if (!parseUrl(murl, linkUrl))
 		{
-			logs->error("***** %s [CHttpServer::handleFlv] http %s parse url fail *****",
+			logs->error("***** %s [CHttpFlvServer::handleFlv] http %s parse url fail *****",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -436,7 +436,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 		{
 			if (linkUrl.app.empty() || linkUrl.instanceName.empty())
 			{
-				logs->error("*** %s [CHttpServer::handleFlv] http 302 url %s app or instance name should be empty ***",
+				logs->error("*** %s [CHttpFlvServer::handleFlv] http 302 url %s app or instance name should be empty ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -446,11 +446,11 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->info("%s [CHttpServer::handleFlv] http 302 ip url %s ",
+			logs->info("%s [CHttpFlvServer::handleFlv] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
-				logs->error("*** %s [CHttpServer::handleFlv] http 302 url %s parse fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleFlv] http 302 url %s parse fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -489,7 +489,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 		// 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 		// 		if (ret < 0)
 		// 		{
-		// 			logs->error("*** %s [CHttpServer::handleFlv] http %s send header fail ***",
+		// 			logs->error("*** %s [CHttpFlvServer::handleFlv] http %s send header fail ***",
 		// 				mremoteAddr.c_str(), murl.c_str());
 		// 			ret = CMS_ERROR;
 		// 			return CMS_ERROR;
@@ -526,7 +526,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 		ret = sendBefore(strFlvHeader.c_str(), strFlvHeader.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleFlv] http %s send body fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleFlv] http %s send body fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -534,7 +534,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 		ret = doTransmission();
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleFlv] http %s doTransmission fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleFlv] http %s doTransmission fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -545,7 +545,7 @@ int	CHttpServer::handleFlv(int &ret, bool isDefault/* = false*/)
 	return 0;
 }
 
-int CHttpServer::handleQuery(int &ret)
+int CHttpFlvServer::handleQuery(int &ret)
 {
 	if (murl.find("/query/info") != string::npos)
 	{
@@ -580,7 +580,7 @@ int CHttpServer::handleQuery(int &ret)
 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleQuery] http %s send header fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleQuery] http %s send header fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -588,7 +588,7 @@ int CHttpServer::handleQuery(int &ret)
 		ret = sendBefore(strDump.c_str(), strDump.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleQuery] http %s send body fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleQuery] http %s send body fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -600,7 +600,7 @@ int CHttpServer::handleQuery(int &ret)
 	return 0;
 }
 
-int CHttpServer::handleMemCheck(int &ret)
+int CHttpFlvServer::handleMemCheck(int &ret)
 {
 	if (murl.find("/mem/check") != string::npos)
 	{
@@ -639,7 +639,7 @@ int CHttpServer::handleMemCheck(int &ret)
 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleMemCheck] http %s send header fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleMemCheck] http %s send header fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -649,7 +649,7 @@ int CHttpServer::handleMemCheck(int &ret)
 			ret = sendBefore(strDump.c_str(), strDump.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleMemCheck] http %s send body fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleMemCheck] http %s send body fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -662,7 +662,7 @@ int CHttpServer::handleMemCheck(int &ret)
 	return 0;
 }
 
-int  CHttpServer::handleHlsM3U8(int &ret)
+int  CHttpFlvServer::handleHlsM3U8(int &ret)
 {
 	static char pattern[] = "[0-9A-Za-z_]+/online.m3u8";
 	size_t nmatch = 1;
@@ -673,13 +673,13 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 	regfree(&reg);
 	if (r != REG_NOMATCH)
 	{
-		logs->debug(" %s [CHttpServer::handleHlsM3U8] http %s is m3u8 request.",
+		logs->debug(" %s [CHttpFlvServer::handleHlsM3U8] http %s is m3u8 request.",
 			mremoteAddr.c_str(), murl.c_str());
 		misM3U8TSRequest = true;
 		LinkUrl linkUrl;
 		if (!parseUrl(murl, linkUrl))
 		{
-			logs->error("***** %s [CHttpServer::handleHlsM3U8] http %s parse url fail *****",
+			logs->error("***** %s [CHttpFlvServer::handleHlsM3U8] http %s parse url fail *****",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -691,11 +691,11 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->info(">>> %s [CHttpServer::handleHlsM3U8] http 302 ip url %s ",
+			logs->info(">>> %s [CHttpFlvServer::handleHlsM3U8] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
-				logs->error("*** %s [CHttpServer::handleHlsM3U8] http 302 url %s parse fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsM3U8] http 302 url %s parse fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -717,7 +717,7 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 		int ret = CMissionMgr::instance()->readHlsM3U8(mHashIdx, mHash, murl, mlocalAddr, outData, outTT);
 		if (ret > 0)
 		{
-			logs->debug(">>> %s [CHttpServer::handleHlsM3U8] %s ,local addr %s,m3u8\n%s",
+			logs->debug(">>> %s [CHttpFlvServer::handleHlsM3U8] %s ,local addr %s,m3u8\n%s",
 				mremoteAddr.c_str(), murl.c_str(), mlocalAddr.c_str(), outData.c_str());
 
 			char szLength[20] = { 0 };
@@ -735,7 +735,7 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 			ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleHlsM3U8] http %s send header fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsM3U8] http %s send header fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -743,7 +743,7 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 			ret = sendBefore(outData.c_str(), outData.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleHlsM3U8] http %s send body fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsM3U8] http %s send body fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -762,7 +762,7 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 			ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleHlsM3U8] http %s send header fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsM3U8] http %s send header fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -776,7 +776,7 @@ int  CHttpServer::handleHlsM3U8(int &ret)
 	return 0;
 }
 
-int  CHttpServer::handleHlsTS(int &ret)
+int  CHttpFlvServer::handleHlsTS(int &ret)
 {
 	static char pattern[] = "[0-9A-Za-z]+/[0-9]+.ts";
 	size_t nmatch = 1;
@@ -787,13 +787,13 @@ int  CHttpServer::handleHlsTS(int &ret)
 	regfree(&reg);
 	if (r != REG_NOMATCH)
 	{
-		logs->debug(" %s [CHttpServer::handleHlsTS] http %s is ts request.",
+		logs->debug(" %s [CHttpFlvServer::handleHlsTS] http %s is ts request.",
 			mremoteAddr.c_str(), murl.c_str());
 		misM3U8TSRequest = true;
 		LinkUrl linkUrl;
 		if (!parseUrl(murl, linkUrl))
 		{
-			logs->error("***** %s [CHttpServer::handleHlsTS] http %s parse url fail *****",
+			logs->error("***** %s [CHttpFlvServer::handleHlsTS] http %s parse url fail *****",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -805,11 +805,11 @@ int  CHttpServer::handleHlsTS(int &ret)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->info(">>> %s [CHttpServer::handleHlsTS] http 302 ip url %s ",
+			logs->info(">>> %s [CHttpFlvServer::handleHlsTS] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
-				logs->error("*** %s [CHttpServer::handleHlsTS] http 302 url %s parse fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsTS] http 302 url %s parse fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -831,7 +831,7 @@ int  CHttpServer::handleHlsTS(int &ret)
 		{
 			char szLength[20] = { 0 };
 			snprintf(szLength, sizeof(szLength), "%d", ss->msliceLen);
-			logs->debug(" %s [CHttpServer::handleHlsTS] http %s ts size %d",
+			logs->debug(" %s [CHttpFlvServer::handleHlsTS] http %s ts size %d",
 				mremoteAddr.c_str(), murl.c_str(), ss->msliceLen);
 			mhttp->httpResponse()->setStatus(HTTP_CODE_200, "OK");
 			mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_SERVER, APP_NAME);
@@ -845,7 +845,7 @@ int  CHttpServer::handleHlsTS(int &ret)
 			ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleHlsTS] http %s send header fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsTS] http %s send header fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -872,7 +872,7 @@ int  CHttpServer::handleHlsTS(int &ret)
 							if (ret < 0)
 							{
 								isError = true;
-								logs->error("*** %s [CHttpServer::handleHlsTS] http %s send header fail ***",
+								logs->error("*** %s [CHttpFlvServer::handleHlsTS] http %s send header fail ***",
 									mremoteAddr.c_str(), murl.c_str());
 								ret = CMS_ERROR;
 							}
@@ -902,7 +902,7 @@ int  CHttpServer::handleHlsTS(int &ret)
 			ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 			if (ret < 0)
 			{
-				logs->error("*** %s [CHttpServer::handleHlsTS] http %s send header fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleHlsTS] http %s send header fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -916,7 +916,7 @@ int  CHttpServer::handleHlsTS(int &ret)
 	return 0;
 }
 
-int CHttpServer::handleTsStream(int &ret)
+int CHttpFlvServer::handleTsStream(int &ret)
 {
 	static char pattern[] = "[0-9A-Za-z]+/ts/[0-9A-Za-z]+.ts";
 	size_t nmatch = 1;
@@ -927,19 +927,19 @@ int CHttpServer::handleTsStream(int &ret)
 	regfree(&reg);
 	if (r != REG_NOMATCH)
 	{
-		logs->debug(" %s [CHttpServer::handleTsStream] ori http %s is ts stream request.",
+		logs->debug(" %s [CHttpFlvServer::handleTsStream] ori http %s is ts stream request.",
 			mremoteAddr.c_str(), murl.c_str());
 
 		misTsStreamRequest = true;
 		murl = murl.replace(murl.find("/ts/"), 4, "/");
 		murl = murl.replace(murl.find(".ts"), 3, "");
 
-		logs->debug(" %s [CHttpServer::handleTsStream] new http %s is ts stream request.",
+		logs->debug(" %s [CHttpFlvServer::handleTsStream] new http %s is ts stream request.",
 			mremoteAddr.c_str(), murl.c_str());
 		LinkUrl linkUrl;
 		if (!parseUrl(murl, linkUrl))
 		{
-			logs->error("***** %s [CHttpServer::handleTsStream] http %s parse url fail *****",
+			logs->error("***** %s [CHttpFlvServer::handleTsStream] http %s parse url fail *****",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -951,11 +951,11 @@ int CHttpServer::handleTsStream(int &ret)
 			murl += linkUrl.app;
 			murl += "/";
 			murl += linkUrl.instanceName;
-			logs->info(">>> %s [CHttpServer::handleTsStream] http 302 ip url %s ",
+			logs->info(">>> %s [CHttpFlvServer::handleTsStream] http 302 ip url %s ",
 				mremoteAddr.c_str(), murl.c_str());
 			if (!parseUrl(murl, linkUrl))
 			{
-				logs->error("*** %s [CHttpServer::handleTsStream] http 302 url %s parse fail ***",
+				logs->error("*** %s [CHttpFlvServer::handleTsStream] http 302 url %s parse fail ***",
 					mremoteAddr.c_str(), murl.c_str());
 				ret = CMS_ERROR;
 				return CMS_ERROR;
@@ -996,7 +996,7 @@ int CHttpServer::handleTsStream(int &ret)
 		ret = writeRspHttpHeader(strRspHeader.c_str(), strRspHeader.length());
 		if (ret < 0)
 		{
-			logs->error("*** %s [CHttpServer::handleTsStream] http %s send header fail ***",
+			logs->error("*** %s [CHttpFlvServer::handleTsStream] http %s send header fail ***",
 				mremoteAddr.c_str(), murl.c_str());
 			ret = CMS_ERROR;
 			return CMS_ERROR;
@@ -1007,19 +1007,19 @@ int CHttpServer::handleTsStream(int &ret)
 	return 0;
 }
 
-void CHttpServer::setHttpRspLastModify(time_t tt)
+void CHttpFlvServer::setHttpRspLastModify(time_t tt)
 {
 	cmsRFC1123(mpublicShortBuf, tt);
 	mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_LAST_MODIFIED, mpublicShortBuf);
 }
 
-void CHttpServer::setHttpRspDate()
+void CHttpFlvServer::setHttpRspDate()
 {
 	cmsRFC1123(mpublicShortBuf, time(NULL));
 	mhttp->httpResponse()->setHeader(HTTP_HEADER_RSP_DATE, mpublicShortBuf);
 }
 
-int CHttpServer::doTransmission()
+int CHttpFlvServer::doTransmission()
 {
 	int ret = 1;
 	if (misFlvRequest)
@@ -1043,7 +1043,7 @@ int CHttpServer::doTransmission()
 		ret = CMissionMgr::instance()->readTsStream(mHashIdx, mHash, mtsStreamIdx, &ss);
 		if (ret > 0)
 		{
-			logs->debug(" %s [CHttpServer::handleTsStream] ori http %s ts stream cur idx=%lld, next idx=%lld, ts duration=%lld.",
+			logs->debug(" %s [CHttpFlvServer::handleTsStream] ori http %s ts stream cur idx=%lld, next idx=%lld, ts duration=%lld.",
 				mremoteAddr.c_str(),
 				murl.c_str(),
 				mtsStreamIdx,
@@ -1072,7 +1072,7 @@ int CHttpServer::doTransmission()
 							if (ret < 0)
 							{
 								isError = true;
-								logs->error("*** %s [CHttpServer::doTransmission] http %s ts stream send fail ***",
+								logs->error("*** %s [CHttpFlvServer::doTransmission] http %s ts stream send fail ***",
 									mremoteAddr.c_str(), murl.c_str());
 								ret = CMS_ERROR;
 							}
@@ -1100,12 +1100,12 @@ int CHttpServer::doTransmission()
 	return ret;
 }
 
-int CHttpServer::writeRspHttpHeader(const char *data, int len)
+int CHttpFlvServer::writeRspHttpHeader(const char *data, int len)
 {
 	return mhttp->write(data, len);
 }
 
-int CHttpServer::sendBefore(const char *data, int len)
+int CHttpFlvServer::sendBefore(const char *data, int len)
 {
 	if (misWebSocket)
 	{
@@ -1174,36 +1174,36 @@ int CHttpServer::sendBefore(const char *data, int len)
 	return CMS_OK;
 }
 
-bool CHttpServer::isFinish()
+bool CHttpFlvServer::isFinish()
 {
 	return misHttpResponseFinish;
 }
 
-bool CHttpServer::isWebsocket()
+bool CHttpFlvServer::isWebsocket()
 {
 	return misWebSocket;
 }
 
-void CHttpServer::makeHash()
+void CHttpFlvServer::makeHash()
 {
 	mHash = makeUrlHash(murl);
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-	logs->info("%s [CHttpServer::makeHash] hash url %s,hash=%s",
+	logs->info("%s [CHttpFlvServer::makeHash] hash url %s,hash=%s",
 		mremoteAddr.c_str(), readHashUrl(murl).c_str(), mstrHash.c_str());
 	mflvTrans->setHash(mHashIdx, mHash);
 }
 
-void CHttpServer::makeHash(std::string url)
+void CHttpFlvServer::makeHash(std::string url)
 {
 	mHash = makeUrlHash(url);
 	mstrHash = hash2Char(mHash.data);
 	mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-	logs->info("%s [CHttpServer::makeHash] 1 hash url %s,hash=%s",
+	logs->info("%s [CHttpFlvServer::makeHash] 1 hash url %s,hash=%s",
 		mremoteAddr.c_str(), readHashUrl(url).c_str(), mstrHash.c_str());
 }
 
-void CHttpServer::tryCreateTask()
+void CHttpFlvServer::tryCreateTask()
 {
 	if (!CTaskMgr::instance()->pullTaskIsExist(mHash))
 	{
@@ -1211,7 +1211,7 @@ void CHttpServer::tryCreateTask()
 	}
 }
 
-void CHttpServer::down8upBytes()
+void CHttpFlvServer::down8upBytes()
 {
 	if (misFlvRequest)
 	{
@@ -1238,7 +1238,7 @@ void CHttpServer::down8upBytes()
 			mxSecTick++;
 			if (((mxSecTick + (0x0F - (CMS_SPEED_DURATION >= 0x0F ? 10 : CMS_SPEED_DURATION) + 1)) & 0x0F) == 0)
 			{
-				logs->info("%s [CHttpServer::down8upBytes] %s download speed %s,upload speed %s",
+				logs->info("%s [CHttpFlvServer::down8upBytes] %s download speed %s,upload speed %s",
 					mremoteAddr.c_str(), murl.c_str(),
 					parseSpeed8Mem(mxSecdownBytes / mxSecTick, true).c_str(),
 					parseSpeed8Mem(mxSecUpBytes / mxSecTick, true).c_str());
@@ -1250,7 +1250,7 @@ void CHttpServer::down8upBytes()
 	}
 }
 
-CReaderWriter *CHttpServer::rwConn()
+CReaderWriter *CHttpFlvServer::rwConn()
 {
 	return mrw;
 }

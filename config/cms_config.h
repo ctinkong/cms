@@ -97,6 +97,8 @@ public:
 	CUpperAddr();
 	~CUpperAddr();
 
+	void        addQueryApi(std::string url);
+	std::string getQueryApi();
 	void		addPull(std::string addr);
 	std::string getPull(unsigned int i);
 	void		addPush(std::string addr);
@@ -104,7 +106,7 @@ public:
 private:
 	std::vector<std::string> mvPullAddr;
 	std::vector<std::string> mvPushAddr;
-
+	std::string mHttpQueryApi;
 };
 
 class CUdpFlag
@@ -140,7 +142,9 @@ public:
 		int   tsDuration,
 		int   tsNum,
 		int   tsSaveNum,
-		bool  isOpenCover);
+		bool  isOpenCover,
+		bool  isClosePullTask,
+		bool  isClosePushTask);
 	int   getFirstPlaySkipMilSecond();
 	bool  isResetStreamTimestamp();
 	bool  isNoTimeout();
@@ -153,6 +157,8 @@ public:
 	int   getTsNum();
 	int   getTsSaveNum();
 	bool  getCover();
+	bool  isClosePullTask();
+	bool  isClosePushTask();
 private:
 	int64 mllCacheTT;				//缓存时长 单位毫秒	
 	bool  misResetStreamTimestamp;	//首播重设时间戳
@@ -166,6 +172,8 @@ private:
 	int   miLiveStreamTimeout;		//直播流超时时间 单位毫秒
 	int   miNoHashTimeout;			//播放任务不存在超时时间 单位毫秒
 	bool  misOpenCover;				//新的推流任务覆盖旧流
+	bool  misClosePullTask;			//是否关闭创建拉流任务
+	bool  misClosePushTask;			//是否关闭创建推流任务
 };
 
 class CWorkerCfg
@@ -188,6 +196,7 @@ public:
 	static CConfig *instance();
 	static void freeInstance();
 	bool		init(const char *configPath);
+
 	CAddr		*addrHttp();
 	CAddr		*addrHttps();
 	CAddr		*addrRtmp();
@@ -207,8 +216,7 @@ private:
 	bool parseLogJson(cJSON *root, const char *configPath);
 	bool parseMediaJson(cJSON *root, const char *configPath);
 
-	static CConfig *minstance;
-
+	static CConfig *minstance;	
 	CAddr	   *mHttp;
 	CAddr	   *mHttps;
 	CAddr	   *mRtmp;

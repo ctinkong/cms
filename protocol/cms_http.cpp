@@ -37,6 +37,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define WebSocketClose		8
 #define mapStrStrIterator std::map<std::string,std::string>::iterator 
 
+std::string &str2Lower(std::string &value)
+{
+	for (string::iterator iterKey = value.begin(); iterKey != value.end(); iterKey++)
+	{
+		if (*iterKey <= 'Z' && *iterKey >= 'A')
+		{
+			*iterKey += 32;
+		}
+	}
+	return value;
+}
+
 bool parseHttpHeader(const char *buf, int len, map<string, string> &mapKeyValue)
 {
 	bool bSucc = true;
@@ -96,15 +108,9 @@ bool parseHttpHeader(const char *buf, int len, map<string, string> &mapKeyValue)
 					if (!strKey.empty() && !strValue.empty())
 					{
 						// key lower case
-						for (string::iterator iterKey = strKey.begin(); iterKey != strKey.end(); iterKey++)
-						{
-							if (*iterKey <= 'Z' && *iterKey >= 'A')
-							{
-								*iterKey += 32;
-							}
-						}
-
+						str2Lower(strKey);
 						mapKeyValue[strKey] = strValue;
+						logs->debug("%s: %s", strKey.c_str(), strValue.c_str());
 					}
 					strKey.clear();
 					strValue.clear();
@@ -250,6 +256,7 @@ std::string Request::readRequest()
 		strStream << it->first << ": " << it->second << "\r\n";
 	}
 	strStream << "\r\n";
+	logs->debug("[Request::readRequest] \n%s", strStream.str().c_str());
 	return strStream.str();
 }
 
@@ -329,6 +336,7 @@ Response::~Response()
 
 std::string	Response::getHeader(std::string key)
 {
+	str2Lower(key);
 	mapStrStrIterator it = mmapHeader.find(key);
 	if (it != mmapHeader.end())
 	{
@@ -456,12 +464,14 @@ CHttp::CHttp(Conn *super, CBufferReader *rd,
 	mbyteWrite = new CByteReaderWriter(DEFAULT_BUFFER_SIZE / 2);
 	msendRequestLen = 0;
 	misReadReuqest = false;
+	misFinish = false;
 	misChunked = false;
 	mchunkedLen = 0;
+	mcontentLen = 0;
 	misReadChunkedLen = false;
 	mbyteRead = NULL;
 	mchunkedReadrRN = 0;
-	msProtocol = "http-flv";
+	msProtocol = "http";
 	mwebsocketLen = 0;
 	mwebsocketIsMask = false;
 	mwebsocketMask[0] = 0;
@@ -527,7 +537,7 @@ int CHttp::want2Read()
 		int  len = 1;
 		if (misTls)
 		{
-			ret = mssl->read(&p, len);
+			ret = mssl->readFull(&p, len);
 			if (ret < 0)
 			{
 				return CMS_ERROR;
@@ -837,6 +847,21 @@ int CHttp::want2Write()
 			}
 			msendRequestLen += len;
 		}
+		else
+		{
+			//发送请求数据 如果有
+			ret = msuper->doTransmission();
+			if (ret < 0)
+			{
+				logs->error("***** %s [CHttp::want2Write] %s doTransmission fail *****",
+					mremoteAddr.c_str(), moriUrl.c_str());
+				return CMS_ERROR;
+			}
+			if (ret == 0 || ret == 2)
+			{
+			}
+			msuper->down8upBytes();
+		}
 	}
 	else
 	{
@@ -914,7 +939,7 @@ void CHttp::reset()
 	mstrRequestHeader.clear();
 }
 
-int CHttp::read(char **data, int &len)
+int CHttp::readFull(char **data, int &len)
 {
 	assert(len > 0);
 	int ret = 0;
@@ -926,6 +951,10 @@ int CHttp::read(char **data, int &len)
 			ret = readChunkedRN();
 			if (ret <= 0)
 			{
+				if (ret == 0)
+				{
+					misFinish = true;
+				}
 				return ret;
 			}
 			assert(mchunkedReadrRN == 2);
@@ -944,7 +973,7 @@ int CHttp::read(char **data, int &len)
 				max = mchunkedLen > 1024 * 8 ? 1024 * 8 : mchunkedLen;
 				if (misTls)
 				{
-					ret = mssl->read(&p, max);
+					ret = mssl->readFull(&p, max);
 					if (ret < 0)
 					{
 						return -1;
@@ -997,7 +1026,7 @@ int CHttp::read(char **data, int &len)
 	{
 		if (misTls)
 		{
-			ret = mssl->read(data, len);
+			ret = mssl->readFull(data, len);
 			if (ret < 0)
 			{
 				return -1;
@@ -1019,6 +1048,150 @@ int CHttp::read(char **data, int &len)
 			}
 			*data = mrdBuff->readBytes(len);
 		}
+		if (len > 0)
+		{
+			logs->debug("%s [CHttp::want2Write] read len %d left %d",
+				moriUrl.c_str(), len, mcontentLen - len);
+			mcontentLen -= len;
+			if (mcontentLen <= 0)
+			{
+				misFinish = true;
+			}
+		}
+	}
+	return len;
+}
+
+int CHttp::read(char **data, int len)
+{
+	assert(len > 0);
+	int ret = 0;
+	if (misChunked)
+	{
+		if (!misReadChunkedLen)
+		{
+			//chunk size
+			ret = readChunkedRN();
+			if (ret <= 0)
+			{
+				if (ret == 0)
+				{
+					misFinish = true;
+				}
+				return ret;
+			}
+			assert(mchunkedReadrRN == 2);
+			mchunkedReadrRN = 0;
+			misReadChunkedLen = true;
+			mchunkedLen = hex2int64(mchunkBytesRN.c_str());
+			mchunkBytesRN.clear();
+		}
+		if (misReadChunkedLen)
+		{
+			//chunk body
+			char *p;
+			int max;
+			while (mchunkedLen > 0)
+			{
+				max = mchunkedLen > 1024 * 8 ? 1024 * 8 : mchunkedLen;
+				if (misTls)
+				{
+					ret = mssl->readFull(&p, max);
+					if (ret < 0)
+					{
+						return -1;
+					}
+					else if (ret == 0)
+					{
+						return 0;
+					}
+				}
+				else
+				{
+					if (mrdBuff->size() < max && mrdBuff->grow(max) == CMS_ERROR)
+					{
+						return -1;
+					}
+					if (mrdBuff->size() < max)
+					{
+						return 0;
+					}
+					p = mrdBuff->readBytes(max);
+				}
+				mbyteRead->writeBytes(p, max);
+				mchunkedLen -= max;
+			}
+			if (mchunkedLen == 0)
+			{
+				//chunked footer;
+				ret = readChunkedRN();
+				if (ret <= 0)
+				{
+					return ret;
+				}
+				assert(mchunkedReadrRN == 2);
+				mchunkedReadrRN = 0;
+				misReadChunkedLen = false;
+				mchunkBytesRN.clear();
+			}
+		}
+		if (mbyteRead->size() > len)
+		{
+			*data = mbyteRead->readBytes(len);
+			return len;
+		}
+		else if (mbyteRead->size() < len)
+		{
+			len = mbyteRead->size();
+			*data = mbyteRead->readBytes(len);
+			return len;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		if (misTls)
+		{
+			ret = mssl->read(data, len);
+			if (ret < 0)
+			{
+				return -1;
+			}
+			else if (ret == 0)
+			{
+				return 0;
+			}
+			len = ret;
+		}
+		else
+		{
+			if (mrdBuff->size() < len && mrdBuff->grow(len) == CMS_ERROR)
+			{
+				return -1;
+			}
+			if (mrdBuff->size() == 0)
+			{
+				return 0;
+			}
+			if (mrdBuff->size() < len)
+			{
+				len = mrdBuff->size();
+			}
+			*data = mrdBuff->readBytes(len);
+		}
+		if (len > 0)
+		{
+			logs->debug("%s [CHttp::want2Write] read len %d left %d",
+				moriUrl.c_str(), len, mcontentLen - len);
+			mcontentLen -= len;
+			if (mcontentLen <= 0)
+			{
+				misFinish = true;
+			}
+		}
 	}
 	return len;
 }
@@ -1033,7 +1206,7 @@ int CHttp::readChunkedRN()
 		int  max = 1;
 		if (misTls)
 		{
-			ret = mssl->read(&p, max);
+			ret = mssl->readFull(&p, max);
 			if (ret < 0)
 			{
 				ret = -1;
@@ -1158,6 +1331,11 @@ void CHttp::setChunked()
 {
 	misChunked = true;
 	mbyteRead = new CByteReaderWriter();
+}
+
+void CHttp::setContentLength(int64 len)
+{
+	mcontentLen = len;
 }
 
 int CHttp::sendMetaData(Slice *s)

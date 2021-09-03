@@ -400,6 +400,16 @@ CUpperAddr::~CUpperAddr()
 
 }
 
+void CUpperAddr::addQueryApi(std::string url)
+{
+	mHttpQueryApi = url;
+}
+
+std::string CUpperAddr::getQueryApi()
+{
+	return mHttpQueryApi;
+}
+
 void CUpperAddr::addPull(std::string addr)
 {
 	mvPullAddr.push_back(addr);
@@ -508,6 +518,8 @@ CMedia::CMedia()
 	mtsNum = 3;
 	mtsSaveNum = 5;
 	misOpenCover = false;
+	misClosePullTask = false;
+	misClosePushTask = false;
 }
 
 CMedia::~CMedia()
@@ -526,7 +538,9 @@ void CMedia::set(int iFirstPlaySkipMilSecond,
 	int   tsDuration,
 	int   tsNum,
 	int   tsSaveNum,
-	bool  isOpenCover)
+	bool  isOpenCover,
+	bool  isClosePullTask,
+	bool  isClosePushTask)
 {
 	miFirstPlaySkipMilSecond = iFirstPlaySkipMilSecond;
 	misResetStreamTimestamp = isResetStreamTimestamp;
@@ -601,6 +615,16 @@ int CMedia::getTsSaveNum()
 bool CMedia::getCover()
 {
 	return misOpenCover;
+}
+
+bool CMedia::isClosePullTask()
+{
+	return misClosePullTask;
+}
+
+bool CMedia::isClosePushTask()
+{
+	return misClosePushTask;
 }
 
 CConfig *CConfig::minstance = NULL;
@@ -853,6 +877,19 @@ bool CConfig::parseNextHopJson(cJSON *root, const char *configPath)
 				return false;
 			}
 		}
+		else
+		{
+			cJSON *queryApi = cJSON_GetObjectItem(upper, "query_api");
+			if (queryApi != NULL && queryApi->type == cJSON_String)
+			{
+				muaAddr->addQueryApi(queryApi->valuestring);
+			}
+			else
+			{
+				printf("***** upper query_api config is not string *****\n");
+				return false;
+			}
+		}
 
 		//push addr
 		cJSON *push = cJSON_GetObjectItem(upper, "push");
@@ -879,6 +916,7 @@ bool CConfig::parseNextHopJson(cJSON *root, const char *configPath)
 			}
 		}
 	}
+
 	return true;
 }
 
@@ -1143,6 +1181,8 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 	int   tsNum = 3;
 	int   tsSaveNum = 5;
 	bool  isOpenCover = false;
+	bool  isClosePullTask = false;
+	bool  isClosePushTask = false;
 	cJSON *T = cJSON_GetObjectItem(media, "first_play_milsecond");
 	if (T != NULL && T->type != cJSON_Number)
 	{
@@ -1326,6 +1366,35 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 			isOpenCover = true;
 		}
 	}
+	//关闭拉流推流标志
+	T = cJSON_GetObjectItem(media, "close_pull_task");
+	if (T != NULL && T->type != cJSON_True && T->type != cJSON_False)
+	{
+		printf("*** [CConfig::init] config file %s media term close_pull_task illegal  ***\n",
+			configPath);
+		return false;
+	}
+	if (T)
+	{
+		if (T->type == cJSON_True)
+		{
+			isClosePullTask = true;
+		}
+	}
+	T = cJSON_GetObjectItem(media, "close_push_task");
+	if (T != NULL && T->type != cJSON_True && T->type != cJSON_False)
+	{
+		printf("*** [CConfig::init] config file %s media term close_push_task illegal  ***\n",
+			configPath);
+		return false;
+	}
+	if (T)
+	{
+		if (T->type == cJSON_True)
+		{
+			isClosePushTask = true;
+		}
+	}
 
 	printf("config [media]::: "
 		"\n\tfirstPlaySkipMilSecond=%d "
@@ -1339,7 +1408,9 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		"\n\ttsDuradion=%d"
 		"\n\ttsNum=%d "
 		"\n\ttsSaveNum=%d"
-		"\n\topenCover=%s\n",
+		"\n\topenCover=%s"
+		"\n\tclosePullTask=%s"
+		"\n\tclosePushTask=%s\n",
 		iFirstPlaySkipMilSecond,
 		isResetStreamTimestamp ? "true" : "false",
 		isNoTimeout ? "true" : "false",
@@ -1351,7 +1422,9 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		tsDuration,
 		tsNum,
 		tsSaveNum,
-		isOpenCover ? "true" : "false");
+		isOpenCover ? "true" : "false",
+		isClosePullTask ? "true" : "false",
+		isClosePushTask ? "true" : "false");
 
 	mmedia->set(iFirstPlaySkipMilSecond,
 		isResetStreamTimestamp,
@@ -1364,7 +1437,9 @@ bool CConfig::parseMediaJson(cJSON *root, const char *configPath)
 		tsDuration,
 		tsNum,
 		tsSaveNum,
-		isOpenCover);
+		isOpenCover,
+		isClosePullTask,
+		isClosePushTask);
 	return true;
 }
 

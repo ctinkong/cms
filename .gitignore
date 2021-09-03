@@ -1,0 +1,5 @@
+cms/.vs
+Debug
+Release
+bin
+*.o

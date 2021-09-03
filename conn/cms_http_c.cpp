@@ -38,7 +38,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mem/cms_mf_mem.h>
 #include <ts/cms_hls_mgr.h>
 
-ChttpClient::ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std::string oriUrl,
+CHttpFlvClient::CHttpFlvClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std::string oriUrl,
 	std::string refer, bool isTls)
 {
 	char remote[23] = { 0 };
@@ -108,7 +108,7 @@ ChttpClient::ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std
 			mHost = linkUrl.host;
 		}
 	}
-	std::string modeName = "ChttpClient";
+	std::string modeName = "CHttpFlvClient";
 	mflvPump = new CFlvPump(this, mHash, mHashIdx, mremoteAddr, modeName, murl);
 
 #ifdef __CMS_CYCLE_MEM__
@@ -118,9 +118,9 @@ ChttpClient::ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std
 	initMediaConfig();
 }
 
-ChttpClient::~ChttpClient()
+CHttpFlvClient::~CHttpFlvClient()
 {
-	logs->debug("######### %s [ChttpClient::~ChttpClient] http enter ",
+	logs->debug("######### %s [CHttpFlvClient::~CHttpFlvClient] http enter ",
 		mremoteAddr.c_str());
 	if (mevLoop)
 	{
@@ -150,7 +150,7 @@ ChttpClient::~ChttpClient()
 	}
 }
 
-void ChttpClient::initMediaConfig()
+void CHttpFlvClient::initMediaConfig()
 {
 	misCreateHls = false;
 	miFirstPlaySkipMilSecond = CConfig::instance()->media()->getFirstPlaySkipMilSecond();
@@ -166,7 +166,7 @@ void ChttpClient::initMediaConfig()
 	mtsSaveNum = CConfig::instance()->media()->getTsSaveNum();
 }
 
-int ChttpClient::activateEV(void *base, struct ev_loop *evLoop)
+int CHttpFlvClient::activateEV(void *base, struct ev_loop *evLoop)
 {
 	mbase = base;
 	mevLoop = evLoop;
@@ -185,7 +185,7 @@ int ChttpClient::activateEV(void *base, struct ev_loop *evLoop)
 	return 0;
 }
 
-int ChttpClient::doit()
+int CHttpFlvClient::doit()
 {
 	if (!mhttp->run())
 	{
@@ -193,14 +193,14 @@ int ChttpClient::doit()
 	}
 	if (!CTaskMgr::instance()->pullTaskAdd(mHash, this))
 	{
-		logs->debug("***%s [ChttpClient::doit] http %s task is exist ***",
+		logs->debug("***%s [CHttpFlvClient::doit] http %s task is exist ***",
 			mremoteAddr.c_str(), murl.c_str());
 		return CMS_ERROR;
 	}
 	return CMS_OK;
 }
 
-int ChttpClient::handleEv(bool isRead)
+int CHttpFlvClient::handleEv(bool isRead)
 {
 	if (misStop)
 	{
@@ -219,13 +219,13 @@ int ChttpClient::handleEv(bool isRead)
 	return CMS_OK;
 }
 
-int ChttpClient::handleTimeout()
+int CHttpFlvClient::handleTimeout()
 {
 	{
 		int64 tn = getTimeUnix();
 		if (tn - mtimeoutTick > 30)
 		{
-			logs->error("%s [ChttpClient::handleTimeout] http %s is timeout ***",
+			logs->error("%s [CHttpFlvClient::handleTimeout] http %s is timeout ***",
 				mremoteAddr.c_str(), murl.c_str());
 			return CMS_ERROR;
 		}
@@ -241,11 +241,11 @@ int ChttpClient::handleTimeout()
 	return CMS_OK;
 }
 
-int ChttpClient::stop(std::string reason)
+int CHttpFlvClient::stop(std::string reason)
 {
 	//可能会被调用两次,任务断开时,正常调用一次 reason 为空,
 	//主动断开时,会调用,reason 是调用原因
-	logs->debug("%s [ChttpClient::stop] http %s has been stop, reason %s ",
+	logs->debug("%s [CHttpFlvClient::stop] http %s has been stop, reason %s ",
 		mremoteAddr.c_str(), murl.c_str(), reason.c_str());
 	if (!misStop)
 	{
@@ -280,29 +280,29 @@ int ChttpClient::stop(std::string reason)
 	if (misCreateHls)
 	{
 		CMissionMgr::instance()->destroy(mHashIdx, mHash);
-		logs->debug("%s [ChttpClient::stop] destroy hls, url %s",
+		logs->debug("%s [CHttpFlvClient::stop] destroy hls, url %s",
 			mremoteAddr.c_str(),
 			murl.c_str());
 	}
 	return CMS_OK;
 }
 
-std::string ChttpClient::getUrl()
+std::string CHttpFlvClient::getUrl()
 {
 	return murl;
 }
 
-std::string ChttpClient::getPushUrl()
+std::string CHttpFlvClient::getPushUrl()
 {
 	return "";
 }
 
-std::string &ChttpClient::getRemoteIP()
+std::string &CHttpFlvClient::getRemoteIP()
 {
 	return mremoteIP;
 }
 
-int ChttpClient::doDecode()
+int CHttpFlvClient::doDecode()
 {
 	int ret = CMS_OK;
 	if (!misDecodeHeader)
@@ -325,14 +325,14 @@ int ChttpClient::doDecode()
 			//redirect
 			misRedirect = true;
 			mredirectUrl = mhttp->httpResponse()->getHeader(HTTP_HEADER_LOCATION);
-			logs->info("%s [ChttpClient::doDecode] http %s code %d redirect %s ",
+			logs->info("%s [CHttpFlvClient::doDecode] http %s code %d redirect %s ",
 				mremoteAddr.c_str(), moriUrl.c_str(), mhttp->httpResponse()->getStatusCode(), mredirectUrl.c_str());
 			ret = CMS_ERROR;
 		}
 		else
 		{
 			//error
-			logs->error("%s [ChttpClient::doDecode] http %s code %d rsp %s ***",
+			logs->error("%s [CHttpFlvClient::doDecode] http %s code %d rsp %s ***",
 				mremoteAddr.c_str(), moriUrl.c_str(), mhttp->httpResponse()->getStatusCode(),
 				mhttp->httpResponse()->getResponse().c_str());
 			ret = CMS_ERROR;
@@ -341,7 +341,7 @@ int ChttpClient::doDecode()
 	return ret;
 }
 
-int ChttpClient::doReadData()
+int CHttpFlvClient::doReadData()
 {
 	char *p;
 	int ret = 0;
@@ -352,13 +352,13 @@ int ChttpClient::doReadData()
 		while (miReadFlvHeader > 0)
 		{
 			len = miReadFlvHeader;
-			ret = mhttp->read(&p, len);
+			ret = mhttp->readFull(&p, len);
 			if (ret <= 0)
 			{
 				return ret;
 			}
 			miReadFlvHeader -= ret;
-			//logs->debug("%s [ChttpClient::doReadData] http %s read flv header len %d ",
+			//logs->debug("%s [CHttpFlvClient::doReadData] http %s read flv header len %d ",
 			//	mremoteAddr.c_str(),moriUrl.c_str(),ret);
 		}
 		//flv tag
@@ -366,25 +366,25 @@ int ChttpClient::doReadData()
 		{
 			char *tagHeader;
 			len = 11;
-			ret = mhttp->read(&tagHeader, len); //肯定会读到11字节
+			ret = mhttp->readFull(&tagHeader, len); //肯定会读到11字节
 			if (ret <= 0)
 			{
 				return ret;
 			}
 
-			//printf("%s [ChttpClient::doReadData] http %s read flv tag header len %d \n",
+			//printf("%s [CHttpFlvClient::doReadData] http %s read flv tag header len %d \n",
 			//	mremoteAddr.c_str(),moriUrl.c_str(),ret);
 
 			miTagType = (FlvPoolDataType)tagHeader[0];
 			mtagLen = (int)bigInt24(tagHeader + 1);
 			if (mtagLen < 0 || mtagLen > 1024 * 1024 * 10)
 			{
-				logs->error("%s [ChttpClient::doReadData] http %s read tag len %d unexpect,tag type=%d ***",
+				logs->error("%s [CHttpFlvClient::doReadData] http %s read tag len %d unexpect,tag type=%d ***",
 					mremoteAddr.c_str(), moriUrl.c_str(), mtagLen, miTagType);
 				return CMS_ERROR;
 			}
 
-			//printf("%s [ChttpClient::doReadData] http %s read flv tag type %d, tag len %d \n",
+			//printf("%s [CHttpFlvClient::doReadData] http %s read flv tag type %d, tag len %d \n",
 			//	mremoteAddr.c_str(),moriUrl.c_str(),miTagType,mtagLen);
 
 			p = (char*)&muiTimestamp;
@@ -408,7 +408,7 @@ int ChttpClient::doReadData()
 				while (mtagReadLen < mtagLen)
 				{
 					len = mtagLen - mtagReadLen > 1024 * 8 ? 1024 * 8 : mtagLen - mtagReadLen;
-					ret = mhttp->read(&p, len);
+					ret = mhttp->readFull(&p, len);
 					if (ret <= 0)
 					{
 						return ret;
@@ -417,14 +417,14 @@ int ChttpClient::doReadData()
 					mtagReadLen += len;
 				}
 				misReadTagBody = true;
-				//printf("%s [ChttpClient::doReadData] http %s read flv tag body=%d \n",
+				//printf("%s [CHttpFlvClient::doReadData] http %s read flv tag body=%d \n",
 				//	mremoteAddr.c_str(),moriUrl.c_str(),mtagReadLen);
 			}
 			if (!misReadTagFooler)
 			{
 				char *tagHeaderFooler;
 				len = 4;
-				ret = mhttp->read(&tagHeaderFooler, len); //肯定会读到4字节
+				ret = mhttp->readFull(&tagHeaderFooler, len); //肯定会读到4字节
 				if (ret <= 0)
 				{
 					return ret;
@@ -434,10 +434,10 @@ int ChttpClient::doReadData()
 				if (mtagLen + 11 != tagTotalLen)
 				{
 					//警告
-					//printf("%s [ChttpClient::doReadData] http %s handle tagTotalLen=%d,mtagLen+11=%d \n",
+					//printf("%s [CHttpFlvClient::doReadData] http %s handle tagTotalLen=%d,mtagLen+11=%d \n",
 					//	mremoteAddr.c_str(),moriUrl.c_str(),tagTotalLen,mtagLen+11);
 				}
-				//printf("%s [ChttpClient::doReadData] http %s handle tagTotalLen=%d,mtagLen=%d \n",
+				//printf("%s [CHttpFlvClient::doReadData] http %s handle tagTotalLen=%d,mtagLen=%d \n",
 				//	mremoteAddr.c_str(),moriUrl.c_str(),tagTotalLen,mtagLen);
 			}
 
@@ -448,7 +448,7 @@ int ChttpClient::doReadData()
 			switch ((int)miTagType)
 			{
 			case FLV_TAG_AUDIO:
-				//printf("%s [ChttpClient::doReadData] http %s handle audio tag \n",
+				//printf("%s [CHttpFlvClient::doReadData] http %s handle audio tag \n",
 				//	mremoteAddr.c_str(),moriUrl.c_str());
 				mtimeoutTick = getTimeUnix();
 
@@ -457,7 +457,7 @@ int ChttpClient::doReadData()
 				mtagLen = 0;
 				break;
 			case FLV_TAG_VIDEO:
-				//printf("%s [ChttpClient::doReadData] http %s handle video tag \n",
+				//printf("%s [CHttpFlvClient::doReadData] http %s handle video tag \n",
 				//	mremoteAddr.c_str(),moriUrl.c_str());
 				mtimeoutTick = getTimeUnix();
 
@@ -466,7 +466,7 @@ int ChttpClient::doReadData()
 				mtagLen = 0;
 				break;
 			case FLV_TAG_SCRIPT:
-				//printf("%s [ChttpClient::doReadData] http %s handle metaData tag \n",
+				//printf("%s [CHttpFlvClient::doReadData] http %s handle metaData tag \n",
 				//	mremoteAddr.c_str(),moriUrl.c_str());
 				mtimeoutTick = getTimeUnix();
 
@@ -475,7 +475,7 @@ int ChttpClient::doReadData()
 				mtagLen = 0;
 				break;
 			default:
-				logs->error("*** %s [ChttpClient::doReadData] http %s read tag type %d unexpect ***",
+				logs->error("*** %s [CHttpFlvClient::doReadData] http %s read tag type %d unexpect ***",
 					mremoteAddr.c_str(), moriUrl.c_str(), miTagType);
 				return 0;
 			}
@@ -484,42 +484,42 @@ int ChttpClient::doReadData()
 	return ret;
 }
 
-int ChttpClient::doTransmission()
+int CHttpFlvClient::doTransmission()
 {
 	return CMS_OK;
 }
 
-int ChttpClient::sendBefore(const char *data, int len)
+int CHttpFlvClient::sendBefore(const char *data, int len)
 {
 	return CMS_OK;
 }
 
-int ChttpClient::doRead()
+int CHttpFlvClient::doRead()
 {
 	return mhttp->want2Read();
 }
 
-int ChttpClient::doWrite()
+int CHttpFlvClient::doWrite()
 {
 	return mhttp->want2Write();
 }
 
-int  ChttpClient::handle()
+int  CHttpFlvClient::handle()
 {
 	return CMS_OK;
 }
 
-int	 ChttpClient::handleFlv(int &ret)
+int	 CHttpFlvClient::handleFlv(int &ret)
 {
 	return CMS_OK;
 }
 
-int ChttpClient::request()
+int CHttpFlvClient::request()
 {
 	return CMS_OK;
 }
 
-void ChttpClient::makeHash()
+void CHttpFlvClient::makeHash()
 {
 	HASH tmpHash;
 	if (mHash == tmpHash)
@@ -527,7 +527,7 @@ void ChttpClient::makeHash()
 		mHash = makeUrlHash(murl);
 		mstrHash = hash2Char(mHash.data);
 		mHashIdx = CFlvPool::instance()->hashIdx(mHash);
-		logs->info("%s [ChttpClient::makeHash] %s hash url %s,hash=%s",
+		logs->info("%s [CHttpFlvClient::makeHash] %s hash url %s,hash=%s",
 			mremoteAddr.c_str(), murl.c_str(), readHashUrl(murl).c_str(), mstrHash.c_str());
 	}
 	else
@@ -536,7 +536,7 @@ void ChttpClient::makeHash()
 	}
 }
 
-void ChttpClient::tryCreateTask()
+void CHttpFlvClient::tryCreateTask()
 {
 	if (!CTaskMgr::instance()->pullTaskIsExist(mHash))
 	{
@@ -544,7 +544,7 @@ void ChttpClient::tryCreateTask()
 	}
 }
 
-int ChttpClient::decodeMetaData(char *data, int len)
+int CHttpFlvClient::decodeMetaData(char *data, int len)
 {
 	misChangeMediaInfo = false;
 	int ret = mflvPump->decodeMetaData(data, len, misChangeMediaInfo);
@@ -560,7 +560,7 @@ int ChttpClient::decodeMetaData(char *data, int len)
 	return CMS_OK;
 }
 
-int  ChttpClient::decodeVideo(char *data, int len, uint32 timestamp)
+int  CHttpFlvClient::decodeVideo(char *data, int len, uint32 timestamp)
 {
 	misChangeMediaInfo = false;
 	int ret = mflvPump->decodeVideo(data, len, timestamp, misChangeMediaInfo);
@@ -580,14 +580,14 @@ int  ChttpClient::decodeVideo(char *data, int len, uint32 timestamp)
 	{
 		misCreateHls = true;
 		std::string hlsUrl = makeHlsUrl(murl);
-		logs->debug("%s [ChttpClient::decodeVideo] %s http m3u8 url %s",
+		logs->debug("%s [CHttpFlvClient::decodeVideo] %s http m3u8 url %s",
 			mremoteAddr.c_str(), murl.c_str(), hlsUrl.c_str());
 		CMissionMgr::instance()->create(mHashIdx, mHash, hlsUrl, mtsDuration, mtsNum, mtsSaveNum);
 	}
 	return CMS_OK;
 }
 
-int  ChttpClient::decodeAudio(char *data, int len, uint32 timestamp)
+int  CHttpFlvClient::decodeAudio(char *data, int len, uint32 timestamp)
 {
 	misChangeMediaInfo = false;
 	int ret = mflvPump->decodeAudio(data, len, timestamp, misChangeMediaInfo);
@@ -607,14 +607,14 @@ int  ChttpClient::decodeAudio(char *data, int len, uint32 timestamp)
 	{
 		misCreateHls = true;
 		std::string hlsUrl = makeHlsUrl(murl);
-		logs->debug("%s [ChttpClient::Audio] %s http m3u8 url %s",
+		logs->debug("%s [CHttpFlvClient::Audio] %s http m3u8 url %s",
 			mremoteAddr.c_str(), murl.c_str(), hlsUrl.c_str());
 		CMissionMgr::instance()->create(mHashIdx, mHash, hlsUrl, mtsDuration, mtsNum, mtsSaveNum);
 	}
 	return CMS_OK;
 }
 
-void ChttpClient::down8upBytes()
+void CHttpFlvClient::down8upBytes()
 {
 	unsigned long tt = getTickCount();
 	if (tt - mspeedTick > 1000)
@@ -639,7 +639,7 @@ void ChttpClient::down8upBytes()
 		mxSecTick++;
 		if (((mxSecTick + (0x0F - (CMS_SPEED_DURATION >= 0x0F ? 10 : CMS_SPEED_DURATION) + 1)) & 0x0F) == 0)
 		{
-			logs->info("%s [ChttpClient::down8upBytes] %s download speed %s,upload speed %s",
+			logs->info("%s [CHttpFlvClient::down8upBytes] %s download speed %s,upload speed %s",
 				mremoteAddr.c_str(), murl.c_str(),
 				parseSpeed8Mem(mxSecdownBytes / mxSecTick, true).c_str(),
 				parseSpeed8Mem(mxSecUpBytes / mxSecTick, true).c_str());
@@ -650,48 +650,48 @@ void ChttpClient::down8upBytes()
 	}
 }
 
-int		ChttpClient::firstPlaySkipMilSecond()
+int		CHttpFlvClient::firstPlaySkipMilSecond()
 {
 	return miFirstPlaySkipMilSecond;
 }
 
-bool	ChttpClient::isResetStreamTimestamp()
+bool	CHttpFlvClient::isResetStreamTimestamp()
 {
 	return misResetStreamTimestamp;
 }
 
-bool	ChttpClient::isNoTimeout()
+bool	CHttpFlvClient::isNoTimeout()
 {
 	return misNoTimeout;
 }
 
-int		ChttpClient::liveStreamTimeout()
+int		CHttpFlvClient::liveStreamTimeout()
 {
 	return miLiveStreamTimeout;
 }
 
-int	ChttpClient::noHashTimeout()
+int	CHttpFlvClient::noHashTimeout()
 {
 	return miNoHashTimeout;
 }
 
-bool	ChttpClient::isRealTimeStream()
+bool	CHttpFlvClient::isRealTimeStream()
 {
 	return misRealTimeStream;
 }
 
-int64   ChttpClient::cacheTT()
+int64   CHttpFlvClient::cacheTT()
 {
 	return mllCacheTT;
 }
 
-std::string &ChttpClient::getHost()
+std::string &CHttpFlvClient::getHost()
 {
 	return mHost;
 }
 
 
-void ChttpClient::makeOneTask()
+void CHttpFlvClient::makeOneTask()
 {
 	makeOneTaskDownload(mHash, 0, false, true);
 	makeOneTaskMedia(mHash, mflvPump->getVideoFrameRate(), mflvPump->getAudioFrameRate(), mflvPump->getWidth(), mflvPump->getHeight(),
@@ -699,13 +699,13 @@ void ChttpClient::makeOneTask()
 		getAudioType(mflvPump->getAudioType()), murl, mremoteAddr, mrw->netType() == NetUdp);
 }
 
-CReaderWriter *ChttpClient::rwConn()
+CReaderWriter *CHttpFlvClient::rwConn()
 {
 	return mrw;
 }
 
 #ifdef __CMS_CYCLE_MEM__
-char *ChttpClient::allocCycMem(uint32 size, unsigned int msgType)
+char *CHttpFlvClient::allocCycMem(uint32 size, unsigned int msgType)
 {
 	if (msgType != MESSAGE_TYPE_VIDEO && msgType != MESSAGE_TYPE_AUDIO)
 	{

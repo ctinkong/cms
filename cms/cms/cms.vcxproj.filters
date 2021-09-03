@@ -70,6 +70,9 @@
     <Filter Include="rfc">
       <UniqueIdentifier>{5627aba9-67dc-4f2d-abbf-b9c7b4af1062}</UniqueIdentifier>
     </Filter>
+    <Filter Include="http">
+      <UniqueIdentifier>{641f29b1-8c2a-40c4-807d-035a9b58ef41}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\enc\cms_base64.cpp">
@@ -275,6 +278,9 @@
     </ClCompile>
     <ClCompile Include="..\..\mem\cms_cycle_mem.cpp">
       <Filter>mem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\http\cms_http_client.cpp">
+      <Filter>http</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -511,6 +517,9 @@
     </ClInclude>
     <ClInclude Include="..\..\mem\cms_cycle_mem.h">
       <Filter>mem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\http\cms_http_client.h">
+      <Filter>http</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -35,7 +35,8 @@ public:
 	CSSL(int fd, std::string remoteAddr, bool isAsClient);
 	~CSSL();
 	bool	run();
-	int		read(char **data, int &len);
+	int		readFull(char **data, int &len);
+	int		read(char **data, int len);
 	int		write(const char *data, int &len);
 	int   	peek(char **data, int &len);
 	void	skip(int len);

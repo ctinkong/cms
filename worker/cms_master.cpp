@@ -253,6 +253,40 @@ void CMaster::fdAssociate2Ev(CConnListener *cls, listenTcpCallBack cb)
 	msetEvIO.insert(watcher);
 }
 
+Conn *CMaster::createHttp(std::string url, std::string method, std::string postData, HttpCallBackFn fn, void *custom)
+{
+	LinkUrl linkUrl;
+	if (!parseUrl(url, linkUrl))
+	{
+		logs->error("[CMaster::createHttp] parse url %s fail.", url.c_str());
+		return NULL;
+	}
+	logs->debug("[CMaster::createHttp] query url %s, postData %s", url.c_str(), postData.c_str());
+	TCPConn *tcp = new TCPConn();
+	if (tcp->dialTcp((char*)linkUrl.addr.c_str(), linkUrl.protocol == PROTOCOL_HTTP ? TypeHttp : TypeHttps) == CMS_ERROR)
+	{
+		logs->error("[CMaster::createHttp] dialTcp %s fail.", url.c_str());
+		delete tcp;
+		return NULL;
+	}
+	if (tcp->connect() == CMS_ERROR)
+	{
+		delete tcp;
+		return NULL;
+	}
+	logs->info("[CMaster::createHttp]"
+		"addr=%s, "
+		"http url=%s",
+		linkUrl.addr.c_str(),
+		url.c_str());
+	CHttpClient *client = new CHttpClient(tcp, url, "");
+	client->start(postData, fn, custom);
+	client->httpRequest()->setMethod(method);
+	uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
+	mworker[i]->addOneConn(tcp->fd(), client);
+	return client;
+}
+
 Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pushUrl, std::string oriUrl, std::string strReferer
 	, ConnType connectType, RtmpType rtmpType, bool isTcp/* = true*/)
 {
@@ -291,15 +325,17 @@ Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pu
 
 		if (isHttp(connectType) || isHttps(connectType))
 		{
-			ChttpClient *http = new ChttpClient(hash, tcp, pullUrl, oriUrl, strReferer, isHttps(connectType) ? true : false);
+			CHttpFlvClient *http = new CHttpFlvClient(hash, tcp, pullUrl, oriUrl, strReferer, isHttps(connectType) ? true : false);
 			uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 			mworker[i]->addOneConn(tcp->fd(), http);
+			conn = http;
 		}
 		else if (isRtmp(connectType))
 		{
 			CConnRtmp *rtmp = new CConnRtmp(hash, rtmpType, tcp, pullUrl, pushUrl);
 			uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 			mworker[i]->addOneConn(tcp->fd(), rtmp);
+			conn = rtmp;
 		}
 	}
 	else
@@ -352,7 +388,7 @@ void CMaster::masterTcpAcceptCallBack(struct ev_loop *loop, struct ev_io *watche
 		case TypeQuery:
 		{
 			{
-				CHttpServer *hs = new CHttpServer(rw, isHttps(listenType));
+				CHttpFlvServer *hs = new CHttpFlvServer(rw, isHttps(listenType));
 				uint32 i = midxWorker++ % CConfig::instance()->workerCfg()->getCount();
 				mworker[i]->addOneConn(rw->fd(), hs);
 			}

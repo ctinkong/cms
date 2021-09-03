@@ -40,12 +40,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #endif
 #include <string>
 
-class ChttpClient :public Conn, public CStreamInfo
+class CHttpFlvClient :public Conn, public CStreamInfo
 {
 public:
-	ChttpClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std::string oriUrl,
+	CHttpFlvClient(HASH &hash, CReaderWriter *rw, std::string pullUrl, std::string oriUrl,
 		std::string refer, bool isTls);
-	~ChttpClient();
+	~CHttpFlvClient();
 	//conn ½Ó¿Ú
 	int activateEV(void *base, struct ev_loop *evLoop);
 	int doit();

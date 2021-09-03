@@ -105,8 +105,9 @@ public:
 	bool        run();
 	int			want2Read();
 	int			want2Write();
-	int         read(char **data, int &len);			//数据保存在*data中，读取指定长度的数据len，如果没有足够数据则返回0
+	int         readFull(char **data, int &len);			//数据保存在*data中，读取指定长度的数据len，如果没有足够数据则返回0
 													//，读完之后要马上处理，没处理前不能再次read，否则可能出现不可预测的错误
+	int         read(char **data, int len);
 	int         write(const char *data, int &len);
 	bool		setUrl(std::string url);
 	void		setRefer(std::string refer);
@@ -123,14 +124,16 @@ public:
 	bool isCmsConnection();
 	std::string protocol();
 
+	bool isFinish() { return misFinish; };
 	void setChunked();
+	void setContentLength(int64 len);
 	void reset();
 	void shouldCloseNodelay(bool force = false);
 
 	OperatorNewDelete
 private:
 	int  readChunkedRN();
-	
+
 
 	//tls 的东西
 	bool			misTls;
@@ -143,8 +146,10 @@ private:
 	int				mheaderEnd;
 	std::string     mstrHeader;
 
+	bool            misFinish;
 	bool			misChunked;
 	int64			mchunkedLen;
+	int64           mcontentLen;
 	bool			misReadChunkedLen;
 	std::string		mchunkBytesRN;
 	int				mchunkedReadrRN;

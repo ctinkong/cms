@@ -69,6 +69,7 @@ void xassert(const char *msg, const char *file, int line)
 		backtrace_symbols_fd(callarray, n, fileno(fp ? fp : stderr));
 	}
 	fclose(fp);
+	cmsSleep(1000);
 	abort();
 }
 
@@ -194,6 +195,7 @@ void xxfree(const void *s_const)
 	if (!s_const)
 	{
 		fprintf(stderr, "Oh NULL\n");
+		cmsSleep(1000);
 		abort();
 	}
 	void *s = (void *)s_const;
@@ -217,6 +219,8 @@ void * cms_xrealloc(void *s, size_t sz, const char *file, int line)
 	void *p;
 	if ((p = realloc(s ? n : s, sz + sizeof(CmsAllocNode))) == NULL)
 	{
+		fprintf(stderr, "Oh xxfree relloc fail\n");
+		cmsSleep(1000);
 		abort();
 	}
 	addAllocNode(p, sz, p, file, line);
@@ -238,6 +242,7 @@ void * cms_xcalloc(size_t n, size_t sz, const char *file, int line)
 	if ((p = calloc(1, n * sz + sizeof(CmsAllocNode))) == NULL)
 	{
 		perror("xcalloc");
+		cmsSleep(1000);
 		abort();
 	}
 	addAllocNode(p, n*sz, p, file, line);
@@ -415,6 +420,7 @@ void * xmalloc(size_t sz)
 	if ((p = malloc(sz)) == NULL)
 	{
 		perror("malloc");
+		cmsSleep(1000);
 		abort();
 	}
 	return (p);
@@ -448,6 +454,7 @@ void * xrealloc(void *s, size_t sz)
 	if ((p = realloc(s, sz)) == NULL)
 	{
 		perror("realloc");
+		cmsSleep(1000);
 		abort();
 	}
 	return (p);

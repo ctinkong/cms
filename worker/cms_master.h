@@ -7,6 +7,7 @@
 #include <worker/cms_worker.h>
 #include <protocol/cms_rtmp_const.h>
 #include <worker/cms_master_callback.h>
+#include <http/cms_http_client.h>
 #include <set>
 
 //ÍøÂç»Øµ÷
@@ -25,6 +26,8 @@ public:
 	void stop();
 	void thread();
 	static void *routinue(void *p);
+
+	Conn *createHttp(std::string url, std::string method, std::string postData, HttpCallBackFn fn, void *custom);
 
 	Conn *createConn(HASH &hash, char *addr, string pullUrl, std::string pushUrl, std::string oriUrl, std::string strReferer
 		, ConnType connectType, RtmpType rtmpType, bool isTcp = true);

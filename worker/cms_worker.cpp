@@ -76,7 +76,7 @@ bool CWorker::run(int i)
 		getTimeStr(date);
 		logs->error("[CWorker::run] %s ***** file=%s,line=%d cmsCreateThread error *****", date, __FILE__, __LINE__);
 		return false;
-	}	
+	}
 	logs->debug("[CWorker::run] worker finish leave");
 
 	return true;
@@ -163,7 +163,7 @@ void CWorker::addOneConn(int fd, Conn *conn)
 	mfdConnQueue.push(fq);
 	mlockFdQueue.Unlock();
 	write(mfdPipe[1], &fd, sizeof(fd));
-	logs->debug("[CWorker::addOneConn] worker-%d add one", midx);
+	logs->debug("[CWorker::addOneConn] worker-%d add one %d", midx, fd);
 }
 
 void CWorker::delOneConn(int fd, Conn *conn)
@@ -201,13 +201,15 @@ void CWorker::workerPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, in
 			break;
 		}
 	} while (1);
-	logs->debug("[CWorker::workerPipeCallBack] worker-%d handle one", midx);
 	std::map<int, Conn*>::iterator itFdConn;
 	mlockFdQueue.Lock();
 	while (!mfdConnQueue.empty())
 	{
 		FdQueeu *fq = mfdConnQueue.front();
 		mfdConnQueue.pop();
+
+		logs->debug("[CWorker::workerPipeCallBack] worker-%d handle one %d", midx, fq->fd);
+
 		if (fq->act == CMS_WORKER_ADD_CONN)
 		{
 			itFdConn = mfdConn.find(fq->fd);
@@ -239,7 +241,7 @@ void CWorker::workerPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, in
 }
 
 void CWorker::connIOCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents)
-{	
+{
 	EvCallBackParam *ecp = (EvCallBackParam*)watcher->data;
 	std::map<int, Conn*>::iterator itFdConn = mfdConn.find(ecp->fd);
 	assert(itFdConn != mfdConn.end());
@@ -273,6 +275,7 @@ void CWorker::connIOCallBack(struct ev_loop *loop, struct ev_io *watcher, int re
 		conn->stop("net error");
 		delete conn;
 		mfdConn.erase(itFdConn);
+		logs->debug("worker-%d delete one %d", midx, ecp->fd);
 	}
 }
 

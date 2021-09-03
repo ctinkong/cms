@@ -25,6 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef __CMS_TASK_MGR_H__
 #define __CMS_TASK_MGR_H__
 #include <interface/cms_interf_conn.h>
+#include <http/cms_http_client.h>
 #include <core/cms_lock.h>
 #include <common/cms_type.h>
 #include <core/cms_thread.h>
@@ -51,6 +52,14 @@ struct CreateTaskPacket
 	OperatorNewDelete
 };
 
+struct HttpQueryPacket
+{
+	char *data;
+	int  len;
+	CHttpClient *client;
+	void *custom;
+};
+
 class CTaskMgr
 {
 public:
@@ -63,6 +72,8 @@ public:
 	void thread();
 	bool run();
 	void stop();
+
+	int httpQueryCB(const char *  data, int dataLen, CHttpClient *client, void *custom);
 
 	//拉流任务接口或者被推流
 	bool	pullTaskAdd(HASH &hash, Conn *conn);
@@ -82,25 +93,31 @@ public:
 	void	createTask(HASH &hash, std::string pullUrl, std::string pushUrl, std::string oriUrl,
 		std::string refer, int createAct, bool isHotPush, bool isPush2Cdn);
 	void	push(CreateTaskPacket *ctp);
+	void	push(HttpQueryPacket *packet);
 
 	OperatorNewDelete
 private:
+	
+	bool	pop(HttpQueryPacket **ctp);
 	bool	pop(CreateTaskPacket **ctp);
 	//创建任务
-	void	pullCreateTask(CreateTaskPacket *ctp);
-	void	pushCreateTask(CreateTaskPacket *ctp);
+	void	searchPullUrl(CreateTaskPacket *ctp);  //查询对应的真实流名
+	void	pullCreateTask(CreateTaskPacket *ctp); //创建拉流
+	void	pushCreateTask(CreateTaskPacket *ctp); //创建推流
 
 	static CTaskMgr *minstance;
 	bool			misRun;
 	cms_thread_t	mtid;
 
+	std::queue<HttpQueryPacket *>	mqueueHttpPacket;
 	std::queue<CreateTaskPacket *>	mqueueCTP;
-	CEevnt							mlockQueue;
+	CLock							mlockQueue;
 	//拉流任务
 	CLock					mlockPullTaskConn;
 	std::map<HASH, Conn *>	mmapPullTaskConn;
 	//推流任务
 	CLock					mlockPushTaskConn;
 	std::map<HASH, Conn *>	mmapPushTaskConn;
+
 };
 #endif

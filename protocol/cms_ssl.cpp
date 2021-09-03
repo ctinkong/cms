@@ -142,7 +142,7 @@ bool CSSL::isHandShake()
 	return misTlsHandShake;
 }
 
-int CSSL::read(char **data, int &len)
+int CSSL::readFull(char **data, int &len)
 {
 	if (/*!misAsClient && */!misTlsHandShake)
 	{
@@ -163,6 +163,36 @@ int CSSL::read(char **data, int &len)
 	if (mrdBuff->size() < len)
 	{
 		return 0;
+	}
+	*data = mrdBuff->readBytes(len);
+	return len;
+}
+
+int CSSL::read(char **data, int len)
+{
+	if (/*!misAsClient && */!misTlsHandShake)
+	{
+		int ret = handShakeTLS();
+		if (ret == -1)
+		{
+			return -1;
+		}
+		if (ret == 0)
+		{
+			return 0;
+		}
+	}
+	if (mrdBuff->size() < len && mrdBuff->grow(len) == CMS_ERROR)
+	{
+		return -1;
+	}
+	if (mrdBuff->size() == 0)
+	{
+		return 0;
+	}
+	if (mrdBuff->size() < len)
+	{
+		len = mrdBuff->size();
 	}
 	*data = mrdBuff->readBytes(len);
 	return len;

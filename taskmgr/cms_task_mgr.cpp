@@ -25,16 +25,37 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <taskmgr/cms_task_mgr.h>
 #include <worker/cms_master.h>
 #include <net/cms_tcp_conn.h>
+#include <protocol/cms_http_const.h>
 #include <log/cms_log.h>
 #include <config/cms_config.h>
 #include <app/cms_app_info.h>
 #include <app/cms_parse_args.h>
 #include <common/cms_utility.h>
 #include <common/cms_url.h>
+#include <cJSON/cJSON.h>
 #include <unistd.h>
 #include <assert.h>
 
+//#define BUKAYUN_RTMP_SERVER
+
 #define MapTaskConnIteror std::map<HASH,Conn *>::iterator
+
+int httpQueryCB(const char *  data, int dataLen, CHttpClient *client, void *custom)
+{
+	HttpQueryPacket *packet = (HttpQueryPacket *)xmalloc(sizeof(HttpQueryPacket));
+	memset(packet, 0, sizeof(HttpQueryPacket));
+	if (dataLen)
+	{
+		packet->data = (char*)xmalloc(dataLen);
+		memcpy(packet->data, data, dataLen);
+		packet->len = dataLen;
+	}
+	packet->client = client;
+	packet->custom = custom;
+	logs->info(">>>>> CTaskMgr httpQueryCB url %s, data len %d", client->httpRequest()->getUrl().c_str(), dataLen);
+	CTaskMgr::instance()->push(packet);
+	return 0;
+}
 
 CTaskMgr *CTaskMgr::minstance = NULL;
 CTaskMgr::CTaskMgr()
@@ -78,23 +99,44 @@ void CTaskMgr::thread()
 	logs->info(">>>>> CTaskMgr thread pid=%d", gettid());
 	setThreadName("cms-taskmgr");
 	CreateTaskPacket *ctp;
+	HttpQueryPacket *hqp;
 	bool isPop;
 	while (misRun)
 	{
-		isPop = pop(&ctp);
-		if (isPop)
+		isPop = false;
+		if (pop(&ctp))
 		{
+			isPop = true;
 			if (ctp->createAct == CREATE_ACT_PULL)
 			{
+
+#ifdef BUKAYUN_RTMP_SERVER
+				searchPullUrl(ctp);
+				ctp = NULL;
+#else
 				pullCreateTask(ctp);
+#endif				
 			}
 			else if (ctp->createAct == CREATE_ACT_PUSH)
 			{
 				pushCreateTask(ctp);
 			}
-			delete ctp;
+			if (ctp)
+			{
+				delete ctp;
+			}
 		}
-		else
+		if (pop(&hqp))
+		{
+			isPop = true;
+			CTaskMgr::instance()->httpQueryCB(hqp->data, hqp->len, hqp->client, hqp->custom);
+			if (hqp->data)
+			{
+				xfree(hqp->data);
+			}
+			xfree(hqp);
+		}
+		if (!isPop)
 		{
 			cmsSleep(10);
 		}
@@ -120,12 +162,57 @@ void CTaskMgr::stop()
 {
 	logs->debug("##### CTaskMgr::stop begin #####");
 	misRun = false;
-	mlockQueue.Lock();
-	mlockQueue.Signal();
-	mlockQueue.Unlock();
 	cmsWaitForThread(mtid, NULL);
 	mtid = 0;
 	logs->debug("##### CTaskMgr::stop finish #####");
+}
+
+int CTaskMgr::httpQueryCB(const char *  data, int dataLen, CHttpClient *client, void *custom)
+{
+	if (data == NULL && dataLen == 0)
+	{
+		CreateTaskPacket *ctp = (CreateTaskPacket *)custom;
+		//http已经完成了
+		std::string strData = client->getData();
+		logs->debug("httpQueryCB data %s", strData.c_str());
+		if (strData.length())
+		{
+			cJSON *root = cJSON_Parse(strData.c_str());
+			if (root)
+			{
+				cJSON *code = cJSON_GetObjectItem(root, "code");
+				if (code != NULL && code->valueint == 0)
+				{
+					cJSON *streamUrl = cJSON_GetObjectItem(root, "data");
+					if (streamUrl != NULL)
+					{
+						logs->debug("live stream %s is query success %s, live stream [%s]",
+							ctp->pullUrl.c_str(), streamUrl->valuestring, streamUrl->valuestring);
+						ctp->pullUrl = streamUrl->valuestring;
+						CTaskMgr::instance()->pullCreateTask(ctp);
+					}
+					else
+					{
+						logs->debug("live stream %s is query url is empty", ctp->pullUrl.c_str());
+					}
+				}
+				else
+				{
+					logs->debug("live stream %s is query url is fail.", ctp->pullUrl.c_str());
+				}
+				cJSON_Delete(root);
+			}
+		}
+
+		delete ctp;
+		client->stop("finish");
+		CMaster::instance()->removeConn(client->rwConn()->fd(), client);
+	}
+	else
+	{
+		client->saveData(data, dataLen);
+	}
+	return 0;
 }
 
 void CTaskMgr::createTask(HASH &hash, std::string pullUrl, std::string pushUrl, std::string oriUrl,
@@ -146,12 +233,22 @@ void CTaskMgr::createTask(HASH &hash, std::string pullUrl, std::string pushUrl, 
 
 void CTaskMgr::push(CreateTaskPacket *ctp)
 {
-	mlockQueue.Lock();
-	if (mqueueCTP.empty())
+	if (CConfig::instance()->media()->isClosePullTask() &&
+		ctp->createAct == CREATE_ACT_PULL)
 	{
-		mlockQueue.Signal();
+		//不创建拉流任务
+		delete ctp;
+		return;
 	}
-	mqueueCTP.push(ctp);	
+	if (CConfig::instance()->media()->isClosePushTask() &&
+		ctp->createAct == CREATE_ACT_PUSH)
+	{
+		//不创建推流任务
+		delete ctp;
+		return;
+	}
+	mlockQueue.Lock();
+	mqueueCTP.push(ctp);
 	mlockQueue.Unlock();
 }
 
@@ -159,20 +256,53 @@ bool CTaskMgr::pop(CreateTaskPacket **ctp)
 {
 	bool isPop = false;
 	mlockQueue.Lock();
-	while (mqueueCTP.empty())
+	if (!mqueueCTP.empty())
 	{
-		if (!misRun)
-		{
-			goto End;
-		}
-		mlockQueue.Wait();
+		isPop = true;
+		*ctp = mqueueCTP.front();
+		mqueueCTP.pop();
 	}
-	isPop = true;
-	*ctp = mqueueCTP.front();
-	mqueueCTP.pop();
-End:
 	mlockQueue.Unlock();
 	return isPop;
+}
+
+void CTaskMgr::push(HttpQueryPacket *packet)
+{
+	mlockQueue.Lock();
+	mqueueHttpPacket.push(packet);
+	mlockQueue.Unlock();
+}
+
+bool CTaskMgr::pop(HttpQueryPacket **packet)
+{
+	bool isPop = false;
+	mlockQueue.Lock();
+	if (!mqueueHttpPacket.empty())
+	{
+		isPop = true;
+		*packet = mqueueHttpPacket.front();
+		mqueueHttpPacket.pop();
+	}
+	mlockQueue.Unlock();
+	return isPop;
+}
+
+void CTaskMgr::searchPullUrl(CreateTaskPacket *ctp)
+{
+	std::string streamName = ctp->pullUrl;
+	std::size_t pos = streamName.rfind("?");
+	if (pos != std::string::npos)
+	{
+		streamName = streamName.substr(0, pos);
+	}
+	pos = streamName.rfind("/");
+	if (pos != std::string::npos)
+	{
+		streamName = streamName.substr(pos + 1);
+		char szPostData[4096] = { 0 };
+		snprintf(szPostData, sizeof(szPostData), "{\"stream_name\": \"%s\"}", streamName.c_str());
+		CMaster::instance()->createHttp(CConfig::instance()->upperAddr()->getQueryApi(), HTTP_METHOD_POST, szPostData, ::httpQueryCB, ctp);
+	}
 }
 
 void CTaskMgr::pullCreateTask(CreateTaskPacket *ctp)
