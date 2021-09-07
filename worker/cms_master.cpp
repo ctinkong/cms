@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include <worker/cms_master.h>
 #include <worker/cms_master_callback.h>
+#include <taskmgr/cms_task_mgr.h>
 #include <conn/cms_conn_rtmp.h>
 #include <conn/cms_http_c.h>
 #include <conn/cms_http_s.h>
@@ -287,9 +288,49 @@ Conn *CMaster::createHttp(std::string url, std::string method, std::string postD
 	return client;
 }
 
+bool CMaster::isTaskExist(HASH &hash, ConnType connectType, RtmpType rtmpType)
+{
+	//http
+	if (isHttp(connectType) || isHttps(connectType))
+	{
+		return CTaskMgr::instance()->pullTaskIsExist(hash);
+	}
+	//rtmp
+	if (rtmpType == RtmpAsClient2Play)
+	{
+		return CTaskMgr::instance()->pullTaskIsExist(hash);
+	}
+	if (rtmpType == RtmpAsClient2Publish)
+	{
+		return CTaskMgr::instance()->pushTaskIsExist(hash);
+	}
+	return false;
+}
+
 Conn *CMaster::createConn(HASH &hash, char *addr, string pullUrl, std::string pushUrl, std::string oriUrl, std::string strReferer
 	, ConnType connectType, RtmpType rtmpType, bool isTcp/* = true*/)
 {
+	if (isTaskExist(hash, connectType, rtmpType))
+	{
+		logs->info("CMaster create conn hash=%s, "
+			"addr=%s, "
+			"pull url=%s, "
+			"push url=%s, "
+			"ori url=%s, "
+			"referer=%s, "
+			"connectType=%s, "
+			"rtmpType=%s, "
+			"tcp=%s, task is exist.",
+			hash2Char(hash.data).c_str(),
+			addr,
+			pullUrl.c_str(),
+			pushUrl.c_str(),
+			oriUrl.c_str(),
+			strReferer.c_str(),
+			getConnType(connectType).c_str(),
+			getRtmpTypeStr(rtmpType).c_str(),
+			isTcp ? "true" : "false");
+	}
 	Conn *conn = NULL;
 	if (isTcp)
 	{

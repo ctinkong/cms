@@ -36,6 +36,7 @@ public:
 	void masterAliveCallBack(struct ev_loop *loop, struct ev_timer *watcher, int revents);
 	void masterTcpAcceptCallBack(struct ev_loop *loop, struct ev_io *watcher, int revents);
 private:
+	bool isTaskExist(HASH &hash, ConnType connectType, RtmpType rtmpType);
 	bool runWorker();
 	void stopWorker();
 	bool listenAll();

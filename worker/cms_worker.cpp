@@ -208,15 +208,25 @@ void CWorker::workerPipeCallBack(struct ev_loop *loop, struct ev_io *watcher, in
 		FdQueeu *fq = mfdConnQueue.front();
 		mfdConnQueue.pop();
 
-		logs->debug("[CWorker::workerPipeCallBack] worker-%d handle one %d", midx, fq->fd);
+		logs->debug("[CWorker::workerPipeCallBack] worker-%d handle one %d, is add %s",
+			midx, fq->fd,
+			fq->act == CMS_WORKER_ADD_CONN ? "true" : "false");
 
 		if (fq->act == CMS_WORKER_ADD_CONN)
 		{
 			itFdConn = mfdConn.find(fq->fd);
 			assert(itFdConn == mfdConn.end());
-			mfdConn.insert(make_pair(fq->fd, fq->conn));
+
 			fq->conn->activateEV(this, mevLoop);
-			fq->conn->doit();
+			if (fq->conn->doit() != CMS_OK)
+			{
+				fq->conn->stop("start fail.");
+				delete fq->conn;
+			}
+			else
+			{
+				mfdConn.insert(make_pair(fq->fd, fq->conn));
+			}
 		}
 		else if (fq->act == CMS_WORKER_DEL_CONN)
 		{

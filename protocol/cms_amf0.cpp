@@ -370,12 +370,12 @@ namespace amf0
 			case AMF0_TYPE_AMF3:
 			case AMF0_TYPE_OBJECT_END:
 			{
-				//logs->info("+++ amf0Data2String unhandle type[ %d ] +++", data->type);
+				//logs->info("+++ amf0DataDumpString unhandle type[ %d ] +++", data->type);
 			}
 			break; /* end of composite object */
 			default:
 			{
-				logs->info("+++ amf0Data2String unexpect type[ %d ] +++", data->type);
+				logs->info("+++ amf0DataDumpString unexpect type[ %d ] +++", data->type);
 			}
 			}
 		}
